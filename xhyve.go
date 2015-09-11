@@ -15,12 +15,12 @@ import (
 
 	"os/exec"
 
-	"github.com/codegangsta/cli"
-	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/ssh"
-	"github.com/docker/machine/state"
-	"github.com/docker/machine/utils"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/docker/machine/libmachine/mcnutils"
+	"github.com/docker/machine/libmachine/ssh"
+	"github.com/docker/machine/libmachine/state"
 )
 
 const (
@@ -28,78 +28,47 @@ const (
 )
 
 type Driver struct {
-	MachineName    string
-	IPAddress      string
+	*drivers.BaseDriver
 	Memory         int
 	DiskSize       int
 	CPU            int
 	ISO            string
 	TmpISO         string
 	UUID           string
-	SSHUser        string
-	SSHPort        int
 	Boot2DockerURL string
 	CaCertPath     string
 	PrivateKeyPath string
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
-
-	storePath string
-}
-
-type Stringer interface {
-	String() string
-}
-
-func init() {
-	drivers.Register("xhyve", &drivers.RegisteredDriver{
-		New:            NewDriver,
-		GetCreateFlags: GetCreateFlags,
-	})
 }
 
 // RegisterCreateFlags registers the flags this driver adds to
 // "docker hosts create"
-func GetCreateFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
+func (d *Driver) GetCreateFlags() []mcnflag.Flag {
+	return []mcnflag.Flag{
+		mcnflag.Flag{
 			EnvVar: "XHYVE_BOOT2DOCKER_URL",
 			Name:   "xhyve-boot2docker-url",
 			Usage:  "The URL of the boot2docker image. Defaults to the latest available version",
 			Value:  "",
 		},
-		cli.IntFlag{
+		mcnflag.Flag{
 			EnvVar: "XHYVE_CPU_COUNT",
 			Name:   "xhyve-cpu-count",
 			Usage:  "Number of CPUs for the machine (-1 to use the number of CPUs available)",
 			Value:  1,
 		},
-		cli.IntFlag{
+		mcnflag.Flag{
 			EnvVar: "XHYVE_MEMORY_SIZE",
 			Name:   "xhyve-memory",
 			Usage:  "Size of memory for host in MB",
 			Value:  1024,
 		},
-		cli.IntFlag{
+		mcnflag.Flag{
 			EnvVar: "XHYVE_DISK_SIZE",
 			Name:   "xhyve-disk-size",
 			Usage:  "Size of disk for host in MB",
 			Value:  20000,
 		},
 	}
-}
-
-func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
-}
-
-func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
 }
 
 func (d *Driver) GetMachineName() string {
@@ -111,7 +80,7 @@ func (d *Driver) GetSSHHostname() (string, error) {
 }
 
 func (d *Driver) GetSSHKeyPath() string {
-	return filepath.Join(d.storePath, "id_rsa")
+	return filepath.Join(d.LocalArtifactPath("."), "id_rsa")
 }
 
 func (d *Driver) GetSSHPort() (int, error) {
@@ -139,7 +108,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.CPU = flags.Int("xhyve-cpu-count")
 	d.Memory = flags.Int("xhyve-memory")
 	d.DiskSize = flags.Int("xhyve-disk-size")
-	d.ISO = path.Join(d.storePath, isoFilename)
+	d.ISO = path.Join(d.LocalArtifactPath("."), isoFilename)
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
@@ -186,21 +155,21 @@ func (d *Driver) GetState() (state.State, error) { // TODO
 }
 
 func (d *Driver) PreCreateCheck() error {
-	reVersion := regexp.MustCompile(`^(\d+\.)?$`)
 	ver, err := vboxVersionDetect()
-	majorVersion := reVersion.FindString(ver)
-	if majorVersion != "5" || majorVersion != "" && err != nil {
+	if err != nil {
+		return fmt.Errorf("Error detecting VBox version: %s", err)
+	}
+	if !strings.HasPrefix(ver, "5") {
 		return fmt.Errorf("Virtual Box version 4 or lower will cause a kernel panic if xhyve tries to run." +
 			"You are running version: " +
 			ver +
-			" Please upgrade to version 5 at https://www.virtualbox.org/wiki/Downloads")
+			"\n\t Please upgrade to version 5 at https://www.virtualbox.org/wiki/Downloads")
 	}
 	return nil
 }
 
 func (d *Driver) Create() error {
-
-	b2dutils := utils.NewB2dUtils("", "")
+	b2dutils := mcnutils.NewB2dUtils("", "", d.GlobalArtifactPath())
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
 	}
@@ -211,7 +180,7 @@ func (d *Driver) Create() error {
 	}
 
 	log.Infof("Creating VM...")
-	if err := os.MkdirAll(d.storePath, 0755); err != nil {
+	if err := os.MkdirAll(d.LocalArtifactPath("."), 0755); err != nil {
 		return err
 	}
 
@@ -283,10 +252,10 @@ func (d *Driver) Start() error {
 		"-l com1,stdio",
 		"-s 2:0,virtio-net",
 		fmt.Sprintf("-s 2:1,virtio-tap,tap1"),
-		fmt.Sprintf("-s 3,ahci-cd,%d", path.Join(d.storePath, isoFilename)),
-		fmt.Sprintf("-s 4,virtio-blk,%d", path.Join(d.storePath, d.MachineName+".img")),
+		fmt.Sprintf("-s 3,ahci-cd,%s", path.Join(d.LocalArtifactPath("."), isoFilename)),
+		fmt.Sprintf("-s 4,virtio-blk,%s", path.Join(d.LocalArtifactPath("."), d.MachineName+".img")),
 		fmt.Sprintf("-U %s", d.UUID),
-		fmt.Sprintf("-f kexec,%s,%s,loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base", path.Join(d.storePath, "vmlinuz64"), path.Join(d.storePath, "initrd.img")),
+		fmt.Sprintf("-f kexec,%s,%s,loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base", path.Join(d.LocalArtifactPath("."), "vmlinuz64"), path.Join(d.LocalArtifactPath("."), "initrd.img")),
 	)
 	//	cmd := exec.Command("sudo xhyve -m 4G -c 4 -s 0:0,hostbridge -s 31,lpc -l com1,stdio -s 2:0,virtio-net -s 3,ahci-cd,'/Users/zchee/.docker/machine/machines/xhyve-test/boot2docker.iso' -s 4,virtio-blk,'/Users/zchee/.docker/machine/machines/xhyve-test/xhyve-test.img' -U D2B9B60C-2465-4AF7-BCB6-522D795B043E -f 'kexec,vmlinuz64,initrd.img,loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base'")
 	cmd.Stdin = strings.NewReader(Password)
@@ -362,11 +331,11 @@ func (d *Driver) setMachineNameIfNotSet() {
 }
 
 func (d *Driver) imgPath() string {
-	return path.Join(d.storePath, fmt.Sprintf("%s.img", d.MachineName))
+	return path.Join(d.LocalArtifactPath("."), fmt.Sprintf("%s.img", d.MachineName))
 }
 
 func (d *Driver) uuidPath() string {
-	return path.Join(d.storePath, "uuid")
+	return path.Join(d.LocalArtifactPath("."), "uuid")
 }
 
 func (d *Driver) createUUIDFile() error {
@@ -446,18 +415,18 @@ func (d *Driver) publicSSHKeyPath() string {
 }
 
 func (d *Driver) extractKernelImages() error {
-	var vmlinuz64 = "/Volumes/Boot2Docker-v1.7/boot/vmlinuz64"
-	var initrd = "/Volumes/Boot2Docker-v1.7/boot/initrd.img"
+	var vmlinuz64 = "/Volumes/Boot2Docker-v1.8/boot/vmlinuz64"
+	var initrd = "/Volumes/Boot2Docker-v1.8/boot/initrd.img"
 
 	hdiutil("attach", d.ISO)
 	log.Debugf("Mounting %s", isoFilename)
 
 	log.Debugf("Extract vmlinuz64")
-	if err := utils.CopyFile(vmlinuz64, filepath.Join(d.storePath, "vmlinuz64")); err != nil {
+	if err := mcnutils.CopyFile(vmlinuz64, filepath.Join(d.LocalArtifactPath("."), "vmlinuz64")); err != nil {
 		return err
 	}
 	log.Debugf("Extract initrd.img")
-	if err := utils.CopyFile(initrd, filepath.Join(d.storePath, "initrd.img")); err != nil {
+	if err := mcnutils.CopyFile(initrd, filepath.Join(d.LocalArtifactPath("."), "initrd.img")); err != nil {
 		return err
 	}
 
