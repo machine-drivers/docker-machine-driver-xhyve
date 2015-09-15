@@ -437,7 +437,7 @@ func (d *Driver) extractKernelImages() error {
 
 func (d *Driver) generateBlankDiskImage(count int) error {
 	cmd := dd
-	output := d.ISO
+	output := d.imgPath
 	cmd("/dev/zero", output, "1m", count)
 
 	return nil
