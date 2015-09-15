@@ -108,7 +108,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.CPU = flags.Int("xhyve-cpu-count")
 	d.Memory = flags.Int("xhyve-memory")
 	d.DiskSize = flags.Int("xhyve-disk-size")
-	d.ISO = path.Join(d.LocalArtifactPath("."), isoFilename)
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
@@ -327,6 +326,10 @@ func (d *Driver) setMachineNameIfNotSet() {
 	if d.MachineName == "" {
 		d.MachineName = fmt.Sprintf("docker-machine-unknown")
 	}
+}
+
+func (d *Driver) ISO() string {
+	return path.Join(d.LocalArtifactPath("."), isoFilename)
 }
 
 func (d *Driver) imgPath() string {
