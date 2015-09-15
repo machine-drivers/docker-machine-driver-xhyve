@@ -251,7 +251,6 @@ func (d *Driver) Start() error {
 		"-s 0:0,hostbridge -s 31,lpc",
 		"-l com1,stdio",
 		"-s 2:0,virtio-net",
-		fmt.Sprintf("-s 2:1,virtio-tap,tap1"),
 		fmt.Sprintf("-s 3,ahci-cd,%s", path.Join(d.LocalArtifactPath("."), isoFilename)),
 		fmt.Sprintf("-s 4,virtio-blk,%s", path.Join(d.LocalArtifactPath("."), d.MachineName+".img")),
 		fmt.Sprintf("-U %s", d.UUID),
