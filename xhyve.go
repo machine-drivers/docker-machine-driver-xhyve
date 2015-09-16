@@ -251,7 +251,7 @@ func (d *Driver) Start() error {
 		"-s 2:0,virtio-net",
 		fmt.Sprintf("-s 3,ahci-cd,%s", path.Join(d.LocalArtifactPath("."), isoFilename)),
 		fmt.Sprintf("-s 4,virtio-blk,%s", path.Join(d.LocalArtifactPath("."), d.MachineName+".img")),
-		fmt.Sprintf("-s 5,virtio-blk,%s", path.Join(d.LocalArtifactPath("."), d.userdata())),
+		fmt.Sprintf("-s 5,virtio-blk,%s", d.userdata()),
 		fmt.Sprintf("-U %s", d.UUID),
 		fmt.Sprintf("-f kexec,%s,%s,loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base host=boot2docker", path.Join(d.LocalArtifactPath("."), "vmlinuz64"), path.Join(d.LocalArtifactPath("."), "initrd.img")),
 	)
@@ -453,8 +453,6 @@ func (d *Driver) generateBlankDiskImage(count int) error {
 
 // Make a boot2docker userdata.tar key bundle
 func (d *Driver) generateKeyBundle() error { // TODO
-	log.Debugf("Creating hard disk image...")
-
 	magicString := "boot2docker, this is xhyve speaking"
 
 	buf := new(bytes.Buffer)
