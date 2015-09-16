@@ -32,7 +32,6 @@ type Driver struct {
 	Memory         int
 	DiskSize       int
 	CPU            int
-	ISO            string
 	TmpISO         string
 	UUID           string
 	Boot2DockerURL string
@@ -420,7 +419,7 @@ func (d *Driver) extractKernelImages() error {
 	var vmlinuz64 = "/Volumes/Boot2Docker-v1.8/boot/vmlinuz64"
 	var initrd = "/Volumes/Boot2Docker-v1.8/boot/initrd.img"
 
-	hdiutil("attach", d.ISO)
+	hdiutil("attach", d.ISO())
 	log.Debugf("Mounting %s", isoFilename)
 
 	log.Debugf("Extract vmlinuz64")
@@ -437,7 +436,7 @@ func (d *Driver) extractKernelImages() error {
 
 func (d *Driver) generateBlankDiskImage(count int) error {
 	cmd := dd
-	output := d.imgPath
+	output := d.imgPath()
 	cmd("/dev/zero", output, "1m", count)
 
 	return nil
