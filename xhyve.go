@@ -187,8 +187,8 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Debugf("Writing boot2docker VM disk image...")
-	if err := d.writeDiskImage(); err != nil {
+	log.Debugf("Make a boot2docker userdata.tar key bundle...")
+	if err := d.generateKeyBundle(); err != nil {
 		return err
 	}
 
@@ -335,6 +335,10 @@ func (d *Driver) imgPath() string {
 	return path.Join(d.LocalArtifactPath("."), fmt.Sprintf("%s.img", d.MachineName))
 }
 
+func (d *Driver) userdata() string {
+	return path.Join(d.LocalArtifactPath("."), "userdata.tar")
+}
+
 func (d *Driver) uuidPath() string {
 	return path.Join(d.LocalArtifactPath("."), "uuid")
 }
@@ -446,8 +450,8 @@ func (d *Driver) generateBlankDiskImage(count int) error {
 	return nil
 }
 
-// Make a boot2docker VM disk image.
-func (d *Driver) writeDiskImage() error { // TODO
+// Make a boot2docker userdata.tar key bundle
+func (d *Driver) generateKeyBundle() error { // TODO
 	log.Debugf("Creating hard disk image...")
 
 	magicString := "boot2docker, this is xhyve speaking"
@@ -491,7 +495,7 @@ func (d *Driver) writeDiskImage() error { // TODO
 	}
 	raw := buf.Bytes()
 
-	if err := ioutil.WriteFile(d.imgPath(), raw, 0644); err != nil {
+	if err := ioutil.WriteFile(d.userdata(), raw, 0644); err != nil {
 		return err
 	}
 
