@@ -430,6 +430,10 @@ func (d *Driver) extractKernelImages() error {
 	if err := mcnutils.CopyFile(initrd, filepath.Join(d.LocalArtifactPath("."), "initrd.img")); err != nil {
 		return err
 	}
+	log.Debugf("Unmounting %s", isoFilename)
+	if err := hdiutil("unmount", "/Volumes/Boot2Docker-v1.8/"); err != nil {
+		return err
+	}
 
 	return nil
 }
