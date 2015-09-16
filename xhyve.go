@@ -245,6 +245,7 @@ func (d *Driver) Start() error {
 	var Password string
 	log.Infof("Creating %s xhyve VM...", d.MachineName)
 	cmd := exec.Command("sudo", "xhyve", // TODO
+		"-A",
 		fmt.Sprintf("-m %dM", d.Memory),
 		"-s 0:0,hostbridge -s 31,lpc",
 		"-l com1,stdio",
