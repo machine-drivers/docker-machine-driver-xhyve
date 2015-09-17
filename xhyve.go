@@ -3,6 +3,7 @@ package xhyve
 import (
 	"archive/tar"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,14 +14,13 @@ import (
 	"strings"
 	"time"
 
-	"os/exec"
-
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+	"github.com/zchee/docker-machine-xhyve/xhyve"
 )
 
 const (
@@ -38,6 +38,11 @@ type Driver struct {
 	CaCertPath     string
 	PrivateKeyPath string
 }
+
+var (
+	ErrMachineExist    = errors.New("machine already exists")
+	ErrMachineNotExist = errors.New("machine does not exist")
+)
 
 // RegisterCreateFlags registers the flags this driver adds to
 // "docker hosts create"
@@ -242,34 +247,18 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	var Password string
 	log.Infof("Creating %s xhyve VM...", d.MachineName)
-	cmd := exec.Command("sudo", "xhyve", // TODO
-		"-A",
-		fmt.Sprintf("-m %dM", d.Memory),
-		"-s 0:0,hostbridge",
-		"-s 31,lpc",
-		"-l com1",
-		"-s 2:0,virtio-net",
-		fmt.Sprintf("-s 3,ahci-cd,%s", path.Join(d.LocalArtifactPath("."), isoFilename)),
-		fmt.Sprintf("-s 4,virtio-blk,%s", path.Join(d.LocalArtifactPath("."), d.MachineName+".img")),
-		fmt.Sprintf("-s 5,virtio-blk,%s", d.userdata()),
-		fmt.Sprintf("-U %s", d.UUID),
-		fmt.Sprintf("-f 'kexec,%s,%s,loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base host=boot2docker'", path.Join(d.LocalArtifactPath("."), "vmlinuz64"), path.Join(d.LocalArtifactPath("."), "initrd.img")),
-	)
-	//	cmd := exec.Command("sudo xhyve -m 4G -c 4 -s 0:0,hostbridge -s 31,lpc -l com1,stdio -s 2:0,virtio-net -s 3,ahci-cd,'/Users/zchee/.docker/machine/machines/xhyve-test/boot2docker.iso' -s 4,virtio-blk,'/Users/zchee/.docker/machine/machines/xhyve-test/xhyve-test.img' -U D2B9B60C-2465-4AF7-BCB6-522D795B043E -f 'kexec,vmlinuz64,initrd.img,loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base'")
-	cmd.Stdin = strings.NewReader(Password)
-	log.Debug(cmd)
-	err := cmd.Run()
-	if err != nil {
-		log.Error(err, cmd.Stdout)
-	}
+	vmlinuz := fmt.Sprint("/Users/zchee/.docker/machine/machines/xhyve-test/vmlinuz64")
+	initrd := fmt.Sprint("/Users/zchee/.docker/machine/machines/xhyve-test/initrd.img")
+	args := strings.Fields("-A -m 4096M -s 0:0,hostbridge -s 31,lpc -l com1 -s 2:0,virtio-net -s 3,ahci-cd,/Users/zchee/.docker/machine/machines/xhyve-test/boot2docker.iso -s 4,virtio-blk,/Users/zchee/.docker/machine/machines/xhyve-test/xhyve-test.img -s 5,virtio-blk,/Users/zchee/.docker/machine/machines/xhyve-test/userdata.tar -U 1D9B0BA9-2490-4F57-9101-B744509944E8")
+
+	go xhyve.Exec(append(args, "-f", fmt.Sprintf("kexec,%s,%s,loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base host=boot2docker", vmlinuz, initrd))...)
 
 	return nil
 }
 
 func (d *Driver) Stop() error { // TODO
-	xhyve("controlvm", d.MachineName, "acpipowerbutton")
+	// xhyve("controlvm", d.MachineName, "acpipowerbutton")
 	for {
 		s, err := d.GetState()
 		if err != nil {
