@@ -216,6 +216,10 @@ func (d *Driver) Create() error {
 	d.UUID = uuidgen()
 	log.Debugf("uuid: %s", d.UUID)
 
+	log.Infof("Convert uuid to mac address...")
+	macaddr := uuid2mac(d.UUID)
+	log.Debugf("Convert uuid to MAC address: %s", macaddr)
+
 	log.Infof("Starting %s...", d.MachineName)
 	if err := d.Start(); err != nil {
 		return err

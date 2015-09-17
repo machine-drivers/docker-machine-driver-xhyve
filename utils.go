@@ -65,6 +65,23 @@ func uuidgen() string {
 	return out
 }
 
+func uuid2mac(uuid string) string {
+	cmd := exec.Command("uuid2mac", uuid)
+
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	log.Debugf("execute: %v %v", cmd, uuid)
+
+	err := cmd.Run()
+	if err != nil {
+		log.Error(err)
+	}
+
+	macaddr := stdout.String()
+	macaddr = strings.Replace(macaddr, "\n", "", -1)
+	return macaddr
+}
+
 func hdiutil(args ...string) error {
 	cmd := exec.Command("hdiutil", args...)
 
