@@ -1,12 +1,12 @@
 default: build
 
-build: 
-	GOGC=off go build -i -o docker-machine-xhyve ./bin
-
 clean:
 	$(RM) docker-machine-xhyve
 
+build: clean
+	GOGC=off go build -i -o docker-machine-xhyve ./bin
+
 install: build
-	cp ./docker-machine-xhyve /usr/local/bin/docker-machine-xhyve
+	cp ./docker-machine-xhyve $(GOPATH)/bin/
 
 .PHONY: build install
