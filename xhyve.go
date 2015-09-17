@@ -247,8 +247,9 @@ func (d *Driver) Start() error {
 	cmd := exec.Command("sudo", "xhyve", // TODO
 		"-A",
 		fmt.Sprintf("-m %dM", d.Memory),
-		"-s 0:0,hostbridge -s 31,lpc",
-		"-l com1,stdio",
+		"-s 0:0,hostbridge",
+		"-s 31,lpc",
+		"-l com1",
 		"-s 2:0,virtio-net",
 		fmt.Sprintf("-s 3,ahci-cd,%s", path.Join(d.LocalArtifactPath("."), isoFilename)),
 		fmt.Sprintf("-s 4,virtio-blk,%s", path.Join(d.LocalArtifactPath("."), d.MachineName+".img")),
