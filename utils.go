@@ -76,8 +76,8 @@ func uuid2mac(uuid string) string {
 		log.Error(err)
 	}
 
-	macaddr := stdout.String()
-	return macaddr
+	out := stdout.String()
+	return strings.Replace(out, "\n", "", 1)
 }
 
 func hdiutil(args ...string) error {
