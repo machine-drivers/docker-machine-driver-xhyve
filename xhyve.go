@@ -33,6 +33,7 @@ type Driver struct {
 	CPU            int
 	TmpISO         string
 	UUID           string
+	MacAddr        string
 	BootCmd        string
 	Boot2DockerURL string
 	CaCertPath     string
@@ -196,12 +197,12 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Debugf("Extracting vmlinuz64 and initrd.img from %s...", isoFilename)
+	log.Infof("Extracting vmlinuz64 and initrd.img from %s...", isoFilename)
 	if err := d.extractKernelImages(); err != nil {
 		return err
 	}
 
-	log.Debugf("Make a boot2docker userdata.tar key bundle...")
+	log.Infof("Make a boot2docker userdata.tar key bundle...")
 	if err := d.generateKeyBundle(); err != nil {
 		return err
 	}
@@ -210,15 +211,15 @@ func (d *Driver) Create() error {
 	if err := d.generateBlankDiskImage(d.DiskSize); err != nil {
 		return err
 	}
-	log.Debugf("disk image: %d", d.DiskSize)
+	log.Debugf("Created disk size: %d", d.DiskSize)
 
 	log.Infof("Generate UUID...")
 	d.UUID = uuidgen()
-	log.Debugf("uuid: %s", d.UUID)
+	log.Debugf("uuidgen generated UUID: %s", d.UUID)
 
-	log.Infof("Convert uuid to mac address...")
-	macaddr := uuid2mac(d.UUID)
-	log.Debugf("Convert uuid to MAC address: %s", macaddr)
+	log.Infof("Convert UUID to MAC address...")
+	d.MacAddr = uuid2mac(d.UUID)
+	log.Debugf("uuid2mac output MAC address: %s", d.MacAddr)
 
 	log.Infof("Starting %s...", d.MachineName)
 	if err := d.Start(); err != nil {
@@ -255,18 +256,21 @@ func (d *Driver) Create() error {
 
 func (d *Driver) Start() error {
 	log.Infof("Creating %s xhyve VM...", d.MachineName)
-	vmlinuz := fmt.Sprint("/Users/zchee/.docker/machine/machines/xhyve-test/vmlinuz64")
-	initrd := fmt.Sprint("/Users/zchee/.docker/machine/machines/xhyve-test/initrd.img")
 	uuid := d.UUID
+	vmlinuz := path.Join(d.LocalArtifactPath("."), "vmlinuz64")
+	initrd := path.Join(d.LocalArtifactPath("."), "initrd.img")
+	iso := path.Join(d.LocalArtifactPath("."), isoFilename)
+	img := path.Join(d.LocalArtifactPath("."), d.MachineName+".img")
+	userdata := path.Join(d.LocalArtifactPath("."), "userdata.tar")
 	bootcmd := d.BootCmd
 
 	args := strings.Fields("-A -s 0:0,hostbridge -s 31,lpc -l com1 -s 2:0,virtio-net")
-	go xhyve.Exec(append(
-		args,
+	go xhyve.Exec(append(args,
+		"-U", fmt.Sprintf("%s", uuid),
 		fmt.Sprintf("-m %dM", d.Memory),
-		fmt.Sprintf("-s 3,ahci-cd,%s", path.Join(d.LocalArtifactPath("."), isoFilename)),
-		fmt.Sprintf("-s 4,virtio-blk,%s", path.Join(d.LocalArtifactPath("."), d.MachineName+".img")),
-		fmt.Sprintf("-U %s", uuid),
+		fmt.Sprintf("-s 3,ahci-cd,%s", iso),
+		fmt.Sprintf("-s 4,virtio-blk,%s", img),
+		fmt.Sprintf("-s 5,virtio-blk,%s", userdata),
 		"-f", fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd))...)
 
 	log.Debugf("args: %s", args)
