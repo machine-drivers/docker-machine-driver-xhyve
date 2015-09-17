@@ -355,7 +355,6 @@ func (d *Driver) userdataPath() string {
 func (d *Driver) getIPfromDHCPLease() (string, error) {
 	var dhcpfh *os.File
 	var dhcpcontent []byte
-	var macaddr string
 	var err error
 	var lastipmatch string
 	var currentip string
@@ -374,36 +373,25 @@ func (d *Driver) getIPfromDHCPLease() (string, error) {
 
 	// Get the IP from the lease table.
 	leaseip := regexp.MustCompile(`^\s*ip_address=(.+?)$`)
-	log.Debugf("leaseip: %s", leaseip) // print regex code.
 	// Get the MAC address associated.
 	leasemac := regexp.MustCompile(`^\s*hw_address=1,(.+?)$`)
-	log.Debugf("leasemac: %s", leasemac) // print regex code.
 
 	for _, line := range strings.Split(string(dhcpcontent), "\n") {
 
 		if matches := leaseip.FindStringSubmatch(line); matches != nil {
-			log.Debugf("ip matches: %s", matches)
 			lastipmatch = matches[1]
-			log.Debugf("lastipmatch: %s", lastipmatch)
-			continue
 		}
 
-		if matches := leasemac.FindStringSubmatch(line); matches != nil {
-			log.Debugf("mac matches: %s", matches)
+		if matches := leasemac.FindStringSubmatch(line); matches != nil && matches[1] == d.MacAddr {
 			currentip = lastipmatch
-			macaddr = matches[1]
-			log.Debug("macaddr: %s", macaddr)
+		} else {
 			continue
 		}
 	}
 
 	if currentip == "" {
-		return "", fmt.Errorf("IP not found for MAC %s in DHCP leases", macaddr)
+		return "", fmt.Errorf("IP not found for MAC %s in DHCP leases", d.MacAddr)
 	}
-
-	// if macaddr == "" {
-	// 	return "", fmt.Errorf("couldn't find MAC address in DHCP leases file %s", dhcpfile)
-	// }
 
 	log.Debugf("IP found in DHCP lease table: %s", currentip)
 	return currentip, nil
