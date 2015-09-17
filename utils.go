@@ -61,12 +61,11 @@ func uuidgen() string {
 	}
 
 	out := stdout.String()
-	out = strings.Replace(out, "\n", "", -1)
-	return out
+	return strings.Replace(out, "\n", "", 1)
 }
 
 func uuid2mac(uuid string) string {
-	cmd := exec.Command("uuid2mac", uuid)
+	cmd := exec.Command("sudo", "uuid2mac", uuid)
 
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
@@ -78,7 +77,6 @@ func uuid2mac(uuid string) string {
 	}
 
 	macaddr := stdout.String()
-	macaddr = strings.Replace(macaddr, "\n", "", -1)
 	return macaddr
 }
 
