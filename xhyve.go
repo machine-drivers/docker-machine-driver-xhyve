@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -19,7 +20,6 @@ import (
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/zchee/docker-machine-xhyve/vmnet"
-	"github.com/zchee/docker-machine-xhyve/xhyve"
 )
 
 const (
@@ -181,7 +181,6 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
-
 	b2dutils := mcnutils.NewB2dUtils("", "", d.GlobalArtifactPath())
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
@@ -221,6 +220,9 @@ func (d *Driver) Create() error {
 	d.MacAddr, _ = vmnet.GetMACAddressByUUID(d.UUID)
 	log.Debugf("uuid2mac output MAC address: %s", d.MacAddr)
 
+	log.Infof("Change the permission for id_rsa and id_rsa.pub")
+	os.Chown(path.Join(d.LocalArtifactPath("."), "id_rsa"), 501, 20)
+
 	log.Infof("Starting %s...", d.MachineName)
 	if err := d.Start(); err != nil {
 		return err
@@ -230,6 +232,7 @@ func (d *Driver) Create() error {
 	var err error
 
 	log.Infof("Waiting for VM to come online...")
+	log.Debugf("d.MacAddr", d.MacAddr)
 	for i := 1; i <= 60; i++ {
 		ip, err = d.getIPfromDHCPLease()
 		if err != nil {
@@ -264,18 +267,22 @@ func (d *Driver) Start() error {
 	userdata := path.Join(d.LocalArtifactPath("."), "userdata.tar")
 	bootcmd := d.BootCmd
 
-	args := strings.Fields("-A -s 0:0,hostbridge -s 31,lpc -l com1 -s 2:0,virtio-net")
+	cmd := exec.Command("goxhyve",
+		fmt.Sprintf("%s", uuid),
+		fmt.Sprintf("%d", d.Memory),
+		fmt.Sprintf("%s", iso),
+		fmt.Sprintf("%s", img),
+		fmt.Sprintf("%s", userdata),
+		fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd),
+		"-d", //TODO fix daemonize flag
+	)
+	log.Debug(cmd)
 	go func() {
-		xhyve.Exec(append(args,
-			"-U", fmt.Sprintf("%s", uuid),
-			fmt.Sprintf("-m %dM", d.Memory),
-			fmt.Sprintf("-s 3,ahci-cd,%s", iso),
-			fmt.Sprintf("-s 4,virtio-blk,%s", img),
-			fmt.Sprintf("-s 5,virtio-blk,%s", userdata),
-			"-f", fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd))...)
+		err := cmd.Run()
+		if err != nil {
+			log.Error(err, cmd.Stdout)
+		}
 	}()
-
-	log.Debugf("args: %s", args)
 
 	return nil
 }
@@ -356,6 +363,7 @@ func (d *Driver) userdataPath() string {
 
 func (d *Driver) getIPfromDHCPLease() (string, error) {
 	currentip, err := vmnet.GetIPAddressByMACAddress(d.MacAddr)
+	log.Debugf(currentip)
 
 	if currentip == "" {
 		return "", fmt.Errorf("IP not found for MAC %s in DHCP leases", d.MacAddr)
