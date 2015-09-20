@@ -29,3 +29,19 @@ cd $GOPATH/src/github.com/nathanleclaire/machine
 sudo ./docker-machine_darwin-amd64 create --driver xhyve xhyve
 ```
 
+## TODO
+
+- [] Daemonize xhyve use `syscall` or `go execute external process myself` or `OS X launchd daemon` or other daemonize method
+
+- [] Shared folder support
+
+- [] Replace execute binary to syscall of golang
+    - e.g. hdutil, dd
+
+- [] Replace generate uuid, execute `uuidgen` to native golang
+
+- [x] Replace exec uuid2mac binary to standalone `vmnet.go`, `dhcp.go`
+
+- [] Update xhyve source to unofficial edge branch
+    - Replace `Grand Central Dispatch` instead of `pthreads` , and etc...
+    - See https://github.com/AntonioMeireles/xhyve/tree/edgy
