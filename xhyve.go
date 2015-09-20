@@ -265,13 +265,15 @@ func (d *Driver) Start() error {
 	bootcmd := d.BootCmd
 
 	args := strings.Fields("-A -s 0:0,hostbridge -s 31,lpc -l com1 -s 2:0,virtio-net")
-	go xhyve.Exec(append(args,
-		"-U", fmt.Sprintf("%s", uuid),
-		fmt.Sprintf("-m %dM", d.Memory),
-		fmt.Sprintf("-s 3,ahci-cd,%s", iso),
-		fmt.Sprintf("-s 4,virtio-blk,%s", img),
-		fmt.Sprintf("-s 5,virtio-blk,%s", userdata),
-		"-f", fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd))...)
+	go func() {
+		xhyve.Exec(append(args,
+			"-U", fmt.Sprintf("%s", uuid),
+			fmt.Sprintf("-m %dM", d.Memory),
+			fmt.Sprintf("-s 3,ahci-cd,%s", iso),
+			fmt.Sprintf("-s 4,virtio-blk,%s", img),
+			fmt.Sprintf("-s 5,virtio-blk,%s", userdata),
+			"-f", fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd))...)
+	}()
 
 	log.Debugf("args: %s", args)
 
