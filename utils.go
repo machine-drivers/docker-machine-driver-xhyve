@@ -64,22 +64,6 @@ func uuidgen() string {
 	return strings.Replace(out, "\n", "", 1)
 }
 
-func uuid2mac(uuid string) string {
-	cmd := exec.Command("sudo", "uuid2mac", uuid)
-
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	log.Debugf("execute: %v %v", cmd, uuid)
-
-	err := cmd.Run()
-	if err != nil {
-		log.Error(err)
-	}
-
-	out := stdout.String()
-	return strings.Replace(out, "\n", "", 1)
-}
-
 func hdiutil(args ...string) error {
 	cmd := exec.Command("hdiutil", args...)
 

@@ -9,7 +9,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+	"github.com/zchee/docker-machine-xhyve/vmnet"
 	"github.com/zchee/docker-machine-xhyve/xhyve"
 )
 
@@ -218,7 +218,7 @@ func (d *Driver) Create() error {
 	log.Debugf("uuidgen generated UUID: %s", d.UUID)
 
 	log.Infof("Convert UUID to MAC address...")
-	d.MacAddr = uuid2mac(d.UUID)
+	d.MacAddr, _ = vmnet.GetMACAddressByUUID(d.UUID)
 	log.Debugf("uuid2mac output MAC address: %s", d.MacAddr)
 
 	log.Infof("Starting %s...", d.MachineName)
@@ -355,48 +355,14 @@ func (d *Driver) userdataPath() string {
 }
 
 func (d *Driver) getIPfromDHCPLease() (string, error) {
-	var dhcpfh *os.File
-	var dhcpcontent []byte
-	var err error
-	var lastipmatch string
-	var currentip string
-
-	// DHCP lease table for NAT vmnet interface
-	var dhcpfile = "/var/db/dhcpd_leases"
-
-	if dhcpfh, err = os.Open(dhcpfile); err != nil {
-		return "", err
-	}
-	defer dhcpfh.Close()
-
-	if dhcpcontent, err = ioutil.ReadAll(dhcpfh); err != nil {
-		return "", err
-	}
-
-	// Get the IP from the lease table.
-	leaseip := regexp.MustCompile(`^\s*ip_address=(.+?)$`)
-	// Get the MAC address associated.
-	leasemac := regexp.MustCompile(`^\s*hw_address=1,(.+?)$`)
-
-	for _, line := range strings.Split(string(dhcpcontent), "\n") {
-
-		if matches := leaseip.FindStringSubmatch(line); matches != nil {
-			lastipmatch = matches[1]
-		}
-
-		if matches := leasemac.FindStringSubmatch(line); matches != nil && matches[1] == d.MacAddr {
-			currentip = lastipmatch
-		} else {
-			continue
-		}
-	}
+	currentip, err := vmnet.GetIPAddressByMACAddress(d.MacAddr)
 
 	if currentip == "" {
 		return "", fmt.Errorf("IP not found for MAC %s in DHCP leases", d.MacAddr)
 	}
 
 	log.Debugf("IP found in DHCP lease table: %s", currentip)
-	return currentip, nil
+	return currentip, err
 }
 
 func (d *Driver) publicSSHKeyPath() string {
