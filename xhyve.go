@@ -269,6 +269,7 @@ func (d *Driver) Start() error {
 
 	cmd := exec.Command("goxhyve",
 		fmt.Sprintf("%s", uuid),
+		fmt.Sprintf("%d", d.CPU),
 		fmt.Sprintf("%d", d.Memory),
 		fmt.Sprintf("%s", iso),
 		fmt.Sprintf("%s", img),
