@@ -1,3 +1,5 @@
+// Originally Author is @ailispaw
+// import by https://github.com/ailispaw/xhyvectl/tree/master/vmnet
 package vmnet
 
 import (
