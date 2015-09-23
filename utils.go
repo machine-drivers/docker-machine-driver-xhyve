@@ -61,8 +61,7 @@ func uuidgen() string {
 	}
 
 	out := stdout.String()
-	out = strings.Replace(out, "\n", "", -1)
-	return out
+	return strings.Replace(out, "\n", "", 1)
 }
 
 func hdiutil(args ...string) error {

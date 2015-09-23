@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/docker/machine/libmachine/drivers/plugin"
-	"github.com/nathanleclaire/docker-machine-xhyve"
+	"github.com/zchee/docker-machine-xhyve"
 )
 
 func main() {

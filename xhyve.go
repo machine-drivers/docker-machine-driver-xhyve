@@ -3,17 +3,15 @@ package xhyve
 import (
 	"archive/tar"
 	"bytes"
+	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
-
-	"os/exec"
 
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
@@ -21,6 +19,7 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+	"github.com/zchee/docker-machine-xhyve/vmnet"
 )
 
 const (
@@ -32,13 +31,19 @@ type Driver struct {
 	Memory         int
 	DiskSize       int
 	CPU            int
-	ISO            string
 	TmpISO         string
 	UUID           string
+	MacAddr        string
+	BootCmd        string
 	Boot2DockerURL string
 	CaCertPath     string
 	PrivateKeyPath string
 }
+
+var (
+	ErrMachineExist    = errors.New("machine already exists")
+	ErrMachineNotExist = errors.New("machine does not exist")
+)
 
 // RegisterCreateFlags registers the flags this driver adds to
 // "docker hosts create"
@@ -67,6 +72,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "xhyve-disk-size",
 			Usage:  "Size of disk for host in MB",
 			Value:  20000,
+		},
+		mcnflag.Flag{
+			EnvVar: "XHYVE_BOOT_CMD",
+			Name:   "xhyve-boot-cmd",
+			Usage:  "Command of booting kexec protocol",
+			Value:  "loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base host=boot2docker",
 		},
 	}
 }
@@ -108,7 +119,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.CPU = flags.Int("xhyve-cpu-count")
 	d.Memory = flags.Int("xhyve-memory")
 	d.DiskSize = flags.Int("xhyve-disk-size")
-	d.ISO = path.Join(d.LocalArtifactPath("."), isoFilename)
+	d.BootCmd = flags.String("xhyve-boot-cmd")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
@@ -154,6 +165,7 @@ func (d *Driver) GetState() (state.State, error) { // TODO
 	//	return state.Stopped, nil
 }
 
+// Check VirtualBox version
 func (d *Driver) PreCreateCheck() error {
 	ver, err := vboxVersionDetect()
 	if err != nil {
@@ -184,41 +196,43 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Debugf("Extracting vmlinuz64 and initrd.img from %s...", isoFilename)
+	log.Infof("Extracting vmlinuz64 and initrd.img from %s...", isoFilename)
 	if err := d.extractKernelImages(); err != nil {
 		return err
 	}
 
-	log.Debugf("Writing boot2docker VM disk image...")
-	if err := d.writeDiskImage(); err != nil {
+	log.Infof("Make a boot2docker userdata.tar key bundle...")
+	if err := d.generateKeyBundle(); err != nil {
 		return err
 	}
 
-	log.Debugf("Creating Blank disk image...")
-	if err := d.generateBlankDiskImage(d.DiskSize); err != nil { // TODO
+	log.Infof("Creating Blank disk image...")
+	if err := d.generateBlankDiskImage(d.DiskSize); err != nil {
 		return err
 	}
+	log.Debugf("Created disk size: %d", d.DiskSize)
 
-	log.Debugf("Generate UUID...")
+	log.Infof("Generate UUID...")
 	d.UUID = uuidgen()
-	log.Debugf(d.UUID) // TODO
+	log.Debugf("uuidgen generated UUID: %s", d.UUID)
 
-	log.Debugf("Create UUID file...")
-	if err := d.createUUIDFile(); err != nil {
-		return err
-	}
+	log.Infof("Convert UUID to MAC address...")
+	d.MacAddr, _ = vmnet.GetMACAddressByUUID(d.UUID)
+	log.Debugf("uuid2mac output MAC address: %s", d.MacAddr)
 
-	log.Debugf("Running xhyve VM...")
+	log.Infof("Change the permission for id_rsa and id_rsa.pub")
+	os.Chown(path.Join(d.LocalArtifactPath("."), "id_rsa"), 501, 20)
+
+	log.Infof("Starting %s...", d.MachineName)
 	if err := d.Start(); err != nil {
 		return err
 	}
-
-	// TODO Maybe get MAC address here from host asignment
 
 	var ip string
 	var err error
 
 	log.Infof("Waiting for VM to come online...")
+	log.Debugf("d.MacAddr", d.MacAddr)
 	for i := 1; i <= 60; i++ {
 		ip, err = d.getIPfromDHCPLease()
 		if err != nil {
@@ -244,32 +258,38 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	var Password string
 	log.Infof("Creating %s xhyve VM...", d.MachineName)
-	cmd := exec.Command("sudo", "xhyve", // TODO
-		fmt.Sprintf("-m %dM", d.Memory),
-		"-s 0:0,hostbridge -s 31,lpc",
-		"-l com1,stdio",
-		"-s 2:0,virtio-net",
-		fmt.Sprintf("-s 2:1,virtio-tap,tap1"),
-		fmt.Sprintf("-s 3,ahci-cd,%s", path.Join(d.LocalArtifactPath("."), isoFilename)),
-		fmt.Sprintf("-s 4,virtio-blk,%s", path.Join(d.LocalArtifactPath("."), d.MachineName+".img")),
-		fmt.Sprintf("-U %s", d.UUID),
-		fmt.Sprintf("-f kexec,%s,%s,loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base", path.Join(d.LocalArtifactPath("."), "vmlinuz64"), path.Join(d.LocalArtifactPath("."), "initrd.img")),
+	uuid := d.UUID
+	vmlinuz := path.Join(d.LocalArtifactPath("."), "vmlinuz64")
+	initrd := path.Join(d.LocalArtifactPath("."), "initrd.img")
+	iso := path.Join(d.LocalArtifactPath("."), isoFilename)
+	img := path.Join(d.LocalArtifactPath("."), d.MachineName+".img")
+	userdata := path.Join(d.LocalArtifactPath("."), "userdata.tar")
+	bootcmd := d.BootCmd
+
+	cmd := exec.Command("goxhyve",
+		fmt.Sprintf("%s", uuid),
+		fmt.Sprintf("%d", d.CPU),
+		fmt.Sprintf("%d", d.Memory),
+		fmt.Sprintf("%s", iso),
+		fmt.Sprintf("%s", img),
+		fmt.Sprintf("%s", userdata),
+		fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd),
+		"-d", //TODO fix daemonize flag
 	)
-	//	cmd := exec.Command("sudo xhyve -m 4G -c 4 -s 0:0,hostbridge -s 31,lpc -l com1,stdio -s 2:0,virtio-net -s 3,ahci-cd,'/Users/zchee/.docker/machine/machines/xhyve-test/boot2docker.iso' -s 4,virtio-blk,'/Users/zchee/.docker/machine/machines/xhyve-test/xhyve-test.img' -U D2B9B60C-2465-4AF7-BCB6-522D795B043E -f 'kexec,vmlinuz64,initrd.img,loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base'")
-	cmd.Stdin = strings.NewReader(Password)
 	log.Debug(cmd)
-	err := cmd.Run()
-	if err != nil {
-		log.Error(err, cmd.Stdout)
-	}
+	go func() {
+		err := cmd.Run()
+		if err != nil {
+			log.Error(err, cmd.Stdout)
+		}
+	}()
 
 	return nil
 }
 
 func (d *Driver) Stop() error { // TODO
-	xhyve("controlvm", d.MachineName, "acpipowerbutton")
+	// xhyve("controlvm", d.MachineName, "acpipowerbutton")
 	for {
 		s, err := d.GetState()
 		if err != nil {
@@ -330,84 +350,28 @@ func (d *Driver) setMachineNameIfNotSet() {
 	}
 }
 
+func (d *Driver) ISOPath() string {
+	return path.Join(d.LocalArtifactPath("."), isoFilename)
+}
+
 func (d *Driver) imgPath() string {
 	return path.Join(d.LocalArtifactPath("."), fmt.Sprintf("%s.img", d.MachineName))
 }
 
-func (d *Driver) uuidPath() string {
-	return path.Join(d.LocalArtifactPath("."), "uuid")
-}
-
-func (d *Driver) createUUIDFile() error {
-	var uuidfile *os.File
-	var err error
-
-	if uuidfile, err = os.Create(d.uuidPath()); err != nil {
-		return err
-	}
-
-	uuid, err := io.WriteString(uuidfile, d.UUID)
-	if err != nil {
-		log.Debug(uuid, err) // TODO
-	}
-
-	uuidfile.Close()
-	return nil
+func (d *Driver) userdataPath() string {
+	return path.Join(d.LocalArtifactPath("."), "userdata.tar")
 }
 
 func (d *Driver) getIPfromDHCPLease() (string, error) {
-	var dhcpfh *os.File
-	var dhcpcontent []byte
-	var macaddr string
-	var err error
-	var lastipmatch string
-	var currentip string
-
-	// DHCP lease table for NAT vmnet interface
-	var dhcpfile = "/var/db/dhcpd_leases"
-
-	if dhcpfh, err = os.Open(dhcpfile); err != nil {
-		return "", err
-	}
-	defer dhcpfh.Close()
-
-	if dhcpcontent, err = ioutil.ReadAll(dhcpfh); err != nil {
-		return "", err
-	}
-
-	// Get the IP from the lease table.
-	leaseip := regexp.MustCompile(`^\s*ip_address=(.+?)$`)
-	log.Debug(leaseip) // TODO
-	// Get the MAC address associated.
-	leasemac := regexp.MustCompile(`^\s*hw_address=1,(.+?)$`)
-	log.Debug(leasemac) // TODO
-
-	for _, line := range strings.Split(string(dhcpcontent), "\n") {
-
-		if matches := leaseip.FindStringSubmatch(line); matches != nil {
-			lastipmatch = matches[1]
-			log.Debug(lastipmatch)
-			continue
-		}
-
-		if matches := leasemac.FindStringSubmatch(line); matches != nil {
-			currentip = lastipmatch
-			macaddr = matches[1]
-			log.Debug(macaddr)
-			continue
-		}
-	}
+	currentip, err := vmnet.GetIPAddressByMACAddress(d.MacAddr)
+	log.Debugf(currentip)
 
 	if currentip == "" {
-		return "", fmt.Errorf("IP not found for MAC %s in DHCP leases", leasemac)
-	}
-
-	if macaddr == "" {
-		return "", fmt.Errorf("couldn't find MAC address in DHCP leases file %s", dhcpfile)
+		return "", fmt.Errorf("IP not found for MAC %s in DHCP leases", d.MacAddr)
 	}
 
 	log.Debugf("IP found in DHCP lease table: %s", currentip)
-	return currentip, nil
+	return currentip, err
 }
 
 func (d *Driver) publicSSHKeyPath() string {
@@ -415,11 +379,11 @@ func (d *Driver) publicSSHKeyPath() string {
 }
 
 func (d *Driver) extractKernelImages() error {
-	var vmlinuz64 = "/Volumes/Boot2Docker-v1.8/boot/vmlinuz64"
-	var initrd = "/Volumes/Boot2Docker-v1.8/boot/initrd.img"
+	var vmlinuz64 = "/Volumes/Boot2Docker-v1.8/boot/vmlinuz64" // TODO Do not hardcode boot2docker version
+	var initrd = "/Volumes/Boot2Docker-v1.8/boot/initrd.img"   // TODO Do not hardcode boot2docker version
 
-	hdiutil("attach", d.ISO)
 	log.Debugf("Mounting %s", isoFilename)
+	hdiutil("attach", d.ISOPath()) // TODO need parse attached disk identifier.
 
 	log.Debugf("Extract vmlinuz64")
 	if err := mcnutils.CopyFile(vmlinuz64, filepath.Join(d.LocalArtifactPath("."), "vmlinuz64")); err != nil {
@@ -429,22 +393,24 @@ func (d *Driver) extractKernelImages() error {
 	if err := mcnutils.CopyFile(initrd, filepath.Join(d.LocalArtifactPath("."), "initrd.img")); err != nil {
 		return err
 	}
+	log.Debugf("Unmounting %s", isoFilename)
+	if err := hdiutil("unmount", "/Volumes/Boot2Docker-v1.8/"); err != nil { // TODO need eject instead unmount. It would remain in the space of /dev.
+		return err
+	}
 
 	return nil
 }
 
 func (d *Driver) generateBlankDiskImage(count int) error {
 	cmd := dd
-	output := d.ISO
+	output := d.imgPath()
 	cmd("/dev/zero", output, "1m", count)
 
 	return nil
 }
 
-// Make a boot2docker VM disk image.
-func (d *Driver) writeDiskImage() error { // TODO
-	log.Debugf("Creating hard disk image...")
-
+// Make a boot2docker userdata.tar key bundle
+func (d *Driver) generateKeyBundle() error { // TODO
 	magicString := "boot2docker, this is xhyve speaking"
 
 	buf := new(bytes.Buffer)
@@ -486,7 +452,7 @@ func (d *Driver) writeDiskImage() error { // TODO
 	}
 	raw := buf.Bytes()
 
-	if err := ioutil.WriteFile(d.imgPath(), raw, 0644); err != nil {
+	if err := ioutil.WriteFile(d.userdataPath(), raw, 0644); err != nil {
 		return err
 	}
 
