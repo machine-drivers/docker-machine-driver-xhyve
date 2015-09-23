@@ -3,45 +3,80 @@ docker-machine-xhyve
 
 Docker Machine driver plugin for xhyve native OS X Hypervisor
 
-## Install
+Master branch inherited from [nathanleclaire/docker-machine-xhyve](https://github.com/nathanleclaire/docker-machine-xhyve). Thanks [@nathanleclaire](https://github.com/nathanleclaire) :)  
+If you have issues or pull-requests, Desired to be posted to this repository.
 
 
-Now, It is not yet available demonized.
+## Required
 
-It is as far to ssh login automatically.  
-When docker-machine has finished creating a vm, at the same time xhyve also shut down.
+### docker-machine
+**!! Please do not post the issue of this repository to the docker/machine !!**  
+It will interfere with the development of the docker-machine.  
+If you were doubt problem either, please post to this repository. I will judge.
+
+Now, docker-machine are develop to new driver plugin mechanism.  
+`docker-machine-xhyve` is using it.  
+So, please try [nathanleclaire/machine/libmachine_rpc_plugins](https://github.com/nathanleclaire/machine/tree/libmachine_rpc_plugins) branch.
 
 ```bash
 # @nathanleclaire developpnig libmachine-rpc branch
 go get github.com/nathanleclaire/machine
-# Checkout branch
 cd $GOPATH/src/github.com/nathanleclaire/machine
 git checkout nathanleclaire/libmachine_rpc_plugins
 # Make libmachine rpc include docker-machine_darwin-amd64 binary
 script/build
-# go get this repo
-go get -d github.com/zchee/docker-machine-xhyve
-# Intalll binary from /usr/local/bin/docker-machine-xhve
-cd $GOPATH/src/github.com/zchee/docker-machine-xhyve
-make install
-# Create vm backend xhyve.
-cd $GOPATH/src/github.com/nathanleclaire/machine
-sudo ./docker-machine_darwin-amd64 create --driver xhyve xhyve
 ```
+
+### xhyve-bindings
+Since it is was hard to `os.exec` itself that embedded `xhyve.Exec`, for the time being, is separated into [xhyve-bindings](https://github.com/zchee/xhyve-bindings/tree/daemonize).
+
+```bash
+$ go get -d github.com/zchee/xhyve-bindings
+$ cd $GOPATH/src/github.com/zchee/xhyve-bindings
+$ git checkout daemonize
+$ make
+$ make install
+```
+
+#### boot2docker custom ISO
+For now, using custom boot2docker ISO.  
+If you want to know custom point, See https://github.com/zchee/boot2docker-legacy/tree/xhyve
+
+```bash
+$ git clone https://github.com/zchee/boot2docker-legacy.git
+$ cd boot2docker-legacy
+$ git checkout xhyve
+$ docker build -t boot2docker-xhyve .
+$ docker run --rm boot2docker-xhyve > boot2docker.iso
+$ mv ./boot2docker.iso ~/.docker/machine/cache/
+```
+
+
+## Install
+
+```bash
+$ go get -d github.com/zchee/docker-machine-xhyve
+$ cd $GOPATH/github.com/zchee/docker-machine-xhyve
+$ make
+$ make install
+```
+
 
 ## TODO
 
-- [] Daemonize xhyve use `syscall` or `go execute external process myself` or `OS X launchd daemon` or other daemonize method
+- [x] Daemonize xhyve use `syscall` or `go execute external process myself` or `OS X launchd daemon` or other daemonize method
+    - Since it is was hard to exec itself that embedded xhyve.Exec, for the time being, is separated into [xhyve-bindings](https://github.com/zchee/xhyve-bindings/tree/daemonize).
 
-- [] Shared folder support
+- [ ] Shared folder support
 
-- [] Replace execute binary to syscall of golang
+- [ ] Replace execute binary to syscall of golang
     - e.g. hdutil, dd
 
-- [] Replace generate uuid, execute `uuidgen` to native golang
+- [ ] Replace generate uuid, execute `uuidgen` to native golang
 
 - [x] Replace exec uuid2mac binary to standalone `vmnet.go`, `dhcp.go`
 
-- [] Update xhyve source to unofficial edge branch
+- [x] Update xhyve source to unofficial edge branch
+    - See [update-xhyve-to-edge](https://github.com/zchee/docker-machine-xhyve/tree/update-xhyve-to-edge)
     - Replace `Grand Central Dispatch` instead of `pthreads` , and etc...
     - See https://github.com/AntonioMeireles/xhyve/tree/edgy
