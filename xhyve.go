@@ -220,8 +220,11 @@ func (d *Driver) Create() error {
 	d.MacAddr, _ = vmnet.GetMACAddressByUUID(d.UUID)
 	log.Debugf("uuid2mac output MAC address: %s", d.MacAddr)
 
-	log.Infof("Change the permission for id_rsa and id_rsa.pub")
+	//TODO parse uid and gid
+	log.Infof("Change the permission for id_rsa and config.json")
+	os.Chown(d.LocalArtifactPath("."), 501, 20)
 	os.Chown(path.Join(d.LocalArtifactPath("."), "id_rsa"), 501, 20)
+	os.Chown(path.Join(d.LocalArtifactPath("."), "config.json"), 501, 20)
 
 	log.Infof("Starting %s...", d.MachineName)
 	if err := d.Start(); err != nil {
@@ -394,7 +397,7 @@ func (d *Driver) extractKernelImages() error {
 		return err
 	}
 	log.Debugf("Unmounting %s", isoFilename)
-	if err := hdiutil("unmount", "/Volumes/Boot2Docker-v1.8/"); err != nil { // TODO need eject instead unmount. It would remain in the space of /dev.
+	if err := hdiutil("detach", "/Volumes/Boot2Docker-v1.8/"); err != nil { // TODO Do not hardcode boot2docker version
 		return err
 	}
 
