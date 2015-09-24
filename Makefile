@@ -6,10 +6,9 @@ clean:
 
 build: clean
 	GOGC=off go build -i -o docker-machine-xhyve ./bin
-
+	sudo chown root ./docker-machine-xhyve
+	sudo chmod +s ./docker-machine-xhyve 
 install: build
 	cp ./docker-machine-xhyve $(GOPATH)/bin/
-	sudo chown root $(GOPATH)/bin/docker-machine-xhyve
-	sudo chmod +s $(GOPATH)/bin/docker-machine-xhyve
 
 .PHONY: build install
