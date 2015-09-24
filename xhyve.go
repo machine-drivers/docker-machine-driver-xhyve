@@ -353,10 +353,6 @@ func (d *Driver) setMachineNameIfNotSet() {
 	}
 }
 
-func (d *Driver) ISOPath() string {
-	return path.Join(d.LocalArtifactPath("."), isoFilename)
-}
-
 func (d *Driver) imgPath() string {
 	return path.Join(d.LocalArtifactPath("."), fmt.Sprintf("%s.img", d.MachineName))
 }
@@ -386,7 +382,7 @@ func (d *Driver) extractKernelImages() error {
 	var initrd = "/Volumes/Boot2Docker-v1.8/boot/initrd.img"   // TODO Do not hardcode boot2docker version
 
 	log.Debugf("Mounting %s", isoFilename)
-	hdiutil("attach", d.ISOPath()) // TODO need parse attached disk identifier.
+	hdiutil("attach", d.Boot2DockerURL) // TODO need parse attached disk identifier.
 
 	log.Debugf("Extract vmlinuz64")
 	if err := mcnutils.CopyFile(vmlinuz64, filepath.Join(d.LocalArtifactPath("."), "vmlinuz64")); err != nil {
