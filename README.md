@@ -70,13 +70,25 @@ $ make install
 - [ ] Shared folder support
 
 - [ ] Replace execute binary to syscall of golang
-    - e.g. hdutil, dd
+    - e.g. `hdutil`, ~~`dd`~~
+    - Create blank disk use `libguestfs` instead of `dd`
 
 - [ ] Replace generate uuid, execute `uuidgen` to native golang
 
 - [x] Replace exec uuid2mac binary to standalone `vmnet.go`, `dhcp.go`
 
-- [x] Update xhyve source to unofficial edge branch
-    - See [update-xhyve-to-edge](https://github.com/zchee/docker-machine-xhyve/tree/update-xhyve-to-edge)
-    - Replace `Grand Central Dispatch` instead of `pthreads` , and etc...
-    - See https://github.com/AntonioMeireles/xhyve/tree/edgy
+- [x] ~~Update xhyve source to unofficial edge branch~~
+    - ~~See [update-xhyve-to-edge](https://github.com/zchee/docker-machine-xhyve/tree/update-xhyve-to-edge)~~
+    - ~~Replace `Grand Central Dispatch` instead of `pthreads` , and etc...~~
+    - ~~See https://github.com/AntonioMeireles/xhyve/tree/edgy~~
+    - Separated [xhyve-bindings](https://github.com/zchee/xhyve-bindings/tree/daemonize)
+
+- [ ] Occasionally fail convert UUID to IP 
+
+- [ ] Support(Ensure) `kill`, `ls`, `restart`, `status`, `stop` command
+
+- [ ] Crash on boot because of `prltoolsd`
+    - Crash it's not an empty disk.img?
+    - See https://github.com/ailispaw/boot2docker-xhyve/pull/16
+
+- [ ] Cleanup code and more performance
