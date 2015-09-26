@@ -1,14 +1,17 @@
 default: build
 
 clean:
-	$(RM) docker-machine-xhyve
+	$(RM) ./bin/docker-machine-xhyve
 	$(RM) $(GOPATH)/bin/docker-machine-xhyve
 
 build: clean
-	GOGC=off go build -i -o docker-machine-xhyve ./bin
-	sudo chown root ./docker-machine-xhyve
-	sudo chmod +s ./docker-machine-xhyve 
+	GOGC=off go build -i -o ./bin/docker-machine-xhyve ./bin
+	sudo chown root:admin ./bin/docker-machine-xhyve
+	sudo chmod u+s ./bin/docker-machine-xhyve
+
 install: build
-	cp ./docker-machine-xhyve $(GOPATH)/bin/
+	cp ./bin/docker-machine-xhyve $(GOPATH)/bin/
+	sudo chown root:admin $(GOPATH)/bin/docker-machine-xhyve
+	sudo chmod u+s $(GOPATH)/bin/docker-machine-xhyve
 
 .PHONY: build install
