@@ -24,28 +24,6 @@ var (
 	vboxManageCmd      = setVBoxManageCmd()
 )
 
-func dd(input string, output string, block string, count int) (string, string, error) { // TODO
-	cmd := exec.Command("dd", fmt.Sprintf("if=%s", input), fmt.Sprintf("of=%s", output), fmt.Sprintf("bs=%s", block), fmt.Sprintf("count=%d", count))
-	if os.Getenv("DEBUG") != "" {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	}
-
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout, cmd.Stderr = &stdout, &stderr
-
-	err := cmd.Run()
-	if err != nil {
-		if ee, ok := err.(*exec.Error); ok && ee == exec.ErrNotFound {
-			err = ErrDdNotFound
-		}
-	}
-
-	fmt.Println(cmd)
-	return stdout.String(), stderr.String(), err
-}
-
 func uuidgen() string {
 	cmd := exec.Command("uuidgen")
 
@@ -144,4 +122,8 @@ func vboxVersionDetect() (string, error) {
 		return "", err
 	}
 	return ver, err
+}
+
+func toPtr(s string) *string {
+	return &s
 }

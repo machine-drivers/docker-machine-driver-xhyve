@@ -8,8 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -20,6 +18,7 @@ import (
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/zchee/docker-machine-xhyve/vmnet"
+	"libguestfs.org/guestfs"
 )
 
 const (
@@ -29,7 +28,7 @@ const (
 type Driver struct {
 	*drivers.BaseDriver
 	Memory         int
-	DiskSize       int
+	DiskSize       int64
 	CPU            int
 	TmpISO         string
 	UUID           string
@@ -91,7 +90,7 @@ func (d *Driver) GetSSHHostname() (string, error) {
 }
 
 func (d *Driver) GetSSHKeyPath() string {
-	return filepath.Join(d.LocalArtifactPath("."), "id_rsa")
+	return d.ResolveStorePath("id_rsa")
 }
 
 func (d *Driver) GetSSHPort() (int, error) {
@@ -118,7 +117,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Boot2DockerURL = flags.String("xhyve-boot2docker-url")
 	d.CPU = flags.Int("xhyve-cpu-count")
 	d.Memory = flags.Int("xhyve-memory")
-	d.DiskSize = flags.Int("xhyve-disk-size")
+	d.DiskSize = int64(flags.Int("xhyve-disk-size"))
 	d.BootCmd = flags.String("xhyve-boot-cmd")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
@@ -172,8 +171,8 @@ func (d *Driver) PreCreateCheck() error {
 		return fmt.Errorf("Error detecting VBox version: %s", err)
 	}
 	if !strings.HasPrefix(ver, "5") {
-		return fmt.Errorf("Virtual Box version 4 or lower will cause a kernel panic if xhyve tries to run." +
-			"You are running version: " +
+		return fmt.Errorf("Virtual Box version 4 or lower will cause a kernel panic" +
+			"if xhyve tries to run. You are running version: " +
 			ver +
 			"\n\t Please upgrade to version 5 at https://www.virtualbox.org/wiki/Downloads")
 	}
@@ -181,7 +180,7 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
-	b2dutils := mcnutils.NewB2dUtils("", "", d.GlobalArtifactPath())
+	b2dutils := mcnutils.NewB2dUtils("", "", d.StorePath)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
 	}
@@ -192,7 +191,7 @@ func (d *Driver) Create() error {
 	}
 
 	log.Infof("Creating VM...")
-	if err := os.MkdirAll(d.LocalArtifactPath("."), 0755); err != nil {
+	if err := os.MkdirAll(d.ResolveStorePath("."), 0755); err != nil {
 		return err
 	}
 
@@ -206,25 +205,31 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Creating Blank disk image...")
+	// Fix file permission root to current user.
+	// In order to avoid require sudo of vmnet.framework, Execute the root owner(and root uid)
+	// "docker-machine-xhyve" and "goxhyve" binary in golang.
+	log.Infof("Fix file permission...")
+	os.Chown(d.ResolveStorePath("."), 501, 20) //TODO Parse current user uid and gid
+	files, _ := ioutil.ReadDir(d.ResolveStorePath("."))
+	for _, f := range files {
+		log.Debugf(d.ResolveStorePath(f.Name()))
+		os.Chown(d.ResolveStorePath(f.Name()), 501, 20)
+	}
+
+	log.Infof("Creating blank ext4 filesystem disk image...")
 	if err := d.generateBlankDiskImage(d.DiskSize); err != nil {
 		return err
 	}
+	os.Chown(d.ResolveStorePath(d.MachineName+".img"), 501, 20)
 	log.Debugf("Created disk size: %d", d.DiskSize)
 
 	log.Infof("Generate UUID...")
-	d.UUID = uuidgen()
+	d.UUID = uuidgen() //TODO Native golang instead execute "uuidgen"
 	log.Debugf("uuidgen generated UUID: %s", d.UUID)
 
 	log.Infof("Convert UUID to MAC address...")
 	d.MacAddr, _ = vmnet.GetMACAddressByUUID(d.UUID)
 	log.Debugf("uuid2mac output MAC address: %s", d.MacAddr)
-
-	//TODO parse uid and gid
-	log.Infof("Change the permission for id_rsa and config.json")
-	os.Chown(d.LocalArtifactPath("."), 501, 20)
-	os.Chown(path.Join(d.LocalArtifactPath("."), "id_rsa"), 501, 20)
-	os.Chown(path.Join(d.LocalArtifactPath("."), "config.json"), 501, 20)
 
 	log.Infof("Starting %s...", d.MachineName)
 	if err := d.Start(); err != nil {
@@ -233,7 +238,6 @@ func (d *Driver) Create() error {
 
 	var ip string
 	var err error
-
 	log.Infof("Waiting for VM to come online...")
 	log.Debugf("d.MacAddr", d.MacAddr)
 	for i := 1; i <= 60; i++ {
@@ -263,11 +267,10 @@ func (d *Driver) Create() error {
 func (d *Driver) Start() error {
 	log.Infof("Creating %s xhyve VM...", d.MachineName)
 	uuid := d.UUID
-	vmlinuz := path.Join(d.LocalArtifactPath("."), "vmlinuz64")
-	initrd := path.Join(d.LocalArtifactPath("."), "initrd.img")
-	iso := path.Join(d.LocalArtifactPath("."), isoFilename)
-	img := path.Join(d.LocalArtifactPath("."), d.MachineName+".img")
-	userdata := path.Join(d.LocalArtifactPath("."), "userdata.tar")
+	vmlinuz := d.ResolveStorePath("vmlinuz64")
+	initrd := d.ResolveStorePath("initrd.img")
+	iso := d.ResolveStorePath(isoFilename)
+	img := d.ResolveStorePath(d.MachineName + ".img")
 	bootcmd := d.BootCmd
 
 	cmd := exec.Command("goxhyve",
@@ -276,7 +279,6 @@ func (d *Driver) Start() error {
 		fmt.Sprintf("%d", d.Memory),
 		fmt.Sprintf("%s", iso),
 		fmt.Sprintf("%s", img),
-		fmt.Sprintf("%s", userdata),
 		fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd),
 		"-d", //TODO fix daemonize flag
 	)
@@ -354,11 +356,11 @@ func (d *Driver) setMachineNameIfNotSet() {
 }
 
 func (d *Driver) imgPath() string {
-	return path.Join(d.LocalArtifactPath("."), fmt.Sprintf("%s.img", d.MachineName))
+	return d.ResolveStorePath(fmt.Sprintf("%s.img", d.MachineName))
 }
 
 func (d *Driver) userdataPath() string {
-	return path.Join(d.LocalArtifactPath("."), "userdata.tar")
+	return d.ResolveStorePath("userdata.tar")
 }
 
 func (d *Driver) getIPfromDHCPLease() (string, error) {
@@ -382,14 +384,14 @@ func (d *Driver) extractKernelImages() error {
 	var initrd = "/Volumes/Boot2Docker-v1.8/boot/initrd.img"   // TODO Do not hardcode boot2docker version
 
 	log.Debugf("Mounting %s", isoFilename)
-	hdiutil("attach", d.Boot2DockerURL) // TODO need parse attached disk identifier.
+	hdiutil("attach", d.ResolveStorePath(isoFilename)) // TODO need parse attached disk identifier.
 
 	log.Debugf("Extract vmlinuz64")
-	if err := mcnutils.CopyFile(vmlinuz64, filepath.Join(d.LocalArtifactPath("."), "vmlinuz64")); err != nil {
+	if err := mcnutils.CopyFile(vmlinuz64, d.ResolveStorePath("vmlinuz64")); err != nil {
 		return err
 	}
 	log.Debugf("Extract initrd.img")
-	if err := mcnutils.CopyFile(initrd, filepath.Join(d.LocalArtifactPath("."), "initrd.img")); err != nil {
+	if err := mcnutils.CopyFile(initrd, d.ResolveStorePath("initrd.img")); err != nil {
 		return err
 	}
 	log.Debugf("Unmounting %s", isoFilename)
@@ -400,10 +402,115 @@ func (d *Driver) extractKernelImages() error {
 	return nil
 }
 
-func (d *Driver) generateBlankDiskImage(count int) error {
-	cmd := dd
-	output := d.imgPath()
-	cmd("/dev/zero", output, "1m", count)
+func (d *Driver) generateBlankDiskImage(count int64) error {
+	output := d.ResolveStorePath(d.MachineName + ".img")
+
+	g, errno := guestfs.Create()
+	if errno != nil {
+		panic(errno)
+	}
+	defer g.Close()
+
+	/* Set $LIBGUESTFS_PATH(libguestfs appliance path) to root user */
+	p := toPtr("/usr/local/lib/guestfs")
+	g.Set_path(p)
+
+	/* Set the trace flag so that we can see each libguestfs call. */
+	if log.IsDebug == true {
+		g.Set_trace(true)
+	}
+
+	/* Create the disk image to libguestfs. */
+	optargsDiskCreate := guestfs.OptargsDisk_create{
+		Backingfile_is_set:   false,
+		Backingformat_is_set: false,
+		Preallocation_is_set: false,
+		Compat_is_set:        false,
+		Clustersize_is_set:   false,
+	}
+
+	/* Create a raw-format sparse disk image, d.DiskSize MB in size. */
+	if err := g.Disk_create(output, "raw", int64(d.DiskSize*1024*1024), &optargsDiskCreate); err != nil {
+		panic(err)
+	}
+
+	/* Attach the disk image to libguestfs. */
+	optargsAdd_drive := guestfs.OptargsAdd_drive{
+		Format_is_set:   true,
+		Format:          "raw",
+		Readonly_is_set: true,
+		Readonly:        false,
+	}
+
+	if err := g.Add_drive(output, &optargsAdd_drive); err != nil {
+		panic(err)
+	}
+
+	/* Run the libguestfs back-end. */
+	if err := g.Launch(); err != nil {
+		panic(err)
+	}
+
+	/* Get the list of devices.  Because we only added one drive
+	 * above, we expect that this list should contain a single
+	 * element.
+	 */
+	devices, err := g.List_devices()
+	if err != nil {
+		panic(err)
+	}
+	if len(devices) != 1 {
+		panic("expected a single device from list-devices")
+	}
+
+	/* Partition the disk as one single MBR partition. */
+	err = g.Part_disk(devices[0], "mbr")
+	if err != nil {
+		panic(err)
+	}
+
+	/* Get the list of partitions.  We expect a single element, which
+	 * is the partition we have just created.
+	 */
+	partitions, err := g.List_partitions()
+	if err != nil {
+		panic(err)
+	}
+	if len(partitions) != 1 {
+		panic("expected a single partition from list-partitions")
+	}
+
+	/* Create a filesystem on the partition. */
+	err = g.Mkfs("ext4", partitions[0], nil)
+	if err != nil {
+		panic(err)
+	}
+
+	/* Now mount the filesystem so that we can add files. */
+	err = g.Mount(partitions[0], "/")
+	if err != nil {
+		panic(err)
+	}
+
+	/* Mkdir -p place of userdata.tar */
+	err = g.Mkdir_p("/var/lib/boot2docker")
+	if err != nil {
+		panic(err)
+	}
+
+	/* Uploads the local userdata.tar file into /var/lib/boot2docker */
+	err = g.Upload(d.ResolveStorePath("userdata.tar"), "/var/lib/boot2docker/userdata.tar")
+	if err != nil {
+		panic(err)
+	}
+
+	/* Because we wrote to the disk and we want to detect write
+	 * errors, call g:shutdown.  You don't need to do this:
+	 * g.Close will do it implicitly.
+	 */
+	if err = g.Shutdown(); err != nil {
+		panic(fmt.Sprintf("write to disk failed: %s", err))
+	}
 
 	return nil
 }
