@@ -221,7 +221,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 	os.Chown(d.ResolveStorePath(d.MachineName+".img"), 501, 20)
-	log.Debugf("Created disk size: %d", d.DiskSize)
+	log.Debugf("Created disk size: %dMB", d.DiskSize)
 
 	log.Infof("Generate UUID...")
 	d.UUID = uuidgen() //TODO Native golang instead execute "uuidgen"
