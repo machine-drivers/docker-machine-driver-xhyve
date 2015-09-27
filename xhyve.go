@@ -17,6 +17,7 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+	"github.com/zchee/docker-machine-xhyve/version"
 	"github.com/zchee/docker-machine-xhyve/vmnet"
 	"libguestfs.org/guestfs"
 )
@@ -166,6 +167,11 @@ func (d *Driver) GetState() (state.State, error) { // TODO
 
 // Check VirtualBox version
 func (d *Driver) PreCreateCheck() error {
+	//TODO:libmachine PLEASE output driver version API!
+	v := version.Version
+	c := version.GitCommit
+	log.Debugf("===== Docker Machine %s Driver Version %s (%s) =====\n", d.DriverName(), v, c)
+
 	ver, err := vboxVersionDetect()
 	if err != nil {
 		return fmt.Errorf("Error detecting VBox version: %s", err)
