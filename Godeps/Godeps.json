@@ -1,0 +1,37 @@
+{
+	"ImportPath": "github.com/zchee/docker-machine-xhyve",
+	"GoVersion": "devel",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/docker/docker/pkg/term",
+			"Comment": "v1.4.1-6348-g7001619",
+			"Rev": "70016198ce84e545bd155627d179a8d65b7fb7f6"
+		},
+		{
+			"ImportPath": "github.com/docker/machine/commands/mcndirs",
+			"Comment": "v0.3.0-rc1-316-g2f5b645",
+			"Rev": "2f5b645ec05dfb8947ff7acba282e9fb4ce44f66"
+		},
+		{
+			"ImportPath": "github.com/docker/machine/drivers/none",
+			"Comment": "v0.3.0-rc1-316-g2f5b645",
+			"Rev": "2f5b645ec05dfb8947ff7acba282e9fb4ce44f66"
+		},
+		{
+			"ImportPath": "github.com/docker/machine/libmachine",
+			"Comment": "v0.3.0-rc1-316-g2f5b645",
+			"Rev": "2f5b645ec05dfb8947ff7acba282e9fb4ce44f66"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ssh",
+			"Rev": "aedad9a179ec1ea11b7064c57cbc6dc30d7724ec"
+		},
+		{
+			"ImportPath": "libguestfs.org/guestfs",
+			"Rev": "87108b051d256aa0e56dd5a1624b938b486a705f"
+		}
+	]
+}
