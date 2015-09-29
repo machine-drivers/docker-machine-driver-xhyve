@@ -38,6 +38,20 @@ $ make
 $ make install
 ```
 
+### libguestfs
+http://libguestfs.org/
+
+Create `ext.4` filesystem disk image using libguestfs golang binding.
+
+```bash
+$ brew tap zchee/libguestfs
+$ brew install libguestfs --with-go --devel --env=std
+```
+Current status only support golang binding.
+
+Also, downloading `supermin appliance` kernel files.  
+Warning! Kernel file size over 4GB!
+
 #### boot2docker custom ISO
 For now, using custom boot2docker ISO.  
 If you want to know custom point, See https://github.com/zchee/boot2docker-legacy/tree/xhyve
