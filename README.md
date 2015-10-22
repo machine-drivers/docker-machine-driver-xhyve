@@ -28,7 +28,8 @@ script/build
 ```
 
 ### xhyve-bindings
-Since it is was hard to `os.exec` itself that embedded `xhyve.Exec`, for the time being, is separated into [xhyve-bindings](https://github.com/zchee/xhyve-bindings/tree/daemonize).
+Since it is was hard to `os.exec` itself that embedded `xhyve.Exec`, for the time being, is separated into [xhyve-bindings](https://github.com/zchee/xhyve-bindings/tree/daemonize).  
+Or, See experimental embedded xhyve branch [embed-xhyve](https://github.com/zchee/docker-machine-xhyve/tree/embed-xhyve)
 
 ```bash
 $ go get -d github.com/zchee/xhyve-bindings
@@ -51,19 +52,6 @@ Current status only support golang binding.
 
 Also, downloading `supermin appliance` kernel files.  
 Warning! Kernel file size over 4GB!
-
-#### boot2docker custom ISO
-For now, using custom boot2docker ISO.  
-If you want to know custom point, See https://github.com/zchee/boot2docker-legacy/tree/xhyve
-
-```bash
-$ git clone https://github.com/zchee/boot2docker-legacy.git
-$ cd boot2docker-legacy
-$ git checkout xhyve
-$ docker build -t boot2docker-xhyve .
-$ docker run --rm boot2docker-xhyve > boot2docker.iso
-$ mv ./boot2docker.iso ~/.docker/machine/cache/
-```
 
 
 ## Install
