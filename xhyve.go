@@ -1,5 +1,6 @@
 package xhyve
 
+import "C"
 import (
 	"archive/tar"
 	"bytes"
@@ -7,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"regexp"
 	"strings"
 	"time"
@@ -20,6 +20,7 @@ import (
 	"github.com/docker/machine/libmachine/state"
 	"github.com/zchee/docker-machine-xhyve/version"
 	"github.com/zchee/docker-machine-xhyve/vmnet"
+	"github.com/zchee/docker-machine-xhyve/xhyve"
 	"libguestfs.org/guestfs"
 )
 
@@ -282,22 +283,13 @@ func (d *Driver) Start() error {
 	img := d.ResolveStorePath(d.MachineName + ".img")
 	bootcmd := d.BootCmd
 
-	cmd := exec.Command("goxhyve",
-		fmt.Sprintf("%s", uuid),
-		fmt.Sprintf("%d", d.CPU),
-		fmt.Sprintf("%d", d.Memory),
-		fmt.Sprintf("%s", iso),
-		fmt.Sprintf("%s", img),
-		fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd),
-		"-d", //TODO fix daemonize flag
-	)
-	log.Debug(cmd)
-	go func() {
-		err := cmd.Run()
-		if err != nil {
-			log.Error(err, cmd.Stdout)
-		}
-	}()
+	args := strings.Fields("-A -s 0:0,hostbridge -s 31,lpc -l com1 -s 2:0,virtio-net")
+	go xhyve.Exec(append(args,
+		"-U", fmt.Sprintf("%s", uuid),
+		fmt.Sprintf("-m %dM", d.Memory),
+		fmt.Sprintf("-s 3,ahci-cd,%s", iso),
+		fmt.Sprintf("-s 4,virtio-blk,%s", img),
+		"-f", fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd))...)
 
 	return nil
 }
