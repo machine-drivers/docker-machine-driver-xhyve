@@ -1,31 +1,113 @@
 package rpcdriver
 
 import (
+	"fmt"
 	"net/rpc"
 
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/state"
 )
 
 type RpcClientDriver struct {
-	Client *rpc.Client
+	Client *InternalClient
 }
 
-func NewRpcClientDriver(rawDriverData []byte, serverEndpoint string) (*RpcClientDriver, error) {
-	client, err := rpc.DialHTTP("tcp", serverEndpoint)
+type RpcCall struct {
+	ServiceMethod string
+	Args          interface{}
+	Reply         interface{}
+}
+
+type InternalClient struct {
+	RpcClient *rpc.Client
+	Calls     chan RpcCall
+	CallErrs  chan error
+}
+
+func (ic *InternalClient) Call(serviceMethod string, args interface{}, reply interface{}) error {
+	ic.Calls <- RpcCall{
+		ServiceMethod: serviceMethod,
+		Args:          args,
+		Reply:         reply,
+	}
+
+	return <-ic.CallErrs
+}
+
+func NewInternalClient(rpcclient *rpc.Client) *InternalClient {
+	return &InternalClient{
+		RpcClient: rpcclient,
+		Calls:     make(chan RpcCall),
+		CallErrs:  make(chan error),
+	}
+}
+
+func NewRpcClientDriver(rawDriverData []byte, driverName string) (*RpcClientDriver, error) {
+	mcnName := ""
+
+	p := localbinary.NewLocalBinaryPlugin(driverName)
+
+	c := &RpcClientDriver{}
+
+	go func() {
+		if err := p.Serve(); err != nil {
+			// If we can't safely load the server, best to just
+			// bail.
+			log.Fatal(err)
+		}
+	}()
+
+	addr, err := p.Address()
+	if err != nil {
+		return nil, fmt.Errorf("Error attempting to get plugin server address for RPC: %s", err)
+	}
+
+	rpcclient, err := rpc.DialHTTP("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
 
-	c := &RpcClientDriver{
-		Client: client,
-	}
+	c.Client = NewInternalClient(rpcclient)
 
-	if err := c.Client.Call("RpcServerDriver.SetConfigRaw", rawDriverData, nil); err != nil {
+	go func() {
+		for {
+			call := <-c.Client.Calls
+
+			log.Debugf("(%s) Got msg %+v", mcnName, call)
+
+			if call.ServiceMethod == "RpcServerDriver.Close" {
+				p.Close()
+			}
+
+			c.Client.CallErrs <- c.Client.RpcClient.Call(call.ServiceMethod, call.Args, call.Reply)
+
+			if call.ServiceMethod == "RpcServerDriver.Close" {
+				// If we're messaging the server to close,
+				// we're not accepting any more RPC calls at
+				// all, so return from this function
+				// (subsequent "requests" to make a call by
+				// sending on the Calls channel will simply
+				// block and never go through)
+				return
+			}
+		}
+	}()
+
+	var version int
+	if err := c.Client.Call("RpcServerDriver.GetVersion", struct{}{}, &version); err != nil {
 		return nil, err
 	}
+	log.Debug("Using API Version ", version)
+
+	if err := c.SetConfigRaw(rawDriverData); err != nil {
+		return nil, err
+	}
+
+	mcnName = c.GetMachineName()
+	p.MachineName = mcnName
 
 	return c, nil
 }
@@ -39,7 +121,15 @@ func (c *RpcClientDriver) UnmarshalJSON(data []byte) error {
 }
 
 func (c *RpcClientDriver) Close() error {
-	return c.Client.Call("RpcServerDriver.Close", struct{}{}, nil)
+	log.Debug("Making call to close driver server")
+
+	if err := c.Client.Call("RpcServerDriver.Close", struct{}{}, nil); err != nil {
+		return err
+	}
+
+	log.Debug("Successfully made call to close driver server")
+
+	return nil
 }
 
 // Helper method to make requests which take no arguments and return simply a

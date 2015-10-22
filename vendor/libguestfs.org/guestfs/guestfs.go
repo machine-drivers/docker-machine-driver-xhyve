@@ -24,6 +24,7 @@ package guestfs
 
 /*
 #cgo CFLAGS:  -DGUESTFS_PRIVATE=1
+// #cgo LDFLAGS: -undefined dynamic_lookup -lguestfs
 #cgo LDFLAGS: -lguestfs
 #include <stdio.h>
 #include <stdlib.h>

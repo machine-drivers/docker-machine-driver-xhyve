@@ -9,7 +9,6 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
-	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
@@ -75,15 +74,6 @@ func (h *Host) CreateSSHClient() (ssh.Client, error) {
 	return ssh.NewClient(h.Driver.GetSSHUsername(), addr, port, auth)
 }
 
-func (h *Host) CreateSSHShell() error {
-	client, err := h.CreateSSHClient()
-	if err != nil {
-		return err
-	}
-
-	return client.Shell()
-}
-
 func (h *Host) runActionForState(action func() error, desiredState state.State) error {
 	if drivers.MachineInState(h.Driver, desiredState)() {
 		return fmt.Errorf("Machine %q is already %s.", h.Name, strings.ToLower(desiredState.String()))
@@ -137,7 +127,7 @@ func (h *Host) Upgrade() error {
 	}
 
 	if machineState != state.Running {
-		log.Fatal(errMachineMustBeRunningForUpgrade)
+		return errMachineMustBeRunningForUpgrade
 	}
 
 	provisioner, err := provision.DetectProvisioner(h.Driver)

@@ -1,9 +1,7 @@
 package plugin
 
 import (
-	"encoding/gob"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"net/rpc"
@@ -11,16 +9,15 @@ import (
 
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
 	"github.com/docker/machine/libmachine/drivers/rpc"
 )
 
-func init() {
-	gob.Register(new(rpcdriver.RpcFlags))
-}
-
 func RegisterDriver(d drivers.Driver) {
-	if len(os.Args) != 1 {
-		fmt.Println("Improper number of arguments.  Usage: ./docker-machine-[driver]")
+	if os.Getenv(localbinary.PluginEnvKey) != localbinary.PluginEnvVal {
+		fmt.Fprintln(os.Stderr, `This is a Docker Machine plugin binary.
+Plugin binaries are not intended to be invoked directly.
+Please use this plugin through the main 'docker-machine' binary.`)
 		os.Exit(1)
 	}
 
@@ -33,9 +30,10 @@ func RegisterDriver(d drivers.Driver) {
 
 	rpc.HandleHTTP()
 
-	listener, err := net.Listen("tcp", "localhost:0")
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintf(os.Stderr, "Error loading RPC server: %s\n", err)
+		os.Exit(1)
 	}
 	defer listener.Close()
 

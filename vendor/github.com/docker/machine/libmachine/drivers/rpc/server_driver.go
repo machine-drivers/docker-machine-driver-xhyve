@@ -1,6 +1,7 @@
 package rpcdriver
 
 import (
+	"encoding/gob"
 	"encoding/json"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -10,12 +11,29 @@ import (
 	"github.com/docker/machine/libmachine/version"
 )
 
+func init() {
+	gob.Register(new(RpcFlags))
+	gob.Register(new(mcnflag.IntFlag))
+	gob.Register(new(mcnflag.StringFlag))
+	gob.Register(new(mcnflag.StringSliceFlag))
+	gob.Register(new(mcnflag.BoolFlag))
+}
+
 type RpcFlags struct {
 	Values map[string]interface{}
 }
 
+func (r RpcFlags) Get(key string) interface{} {
+	val, ok := r.Values[key]
+	if !ok {
+		log.Warnf("Trying to access option %s which does not exist", key)
+		log.Warn("THIS ***WILL*** CAUSE UNEXPECTED BEHAVIOR")
+	}
+	return val
+}
+
 func (r RpcFlags) String(key string) string {
-	val, ok := r.Values[key].(string)
+	val, ok := r.Get(key).(string)
 	if !ok {
 		log.Warnf("Type assertion did not go smoothly to string for key %s", key)
 	}
@@ -23,7 +41,7 @@ func (r RpcFlags) String(key string) string {
 }
 
 func (r RpcFlags) StringSlice(key string) []string {
-	val, ok := r.Values[key].([]string)
+	val, ok := r.Get(key).([]string)
 	if !ok {
 		log.Warnf("Type assertion did not go smoothly to string slice for key %s", key)
 	}
@@ -31,7 +49,7 @@ func (r RpcFlags) StringSlice(key string) []string {
 }
 
 func (r RpcFlags) Int(key string) int {
-	val, ok := r.Values[key].(int)
+	val, ok := r.Get(key).(int)
 	if !ok {
 		log.Warnf("Type assertion did not go smoothly to int for key %s", key)
 	}
@@ -39,7 +57,7 @@ func (r RpcFlags) Int(key string) int {
 }
 
 func (r RpcFlags) Bool(key string) bool {
-	val, ok := r.Values[key].(bool)
+	val, ok := r.Get(key).(bool)
 	if !ok {
 		log.Warnf("Type assertion did not go smoothly to bool for key %s", key)
 	}

@@ -41,12 +41,6 @@ func (s Filestore) Save(host *host.Host) error {
 			return fmt.Errorf("Error getting raw config for driver: %s", err)
 		}
 		host.RawDriver = data
-	} else {
-		data, err := json.Marshal(host.Driver)
-		if err != nil {
-			return fmt.Errorf("Error marshalling driver to raw format: %s", err)
-		}
-		host.RawDriver = data
 	}
 
 	data, err := json.MarshalIndent(host, "", "    ")
@@ -87,6 +81,7 @@ func (s Filestore) List() ([]*host.Host, error) {
 			hosts = append(hosts, host)
 		}
 	}
+
 	return hosts, nil
 }
 

@@ -7,31 +7,44 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/docker/docker/pkg/term",
-			"Comment": "v1.4.1-6348-g7001619",
-			"Rev": "70016198ce84e545bd155627d179a8d65b7fb7f6"
+			"Comment": "v1.4.1-7111-g48fe12a",
+			"Rev": "48fe12af0c785d62ac852ea8428a9789a4e9d7fd"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/commands/mcndirs",
-			"Comment": "v0.3.0-rc1-316-g2f5b645",
-			"Rev": "2f5b645ec05dfb8947ff7acba282e9fb4ce44f66"
+			"Comment": "v0.3.0-rc1-426-ga1e610b",
+			"Rev": "a1e610bdd31c307a06a46d7ff6abf2c4b37ade34"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/drivers/none",
-			"Comment": "v0.3.0-rc1-316-g2f5b645",
-			"Rev": "2f5b645ec05dfb8947ff7acba282e9fb4ce44f66"
+			"Comment": "v0.3.0-rc1-426-ga1e610b",
+			"Rev": "a1e610bdd31c307a06a46d7ff6abf2c4b37ade34"
+		},
+		{
+			"ImportPath": "github.com/docker/machine/drivers/virtualbox",
+			"Comment": "v0.3.0-rc1-426-ga1e610b",
+			"Rev": "a1e610bdd31c307a06a46d7ff6abf2c4b37ade34"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine",
-			"Comment": "v0.3.0-rc1-316-g2f5b645",
-			"Rev": "2f5b645ec05dfb8947ff7acba282e9fb4ce44f66"
+			"Comment": "v0.3.0-rc1-426-ga1e610b",
+			"Rev": "a1e610bdd31c307a06a46d7ff6abf2c4b37ade34"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/curve25519",
+			"Rev": "c8b9e6388ef638d5a8a9d865c634befdc46a6784"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh",
-			"Rev": "aedad9a179ec1ea11b7064c57cbc6dc30d7724ec"
+			"Rev": "c8b9e6388ef638d5a8a9d865c634befdc46a6784"
+		},
+		{
+			"ImportPath": "golang.org/x/net/http2/hpack",
+			"Rev": "9946ad7d5eae91d8edca4f54d1a1e130a052e823"
 		},
 		{
 			"ImportPath": "libguestfs.org/guestfs",
-			"Rev": "87108b051d256aa0e56dd5a1624b938b486a705f"
+			"Rev": "ea01e5d171f50818a3a2bd5cc76426de34f09a0b"
 		}
 	]
 }

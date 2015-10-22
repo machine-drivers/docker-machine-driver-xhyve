@@ -15,6 +15,10 @@ import (
 	"github.com/docker/machine/libmachine/log"
 )
 
+var (
+	GithubApiToken string
+)
+
 const (
 	timeout = time.Second * 5
 )
@@ -70,15 +74,36 @@ func NewB2dUtils(githubApiBaseUrl, githubBaseUrl, storePath string) *B2dUtils {
 	}
 }
 
+func (b *B2dUtils) getReleasesRequest() (*http.Request, error) {
+	apiUrl := fmt.Sprintf("%s/repos/boot2docker/boot2docker/releases", b.githubApiBaseUrl)
+
+	req, err := http.NewRequest("GET", apiUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if GithubApiToken != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("token %s", GithubApiToken))
+	}
+
+	return req, nil
+}
+
 // Get the latest boot2docker release tag name (e.g. "v0.6.0").
 // FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
 func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
 	client := getClient()
-	apiUrl := fmt.Sprintf("%s/repos/boot2docker/boot2docker/releases", b.githubApiBaseUrl)
-	rsp, err := client.Get(apiUrl)
+
+	req, err := b.getReleasesRequest()
 	if err != nil {
 		return "", err
 	}
+
+	rsp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+
 	defer rsp.Body.Close()
 
 	var t []struct {
@@ -99,7 +124,7 @@ func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
 func removeFileIfExists(name string) error {
 	if _, err := os.Stat(name); err == nil {
 		if err := os.Remove(name); err != nil {
-			log.Fatalf("Error removing temporary download file: %s", err)
+			return fmt.Errorf("Error removing temporary download file: %s", err)
 		}
 	}
 	return nil
@@ -134,7 +159,7 @@ func (b *B2dUtils) DownloadISO(dir, file, isoUrl string) error {
 
 	defer func() {
 		if err := removeFileIfExists(f.Name()); err != nil {
-			log.Fatalf("Error removing file: %s", err)
+			log.Warnf("Error removing file: %s", err)
 		}
 	}()
 
