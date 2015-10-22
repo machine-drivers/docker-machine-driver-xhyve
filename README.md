@@ -97,7 +97,8 @@ $ make install
     - ~~See https://github.com/AntonioMeireles/xhyve/tree/edgy~~
     - Separated [xhyve-bindings](https://github.com/zchee/xhyve-bindings/tree/daemonize)
 
-- [ ] Occasionally fail convert UUID to IP 
+- [x] ~~Occasionally fail convert UUID to IP~~
+    - Fixed [1960629b3c8683aec193631a0e9573c5143832ab](https://github.com/zchee/docker-machine-xhyve/commit/1960629b3c8683aec193631a0e9573c5143832ab)
 
 - [ ] Support(Ensure) `kill`, `ls`, `restart`, `status`, `stop` command
 
