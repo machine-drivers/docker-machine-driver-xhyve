@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 
@@ -49,31 +50,31 @@ var (
 // "docker hosts create"
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
-		mcnflag.Flag{
+		mcnflag.StringFlag{
 			EnvVar: "XHYVE_BOOT2DOCKER_URL",
 			Name:   "xhyve-boot2docker-url",
 			Usage:  "The URL of the boot2docker image. Defaults to the latest available version",
 			Value:  "",
 		},
-		mcnflag.Flag{
+		mcnflag.IntFlag{
 			EnvVar: "XHYVE_CPU_COUNT",
 			Name:   "xhyve-cpu-count",
 			Usage:  "Number of CPUs for the machine (-1 to use the number of CPUs available)",
 			Value:  1,
 		},
-		mcnflag.Flag{
+		mcnflag.IntFlag{
 			EnvVar: "XHYVE_MEMORY_SIZE",
 			Name:   "xhyve-memory",
 			Usage:  "Size of memory for host in MB",
 			Value:  1024,
 		},
-		mcnflag.Flag{
+		mcnflag.IntFlag{
 			EnvVar: "XHYVE_DISK_SIZE",
 			Name:   "xhyve-disk-size",
 			Usage:  "Size of disk for host in MB",
 			Value:  20000,
 		},
-		mcnflag.Flag{
+		mcnflag.StringFlag{
 			EnvVar: "XHYVE_BOOT_CMD",
 			Name:   "xhyve-boot-cmd",
 			Usage:  "Command of booting kexec protocol",
@@ -162,7 +163,7 @@ func (d *Driver) GetState() (state.State, error) { // TODO
 	//	if stdout, _, _ := vmrun("list"); strings.Contains(stdout, d.vmxPath()) {
 	return state.Running, nil
 	//	}
-	//	return state.Stopped, nil
+	// return state.Stopped, nil
 }
 
 // Check VirtualBox version
@@ -234,7 +235,10 @@ func (d *Driver) Create() error {
 	log.Debugf("uuidgen generated UUID: %s", d.UUID)
 
 	log.Infof("Convert UUID to MAC address...")
-	d.MacAddr, _ = vmnet.GetMACAddressByUUID(d.UUID)
+	//Trim "0" string
+	re := regexp.MustCompile(`[0]`)
+	mac, _ := vmnet.GetMACAddressByUUID(d.UUID)
+	d.MacAddr = re.ReplaceAllString(mac, "")
 	log.Debugf("uuid2mac output MAC address: %s", d.MacAddr)
 
 	log.Infof("Starting %s...", d.MachineName)
@@ -271,7 +275,6 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	log.Infof("Creating %s xhyve VM...", d.MachineName)
 	uuid := d.UUID
 	vmlinuz := d.ResolveStorePath("vmlinuz64")
 	initrd := d.ResolveStorePath("initrd.img")
