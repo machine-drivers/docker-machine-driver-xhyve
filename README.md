@@ -1,7 +1,7 @@
 docker-machine-xhyve
 ===
 
-Docker Machine driver plugin for xhyve native OS X Hypervisor
+Docker Machine driver plugin for [xhyve](https://github.com/mist64/xhyve) native OS X Hypervisor
 
 Master branch inherited from [nathanleclaire/docker-machine-xhyve](https://github.com/nathanleclaire/docker-machine-xhyve). Thanks [@nathanleclaire](https://github.com/nathanleclaire) :)  
 If you have issues or pull-requests, Desired to be posted to this repository.
@@ -10,6 +10,8 @@ If you have issues or pull-requests, Desired to be posted to this repository.
 ## Required
 
 ### docker-machine
+https://github.com/docker/machine
+
 **!! Please do not post the issue of this repository to the docker/machine !!**  
 It will interfere with the development of the docker-machine.  
 If you were doubt problem either, please post to this repository. I will judge.
@@ -28,6 +30,8 @@ script/build
 ```
 
 ### xhyve-bindings
+[xhyve-bindings](https://github.com/zchee/xhyve-bindings/tree/daemonize)
+
 Since it is was hard to `os.exec` itself that embedded `xhyve.Exec`, for the time being, is separated into [xhyve-bindings](https://github.com/zchee/xhyve-bindings/tree/daemonize).  
 Or, See experimental embedded xhyve branch [embed-xhyve](https://github.com/zchee/docker-machine-xhyve/tree/embed-xhyve)
 
@@ -66,16 +70,21 @@ $ make install
 
 ## TODO
 
-- [x] Daemonize xhyve use `syscall` or `go execute external process myself` or `OS X launchd daemon` or other daemonize method
-    - Since it is was hard to exec itself that embedded xhyve.Exec, for the time being, is separated into [xhyve-bindings](https://github.com/zchee/xhyve-bindings/tree/daemonize).
-
 - [ ] Shared folder support
+  - Use `9p` filesystem also `virtio-9p`? See https://github.com/mist64/xhyve/issues/70#issuecomment-144935541
 
 - [ ] Replace execute binary to syscall of golang
     - e.g. `hdutil`, ~~`dd`~~
     - Create blank disk use `libguestfs` instead of `dd`
 
 - [ ] Replace generate uuid, execute `uuidgen` to native golang
+
+- [ ] Support(Ensure) `kill`, `ls`, `restart`, `status`, `stop` command
+
+- [ ] Cleanup code and more performance
+
+- [x] Daemonize xhyve use `syscall` or `go execute external process myself` or `OS X launchd daemon` or other daemonize method
+    - Since it is was hard to exec itself that embedded xhyve.Exec, for the time being, is separated into [xhyve-bindings](https://github.com/zchee/xhyve-bindings/tree/daemonize).
 
 - [x] Replace exec uuid2mac binary to standalone `vmnet.go`, `dhcp.go`
 
@@ -88,11 +97,7 @@ $ make install
 - [x] ~~Occasionally fail convert UUID to IP~~
     - Fixed [1960629b3c8683aec193631a0e9573c5143832ab](https://github.com/zchee/docker-machine-xhyve/commit/1960629b3c8683aec193631a0e9573c5143832ab)
 
-- [ ] Support(Ensure) `kill`, `ls`, `restart`, `status`, `stop` command
-
-- [ ] ~~Crash on boot because of `prltoolsd`~~
+- [x] ~~Crash on boot because of `prltoolsd`~~
     - Crash it's not an empty disk.img?
     - See https://github.com/ailispaw/boot2docker-xhyve/pull/16
       - Solved on `boot2docker v1.8.3`
-
-- [ ] Cleanup code and more performance
