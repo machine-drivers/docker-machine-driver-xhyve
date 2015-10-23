@@ -90,8 +90,9 @@ $ make install
 
 - [ ] Support(Ensure) `kill`, `ls`, `restart`, `status`, `stop` command
 
-- [ ] Crash on boot because of `prltoolsd`
+- [ ] ~~Crash on boot because of `prltoolsd`~~
     - Crash it's not an empty disk.img?
     - See https://github.com/ailispaw/boot2docker-xhyve/pull/16
+      - Solved on `boot2docker v1.8.3`
 
 - [ ] Cleanup code and more performance
