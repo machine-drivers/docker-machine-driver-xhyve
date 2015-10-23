@@ -16,17 +16,17 @@ https://github.com/docker/machine
 It will interfere with the development of the docker-machine.  
 If you were doubt problem either, please post to this repository. I will judge.
 
-Now, docker-machine are develop to new driver plugin mechanism.  
-`docker-machine-xhyve` is using it.  
-So, please try [nathanleclaire/machine/libmachine_rpc_plugins](https://github.com/nathanleclaire/machine/tree/libmachine_rpc_plugins) branch.
+Now, `libmachine-rpc` driver plugin method is merged `docker-machine` master branch.  
+https://github.com/docker/machine/commit/8aa1572e0dcd75762a7627e1056ef104317f44b9
+Awesome @nathanleclaire :tada:
 
 ```bash
-# @nathanleclaire developpnig libmachine-rpc branch
 go get github.com/nathanleclaire/machine
-cd $GOPATH/src/github.com/nathanleclaire/machine
-git checkout nathanleclaire/libmachine_rpc_plugins
-# Make libmachine rpc include docker-machine_darwin-amd64 binary
-script/build
+cd $GOPATH/src/github.com/docker/machine
+# Build docker-machine and some docker-machine official(embedded) driver binary
+make build
+# Install all binary into /usr/local/bin/
+make install
 ```
 
 ### xhyve-bindings
