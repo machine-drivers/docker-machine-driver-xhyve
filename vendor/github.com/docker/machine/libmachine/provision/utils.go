@@ -63,7 +63,7 @@ func ConfigureAuth(p Provisioner) error {
 	driver := p.GetDriver()
 	machineName := driver.GetMachineName()
 	authOptions := p.GetAuthOptions()
-	org := machineName
+	org := mcnutils.GetUsername() + "." + machineName
 	bits := 2048
 
 	ip, err := driver.GetIP()
@@ -95,7 +95,7 @@ func ConfigureAuth(p Provisioner) error {
 	// TODO: Switch to passing just authOptions to this func
 	// instead of all these individual fields
 	err = cert.GenerateCert(
-		[]string{ip},
+		[]string{ip, "localhost"},
 		authOptions.ServerCertPath,
 		authOptions.ServerKeyPath,
 		authOptions.CaCertPath,
@@ -179,11 +179,7 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	if err := waitForDocker(p, dockerPort); err != nil {
-		return err
-	}
-
-	return nil
+	return waitForDocker(p, dockerPort)
 }
 
 func matchNetstatOut(reDaemonListening, netstatOut string) bool {
