@@ -1,11 +1,13 @@
 default: build
 
+CGO_CFLAGS="-DGUESTFS_PRIVATE=1 -I/usr/local/include"
+CGO_LDFLAGS="-L/usr/local/lib -lguestfs"
+
 clean:
 	$(RM) ./bin/docker-machine-driver-xhyve
 	$(RM) $(GOPATH)/bin/docker-machine-driver-xhyve
 
 bin/docker-machine-driver-xhyve:
-	# ./scripts/static.sh godep go build -i -o ./bin/docker-machine-xhyve ./bin
 	godep go build -i -o ./bin/docker-machine-driver-xhyve ./bin
 	sudo chown root:admin ./bin/docker-machine-driver-xhyve
 	sudo chmod u+s ./bin/docker-machine-driver-xhyve
