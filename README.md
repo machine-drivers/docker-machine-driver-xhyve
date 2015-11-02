@@ -30,15 +30,14 @@ make install
 ```
 
 ### xhyve-bindings
-[xhyve-bindings](https://github.com/zchee/xhyve-bindings/tree/daemonize)
+https://github.com/zchee/xhyve-bindings
 
-Since it is was hard to `os.exec` itself that embedded `xhyve.Exec`, for the time being, is separated into [xhyve-bindings](https://github.com/zchee/xhyve-bindings/tree/daemonize).  
+Since it is was hard to `os.exec` itself that embedded `xhyve.Exec`, for the time being, is separated into [xhyve-bindings](https://github.com/zchee/xhyve-bindings).  
 Or, See experimental embedded xhyve branch [embed-xhyve](https://github.com/zchee/docker-machine-xhyve/tree/embed-xhyve)
 
 ```bash
 $ go get -d github.com/zchee/xhyve-bindings
 $ cd $GOPATH/src/github.com/zchee/xhyve-bindings
-$ git checkout daemonize
 $ make
 $ make install
 ```
