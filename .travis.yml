@@ -1,0 +1,21 @@
+os: osx
+# language: objective-c
+
+# http://docs.travis-ci.com/user/environment-variables/#Global-Variables
+env:
+  global:
+    - GOPATH=/Users/travis/go
+    - PATH=/Users/travis/go/bin:$PATH
+  # matrix:
+  #   - USE_NETWORK=true
+  #   - USE_NETWORK=false  - 
+before_install:
+  - brew tap zchee/libguestfs
+  - brew update
+  - brew outdated  go || brew upgrade go
+  - brew install libguestfs --with-go --devel --env=std
+  - go get -d github.com/zchee/xhyve-bindings
+  - go get -d github.com/zchee/docker-machine-xhyve
+script:
+  - cd $GOPATH/src/github.com/zchee/xhyve-bindings && make install
+  - cd $GOPATH/src/github.com/zchee/docker-machine-xhyve && make install
