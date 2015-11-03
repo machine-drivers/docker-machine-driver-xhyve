@@ -5,17 +5,22 @@ os: osx
 env:
   global:
     - GOPATH=/Users/travis/go
-    - PATH=/Users/travis/go/bin:$PATH
+    - PATH=${GOPATH}/bin:$PATH
+    - GO15VENDOREXPERIMENT=1
+    - GOARCH=amd64
+    - GOMAXPROCS=8
+    - GOOS=darwin
+    - HOMEBREW_MAKE_JOBS=9 
   # matrix:
-  #   - USE_NETWORK=true
-  #   - USE_NETWORK=false  - 
+cache:
+  directories:
+  - /usr/local
 before_install:
   - brew tap zchee/libguestfs
   - brew update
   - brew outdated  go || brew upgrade go
   - brew install libguestfs --with-go --devel --env=std
-  - go get -d github.com/zchee/xhyve-bindings
   - go get -d github.com/zchee/docker-machine-xhyve
 script:
-  - cd $GOPATH/src/github.com/zchee/xhyve-bindings && make install
-  - cd $GOPATH/src/github.com/zchee/docker-machine-xhyve && make install
+  - uname -asnrvmpio
+  - cd $GOPATH/src/github.com/zchee/docker-machine-xhyve && CGO_CFLAGS="-DGUESTFS_PRIVATE=1 -I/usr/local/include" CGO_LDFLAGS="-L/usr/local/lib -lguestfs" make install
