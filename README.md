@@ -61,7 +61,7 @@ Warning! Kernel file size over 4GB!
 
 ```bash
 $ go get -d github.com/zchee/docker-machine-xhyve
-$ cd $GOPATH/github.com/zchee/docker-machine-xhyve
+$ cd $GOPATH/src/github.com/zchee/docker-machine-xhyve
 $ make
 $ make install
 ```
