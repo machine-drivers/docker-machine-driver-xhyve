@@ -6,23 +6,19 @@ os: osx
 # http://docs.travis-ci.com/user/environment-variables/#Global-Variables
 env:
   global:
-    - GOPATH=/Users/travis/go
-    - PATH=${GOPATH}/bin:$PATH
     - GO15VENDOREXPERIMENT=1
-    - GOARCH=amd64
     - GOMAXPROCS=8
-    - GOOS=darwin
-    - HOMEBREW_MAKE_JOBS=9 
-  # matrix:
+    - HOMEBREW_MAKE_JOBS=9
+
 cache:
   directories:
-  - /usr/local
+  - ~/Library/Caches/Homebrew
+
 before_install:
   - brew tap zchee/libguestfs
   - brew update
-  - brew outdated  go || brew upgrade go
   - brew install libguestfs --with-go --devel --env=std
-  - go get -d github.com/zchee/docker-machine-xhyve
+  - go get -d -v -u github.com/zchee/docker-machine-xhyve
+
 script:
-  - uname -asnrvmpio
-  - cd $GOPATH/src/github.com/zchee/docker-machine-xhyve && CGO_CFLAGS="-DGUESTFS_PRIVATE=1 -I/usr/local/include" CGO_LDFLAGS="-L/usr/local/lib -lguestfs" make install
+  - make install
