@@ -6,23 +6,27 @@ import (
 	"github.com/docker/machine/libmachine/swarm"
 )
 
-// In the 0.0.1 => 0.0.2 transition, the JSON representation of
+// In the 0.1.0 => 0.2.0 transition, the JSON representation of
 // machines changed from a "flat" to a more "nested" structure
 // for various options and configuration settings.  To preserve
 // compatibility with existing machines, these migration functions
 // have been introduced.  They preserve backwards compat at the expense
 // of some duplicated information.
 
-// validates host config and modifies if needed
+// MigrateHostV0ToHostV1 validates host config and modifies if needed
 // this is used for configuration updates
-func MigrateHostV0ToHostV1(hostV0 *HostV0) *HostV1 {
-	hostV1 := &HostV1{
-		Driver: hostV0.Driver,
+func MigrateHostV0ToHostV1(hostV0 *V0) *V1 {
+	hostV1 := &V1{
+		Driver:     hostV0.Driver,
+		DriverName: hostV0.DriverName,
 	}
 
-	hostV1.HostOptions = &HostOptionsV1{}
-	hostV1.HostOptions.EngineOptions = &engine.EngineOptions{}
-	hostV1.HostOptions.SwarmOptions = &swarm.SwarmOptions{
+	hostV1.HostOptions = &OptionsV1{}
+	hostV1.HostOptions.EngineOptions = &engine.Options{
+		TLSVerify:  true,
+		InstallURL: "https://get.docker.com",
+	}
+	hostV1.HostOptions.SwarmOptions = &swarm.Options{
 		Address:   "",
 		Discovery: hostV0.SwarmDiscovery,
 		Host:      hostV0.SwarmHost,
@@ -44,13 +48,13 @@ func MigrateHostV0ToHostV1(hostV0 *HostV0) *HostV1 {
 	return hostV1
 }
 
-// fills nested host metadata and modifies if needed
+// MigrateHostMetadataV0ToHostMetadataV1 fills nested host metadata and modifies if needed
 // this is used for configuration updates
-func MigrateHostMetadataV0ToHostMetadataV1(m *HostMetadataV0) *HostMetadata {
-	hostMetadata := &HostMetadata{}
+func MigrateHostMetadataV0ToHostMetadataV1(m *MetadataV0) *Metadata {
+	hostMetadata := &Metadata{}
 	hostMetadata.DriverName = m.DriverName
-	hostMetadata.HostOptions.EngineOptions = &engine.EngineOptions{}
-	hostMetadata.HostOptions.AuthOptions = &auth.AuthOptions{
+	hostMetadata.HostOptions.EngineOptions = &engine.Options{}
+	hostMetadata.HostOptions.AuthOptions = &auth.Options{
 		StorePath:            m.StorePath,
 		CaCertPath:           m.CaCertPath,
 		CaCertRemotePath:     "",

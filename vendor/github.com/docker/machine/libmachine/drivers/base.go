@@ -17,9 +17,9 @@ const (
 type BaseDriver struct {
 	IPAddress      string
 	MachineName    string
-	SSHKeyPath     string
-	SSHPort        int
 	SSHUser        string
+	SSHPort        int
+	SSHKeyPath     string
 	StorePath      string
 	SwarmMaster    bool
 	SwarmHost      string
@@ -29,6 +29,11 @@ type BaseDriver struct {
 // DriverName returns the name of the driver
 func (d *BaseDriver) DriverName() string {
 	return "unknown"
+}
+
+// GetMachineName returns the machine name
+func (d *BaseDriver) GetMachineName() string {
+	return d.MachineName
 }
 
 // GetIP returns the ip
@@ -41,16 +46,6 @@ func (d *BaseDriver) GetIP() (string, error) {
 		return "", fmt.Errorf("IP address is invalid: %s", d.IPAddress)
 	}
 	return d.IPAddress, nil
-}
-
-// GetMachineName returns the machine name
-func (d *BaseDriver) GetMachineName() string {
-	return d.MachineName
-}
-
-// GetSSHHostname returns hostname for use with ssh
-func (d *BaseDriver) GetSSHHostname() (string, error) {
-	return d.GetIP()
 }
 
 // GetSSHKeyPath returns the ssh key path
@@ -75,7 +70,6 @@ func (d *BaseDriver) GetSSHUsername() string {
 	if d.SSHUser == "" {
 		d.SSHUser = DefaultSSHUser
 	}
-
 	return d.SSHUser
 }
 
