@@ -389,8 +389,8 @@ func (d *Driver) publicSSHKeyPath() string {
 }
 
 func (d *Driver) extractKernelImages() error {
-	var vmlinuz64 = "/Volumes/Boot2Docker-v1.8/boot/vmlinuz64" // TODO Do not hardcode boot2docker version
-	var initrd = "/Volumes/Boot2Docker-v1.8/boot/initrd.img"   // TODO Do not hardcode boot2docker version
+	var vmlinuz64 = "/Volumes/Boot2Docker-v1.9/boot/vmlinuz64" // TODO Do not hardcode boot2docker version
+	var initrd = "/Volumes/Boot2Docker-v1.9/boot/initrd.img"   // TODO Do not hardcode boot2docker version
 
 	log.Debugf("Mounting %s", isoFilename)
 	hdiutil("attach", d.ResolveStorePath(isoFilename)) // TODO need parse attached disk identifier.
@@ -404,7 +404,7 @@ func (d *Driver) extractKernelImages() error {
 		return err
 	}
 	log.Debugf("Unmounting %s", isoFilename)
-	if err := hdiutil("detach", "/Volumes/Boot2Docker-v1.8/"); err != nil { // TODO Do not hardcode boot2docker version
+	if err := hdiutil("detach", "/Volumes/Boot2Docker-v1.9/"); err != nil { // TODO Do not hardcode boot2docker version
 		return err
 	}
 
