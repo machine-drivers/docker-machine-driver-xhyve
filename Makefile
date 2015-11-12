@@ -3,6 +3,9 @@ default: build
 CGO_CFLAGS="-DGUESTFS_PRIVATE=1 -I/usr/local/include"
 CGO_LDFLAGS="-L/usr/local/lib -lguestfs"
 
+# Support go1.5 vendoring (let us avoid messing with GOPATH or using godep)
+export GO15VENDOREXPERIMENT = 1
+
 clean:
 	$(RM) ./bin/docker-machine-driver-xhyve
 	$(RM) $(GOPATH)/bin/docker-machine-driver-xhyve
