@@ -2,7 +2,10 @@
 	"ImportPath": "github.com/zchee/docker-machine-xhyve",
 	"GoVersion": "devel",
 	"Packages": [
-		"./..."
+		"github.com/zchee/docker-machine-xhyve",
+		"github.com/zchee/docker-machine-xhyve/bin",
+		"github.com/zchee/docker-machine-xhyve/version",
+		"github.com/zchee/docker-machine-xhyve/vmnet"
 	],
 	"Deps": [
 		{
@@ -12,18 +15,22 @@
 		},
 		{
 			"ImportPath": "github.com/docker/machine/commands/mcndirs",
-			"Comment": "v0.5.0-rc4-52-g9775f9e",
-			"Rev": "9775f9ec04e493584f8e22ef725e1d3490873b16"
+			"Comment": "v0.5.0-77-g45d38fd",
+			"Rev": "45d38fd31bba9764a644bcfef02c4e69755b2bee"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/drivers/none",
-			"Comment": "v0.5.0-rc4-52-g9775f9e",
-			"Rev": "9775f9ec04e493584f8e22ef725e1d3490873b16"
+			"Comment": "v0.5.0-77-g45d38fd",
+			"Rev": "45d38fd31bba9764a644bcfef02c4e69755b2bee"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine",
-			"Comment": "v0.5.0-rc4-52-g9775f9e",
-			"Rev": "9775f9ec04e493584f8e22ef725e1d3490873b16"
+			"Comment": "v0.5.0-77-g45d38fd",
+			"Rev": "45d38fd31bba9764a644bcfef02c4e69755b2bee"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/curve25519",
+			"Rev": "575fdbe86e5dd89229707ebec0575ce7d088a4a6"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh",
