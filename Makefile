@@ -152,7 +152,7 @@ dep-save:
 dep-restore:
 	godep restore -v
 
-run: kill driver-run
+run: driver-run
 
 kill: driver-kill
 
