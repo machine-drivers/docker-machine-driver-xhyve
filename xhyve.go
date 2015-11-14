@@ -150,14 +150,14 @@ func (d *Driver) GetIP() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	s, _ := d.GetSShStatus()
+	s, _ := d.GetSShState()
 	if !s {
 		return state.Stopped, nil
 	}
 	return state.Running, nil
 }
 
-func (d *Driver) GetSShStatus() (bool, error) {
+func (d *Driver) GetSShState() (bool, error) {
 	log.Debug("Getting to VM SSH status...")
 	if _, err := drivers.RunSSHCommandFromDriver(d, "exit 0"); err != nil {
 		return false, nil
