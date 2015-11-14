@@ -149,24 +149,23 @@ func (d *Driver) GetIP() (string, error) {
 	return d.getIPfromDHCPLease()
 }
 
-func (d *Driver) GetState() (state.State, error) { // TODO
-	s, err := d.GetSShStates()
+func (d *Driver) GetState() (state.State, error) {
+	s, _ := d.GetSShStatus()
 	if !s {
-		return state.Stopping, err
+		return state.Stopped, nil
 	}
 	return state.Running, nil
 }
 
-func (d *Driver) GetSShStates() (bool, error) {
-	log.Debug("Getting to WaitForSSH function...")
+func (d *Driver) GetSShStatus() (bool, error) {
+	log.Debug("Getting to VM SSH status...")
 	if _, err := drivers.RunSSHCommandFromDriver(d, "exit 0"); err != nil {
-		log.Debugf("Error getting ssh command 'exit 0' : %s", err)
 		return false, nil
 	}
 	return true, nil
 }
 
-// Check VirtualBox version
+// Print driver version, Check VirtualBox version
 func (d *Driver) PreCreateCheck() error {
 	//TODO:libmachine PLEASE output driver version API!
 	v := version.Version
@@ -267,7 +266,7 @@ func (d *Driver) Create() error {
 		return fmt.Errorf("Machine didn't return an IP after 120 seconds, aborting")
 	}
 
-	// we got an IP, let's copy ssh keys over
+	// We got an IP, let's copy ssh keys over
 	d.IPAddress = ip
 
 	return nil
@@ -301,8 +300,13 @@ func (d *Driver) Start() error {
 	return nil
 }
 
-func (d *Driver) Stop() error { // TODO
-	// xhyve("controlvm", d.MachineName, "acpipowerbutton")
+func (d *Driver) Stop() error {
+	log.Infof("Stopping %s use send ACPI signals poweroff ...", d.MachineName)
+	if _, err := drivers.RunSSHCommandFromDriver(d, "sudo poweroff"); err != nil {
+		log.Debugf("Error getting ssh command 'exit 0' : %s", err)
+		return err
+	}
+
 	for {
 		s, err := d.GetState()
 		if err != nil {
@@ -320,7 +324,7 @@ func (d *Driver) Stop() error { // TODO
 	return nil
 }
 
-func (d *Driver) Remove() error { // TODO
+func (d *Driver) Remove() error {
 	s, err := d.GetState()
 	if err != nil {
 		if err == ErrMachineNotExist {
@@ -334,11 +338,10 @@ func (d *Driver) Remove() error { // TODO
 			return err
 		}
 	}
-	//return xhyve("unregistervm", "--delete", d.MachineName)
 	return nil
 }
 
-func (d *Driver) Restart() error { // TODO
+func (d *Driver) Restart() error {
 	s, err := d.GetState()
 	if err != nil {
 		return err
@@ -352,8 +355,13 @@ func (d *Driver) Restart() error { // TODO
 	return d.Start()
 }
 
-func (d *Driver) Kill() error { // TODO
-	//return xhyve("controlvm", d.MachineName, "poweroff")
+func (d *Driver) Kill() error {
+	log.Infof("Killing %s use hardware to stop all CPU ...", d.MachineName)
+	if _, err := drivers.RunSSHCommandFromDriver(d, "sudo halt"); err != nil {
+		log.Debugf("Error getting ssh command 'exit 0' : %s", err)
+		return err
+	}
+
 	return nil
 }
 
