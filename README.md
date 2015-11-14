@@ -83,6 +83,23 @@ but, that is not real state of vm.
 `xhyve` has the OS X xpc dictionary on backend. (still uncertain)  
 In the future, get the state to use it.
 
+### Does not clean up the vmnet when remove a VM
+Current state, `docker-machine-xhyve` does not clean up the vmnet configuration.  
+
+```
+Running xhyve vm (e.g. IP: 192.168.64.1)
+        |
+`docker-machine rm`, ACPI signal(poweroff) in over ssh
+        |
+vm is poweroff, `goxhyve` also killed with to poweroff
+        |
+Re-create xhyve vm.
+```
+New vm's ip, It will probably be assigned to 192.168.64.**2**. If create another new vm, assigned to 192.168.64.**3**  
+but 192.168.64.**1** are not using anyone.
+
+`vmnet.framework` seems to have decided to IP based on `/var/db/dhcpd_leases` and `/Library/Preferences/SystemConfiguration/com.apple.vmnet.plist`  
+So, To remove it manually, or Don’t even bother. I will fix after I understand the `vmnet.framework`
 
 ## TODO
 
