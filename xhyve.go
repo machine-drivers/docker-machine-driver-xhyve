@@ -142,28 +142,28 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetIP() (string, error) {
-	s, err := d.GetState()
-	if err != nil {
-		return "", err
-	}
-	if s != state.Running {
-		return "", drivers.ErrHostIsNotRunning
+	if d.IPAddress != "" {
+		return d.IPAddress, nil
 	}
 
-	ip, err := d.getIPfromDHCPLease()
-	if err != nil {
-		return "", err
-	}
-
-	return ip, nil
+	return d.getIPfromDHCPLease()
 }
 
 func (d *Driver) GetState() (state.State, error) { // TODO
-	// VMRUN only tells use if the vm is running or not
-	//	if stdout, _, _ := vmrun("list"); strings.Contains(stdout, d.vmxPath()) {
+	s, err := d.GetSShStates()
+	if !s {
+		return state.Stopping, err
+	}
 	return state.Running, nil
-	//	}
-	// return state.Stopped, nil
+}
+
+func (d *Driver) GetSShStates() (bool, error) {
+	log.Debug("Getting to WaitForSSH function...")
+	if _, err := drivers.RunSSHCommandFromDriver(d, "exit 0"); err != nil {
+		log.Debugf("Error getting ssh command 'exit 0' : %s", err)
+		return false, nil
+	}
+	return true, nil
 }
 
 // Check VirtualBox version
@@ -245,11 +245,10 @@ func (d *Driver) Create() error {
 	if err := d.Start(); err != nil {
 		return err
 	}
+	log.Infof("Waiting for VM to come online...")
 
 	var ip string
 	var err error
-	log.Infof("Waiting for VM to come online...")
-	log.Debugf("d.MacAddr", d.MacAddr)
 	for i := 1; i <= 60; i++ {
 		ip, err = d.getIPfromDHCPLease()
 		if err != nil {
