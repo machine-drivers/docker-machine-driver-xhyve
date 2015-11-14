@@ -50,6 +50,8 @@ driver-run: clean build install
 	rm -rf ${DOCKER_MACHINE_STORAGEPATH}/machines/${DOCKER_MACHINE_VM_NAME} && ${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} create --driver xhyve --xhyve-disk-size ${DOCKER_MACHINE_VM_DISKSIZE} ${DOCKER_MACHINE_VM_NAME}
 
 driver-kill:
-	$(shell for i in $$(ps ax | grep goxhyve | awk '{print $$1'}); do sudo kill 2>/dev/null $$i; done)
+	@PID=$$(pgrep goxhyve) || PID=none; \
+	echo "${CBLUE}==>${CRESET}${CGREEN}Kill goxhyve test process. PID:$$PID ${CRESET} ..."; \
+	sudo kill $$PID 2>/dev/null || true
 
 .PHONY: driver-kill

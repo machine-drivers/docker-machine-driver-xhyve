@@ -152,32 +152,22 @@ dep-save:
 dep-restore:
 	godep restore -v
 
-run: driver-run
+run: kill driver-run
 
 kill: driver-kill
 
+# TODO: for zsh completion. zsh do not get jobs of includes makefile
 test-driver-env:
-
 test-driver-ip:
-
 test-driver-kill:
-
 test-driver-ls:
-
 test-driver-regenerate-certs:
-
 test-driver-restart:
-
 test-driver-rm:
-
 test-driver-ssh:
-
 test-driver-status:
-
 test-driver-start:
-
 test-driver-upgrade:
-
 test-driver-url:
 
 .PHONY: clean run kill
