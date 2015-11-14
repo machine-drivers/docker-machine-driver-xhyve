@@ -32,10 +32,13 @@ test-driver-rm:
 	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} rm ${DOCKER_MACHINE_VM_NAME}
 
 test-driver-ssh:
-	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} ssh ${DOCKER_MACHINE_VM_NAME} 
+	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} ssh ${DOCKER_MACHINE_VM_NAME}
 
 test-driver-status:
 	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} status ${DOCKER_MACHINE_VM_NAME}
+
+test-driver-stop:
+	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} stop ${DOCKER_MACHINE_VM_NAME}
 
 test-driver-start:
 	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} start ${DOCKER_MACHINE_VM_NAME}
@@ -46,7 +49,7 @@ test-driver-upgrade:
 test-driver-url:
 	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} url ${DOCKER_MACHINE_VM_NAME}
 
-driver-run: clean build install
+driver-run:
 	rm -rf ${DOCKER_MACHINE_STORAGEPATH}/machines/${DOCKER_MACHINE_VM_NAME} && ${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} create --driver xhyve --xhyve-disk-size ${DOCKER_MACHINE_VM_DISKSIZE} ${DOCKER_MACHINE_VM_NAME}
 
 driver-kill:

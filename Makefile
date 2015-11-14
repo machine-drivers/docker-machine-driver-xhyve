@@ -165,8 +165,9 @@ test-driver-regenerate-certs:
 test-driver-restart:
 test-driver-rm:
 test-driver-ssh:
-test-driver-status:
 test-driver-start:
+test-driver-status:
+test-driver-stop:
 test-driver-upgrade:
 test-driver-url:
 
