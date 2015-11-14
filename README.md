@@ -99,7 +99,10 @@ New vm's ip, It will probably be assigned to 192.168.64.**2**. If create another
 but 192.168.64.**1** are not using anyone.
 
 `vmnet.framework` seems to have decided to IP based on `/var/db/dhcpd_leases` and `/Library/Preferences/SystemConfiguration/com.apple.vmnet.plist`  
-So, To remove it manually, or Don’t even bother. I will fix after I understand the `vmnet.framework`
+So, To remove it manually, or Don’t even bother.  
+Maybe `vmnet.framework` shared net address range `192.168.64.1` ~ `192.168.64.255`. You can make 255 vm :stuck_out_tongue_closed_eyes:
+
+I will fix after I understand the `vmnet.framework`
 
 ## TODO
 
