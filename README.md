@@ -80,7 +80,8 @@ Please use the existing protocol for the time being, such as `sshd`.
 `docker-machine-xhyve` checking vm state use send `exit 0` on `ssh`.  
 but, that is not real state of vm.  
 
-`xhyve` has the OS X xpc dictionary on backend. (still uncertain)  
+`xhyve` has the XPC dictionary on backend. (still uncertain)  
+XPC Services is part of libSystem, provides a lightweight mechanism for basic interprocess communication integrated with Grand Central Dispatch and launchd.  
 In the future, get the state to use it.
 
 ### Does not clean up the vmnet when remove a VM
