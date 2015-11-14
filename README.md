@@ -67,6 +67,23 @@ $ make install
 ```
 
 
+## Known isuue
+
+### Occasionally, hangs at get ip (MACaddress to IP)
+The cause is not still unknown, it is continuing to investigate.
+
+### Not implement shared folder
+`docker-machine-xhyve` also `xhyve` does not implement shared folder system.  
+Please use the existing protocol for the time being, such as `sshd`.
+
+### Get state use `ssh`, do not know real vm state
+`docker-machine-xhyve` checking vm state use send `exit 0` on `ssh`.  
+but, that is not real state of vm.  
+
+`xhyve` has the OS X xpc dictionary on backend. (still uncertain)  
+In the future, get the state to use it.
+
+
 ## TODO
 
 - [ ] Shared folder support
