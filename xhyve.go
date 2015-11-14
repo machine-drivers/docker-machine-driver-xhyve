@@ -29,16 +29,17 @@ const (
 
 type Driver struct {
 	*drivers.BaseDriver
-	Memory         int
-	DiskSize       int64
-	CPU            int
-	TmpISO         string
-	UUID           string
-	MacAddr        string
-	BootCmd        string
-	Boot2DockerURL string
-	CaCertPath     string
-	PrivateKeyPath string
+	Memory                int
+	DiskSize              int64
+	CPU                   int
+	TmpISO                string
+	UUID                  string
+	MacAddr               string
+	BootCmd               string
+	Boot2DockerURL        string
+	Boot2DockerIsoVersion string
+	CaCertPath            string
+	PrivateKeyPath        string
 }
 
 var (
@@ -396,22 +397,48 @@ func (d *Driver) publicSSHKeyPath() string {
 }
 
 func (d *Driver) extractKernelImages() error {
-	var vmlinuz64 = "/Volumes/Boot2Docker-v1.9/boot/vmlinuz64" // TODO Do not hardcode boot2docker version
-	var initrd = "/Volumes/Boot2Docker-v1.9/boot/initrd.img"   // TODO Do not hardcode boot2docker version
-
 	log.Debugf("Mounting %s", isoFilename)
-	hdiutil("attach", d.ResolveStorePath(isoFilename)) // TODO need parse attached disk identifier.
+	if err := hdiutil("attach", d.ResolveStorePath(isoFilename)); err != nil {
+		return err
+	}
 
-	log.Debugf("Extract vmlinuz64")
+	log.Debugf("Getting Boot2docker version ...")
+	iso, err := os.Open("/Volumes")
+	if err != nil {
+		return err
+	}
+	defer iso.Close()
+
+	// TODO: More faster parse
+	l, _ := ioutil.ReadDir(iso.Name())
+	s := make([]string, 0, 100)
+	for _, f := range l {
+		re := regexp.MustCompile(`(.*)-(.*)`)
+		re2 := regexp.MustCompile(`(^v.*)`)
+		s = re.FindStringSubmatch(f.Name())
+		for _, v := range s {
+			if re2.MatchString(v) {
+				d.Boot2DockerIsoVersion = v
+				break
+			}
+		}
+	}
+	log.Debugf("Boot2docker version: %s", d.Boot2DockerIsoVersion)
+
+	volumeRootDir := "/Volumes/Boot2Docker-" + d.Boot2DockerIsoVersion
+	vmlinuz64 := volumeRootDir + "/boot/vmlinuz64"
+	initrd := volumeRootDir + "/boot/initrd.img"
+
+	log.Debugf("Extracting vmlinuz64 into %s", d.ResolveStorePath("."))
 	if err := mcnutils.CopyFile(vmlinuz64, d.ResolveStorePath("vmlinuz64")); err != nil {
 		return err
 	}
-	log.Debugf("Extract initrd.img")
+	log.Debugf("Extracting initrd.img into %s", d.ResolveStorePath("."))
 	if err := mcnutils.CopyFile(initrd, d.ResolveStorePath("initrd.img")); err != nil {
 		return err
 	}
 	log.Debugf("Unmounting %s", isoFilename)
-	if err := hdiutil("detach", "/Volumes/Boot2Docker-v1.9/"); err != nil { // TODO Do not hardcode boot2docker version
+	if err := hdiutil("detach", volumeRootDir); err != nil {
 		return err
 	}
 
