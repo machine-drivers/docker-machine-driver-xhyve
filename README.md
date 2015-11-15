@@ -6,6 +6,8 @@ Docker Machine driver plugin for [xhyve](https://github.com/mist64/xhyve) native
 Master branch inherited from [nathanleclaire/docker-machine-xhyve](https://github.com/nathanleclaire/docker-machine-xhyve). Thanks [@nathanleclaire](https://github.com/nathanleclaire) :)  
 If you have issues or pull-requests, Desired to be posted to this repository.
 
+## Screencast
+[![asciicast](imgs/launch.png)](https://asciinema.org/a/29930)
 
 ## Required
 
