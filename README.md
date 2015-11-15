@@ -105,6 +105,10 @@ Maybe `vmnet.framework` shared net address range `192.168.64.1` ~ `192.168.64.25
 
 I will fix after I understand the `vmnet.framework`
 
+### Total Memory can not be set more than 3GB
+This seems to be a bug from bhyve.  
+I tested CoreOS and TinyCoreLinux by original `xhyve`,  but also could not be set more than 3GB.  
+
 ## TODO
 
 - [ ] Shared folder support
