@@ -203,6 +203,9 @@ func (d *Driver) PreCreateCheck() error {
 	log.Debugf("===== Docker Machine %s Driver Version %s (%s) =====\n", d.DriverName(), v, c)
 
 	ver, err := vboxVersionDetect()
+	if ver == "" && err == nil {
+		return nil
+	}
 	if err != nil {
 		return fmt.Errorf("Error detecting VBox version: %s", err)
 	}

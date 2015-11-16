@@ -58,7 +58,10 @@ func hdiutil(args ...string) error {
 // detect the VBoxManage cmd's path if needed
 func setVBoxManageCmd() string {
 	cmd := "VBoxManage"
-	if path, err := exec.LookPath(cmd); err == nil {
+	path, err := exec.LookPath(cmd)
+	if err != nil {
+		return ""
+	} else if err == nil {
 		return path
 	}
 	if runtime.GOOS == "windows" {
@@ -117,6 +120,9 @@ func vbmOutErr(args ...string) (string, string, error) {
 }
 
 func vboxVersionDetect() (string, error) {
+	if vboxManageCmd == "" {
+		return "", nil
+	}
 	ver, err := vbmOut("-v")
 	if err != nil {
 		return "", err
