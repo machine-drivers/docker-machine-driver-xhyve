@@ -24,28 +24,57 @@ import (
 )
 
 const (
-	isoFilename = "boot2docker.iso"
+	isoFilename                  = "boot2docker.iso"
+	defaultBoot2DockerIsoVersion = ""
+	defaultBoot2DockerURL        = ""
+	defaultBootCmd               = "loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base host=boot2docker"
+	defaultCPU                   = 1
+	defaultCaCertPath            = ""
+	defaultDiskSize              = 20000
+	defaultMacAddr               = ""
+	defaultMemory                = 1024
+	defaultPrivateKeyPath        = ""
+	defaultUUID                  = ""
 )
 
 type Driver struct {
 	*drivers.BaseDriver
-	Memory                int
-	DiskSize              int64
-	CPU                   int
-	TmpISO                string
-	UUID                  string
-	MacAddr               string
-	BootCmd               string
-	Boot2DockerURL        string
 	Boot2DockerIsoVersion string
+	Boot2DockerURL        string
+	BootCmd               string
+	CPU                   int
 	CaCertPath            string
+	DiskSize              int64
+	MacAddr               string
+	Memory                int
 	PrivateKeyPath        string
+	UUID                  string
 }
 
 var (
 	ErrMachineExist    = errors.New("machine already exists")
 	ErrMachineNotExist = errors.New("machine does not exist")
 )
+
+// NewDriver creates a new VirtualBox driver with default settings.
+func NewDriver(hostName, storePath string) *Driver {
+	return &Driver{
+		BaseDriver: &drivers.BaseDriver{
+			MachineName: hostName,
+			StorePath:   storePath,
+		},
+		Boot2DockerIsoVersion: defaultBoot2DockerIsoVersion,
+		Boot2DockerURL:        defaultBoot2DockerURL,
+		BootCmd:               defaultBootCmd,
+		CPU:                   defaultCPU,
+		CaCertPath:            defaultCaCertPath,
+		DiskSize:              defaultDiskSize,
+		MacAddr:               defaultMacAddr,
+		Memory:                defaultMemory,
+		PrivateKeyPath:        defaultPrivateKeyPath,
+		UUID:                  defaultUUID,
+	}
+}
 
 // RegisterCreateFlags registers the flags this driver adds to
 // "docker hosts create"
@@ -61,25 +90,25 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "XHYVE_CPU_COUNT",
 			Name:   "xhyve-cpu-count",
 			Usage:  "Number of CPUs for the machine (-1 to use the number of CPUs available)",
-			Value:  1,
+			Value:  defaultCPU,
 		},
 		mcnflag.IntFlag{
 			EnvVar: "XHYVE_MEMORY_SIZE",
 			Name:   "xhyve-memory",
 			Usage:  "Size of memory for host in MB",
-			Value:  1024,
+			Value:  defaultMemory,
 		},
 		mcnflag.IntFlag{
 			EnvVar: "XHYVE_DISK_SIZE",
 			Name:   "xhyve-disk-size",
 			Usage:  "Size of disk for host in MB",
-			Value:  20000,
+			Value:  defaultDiskSize,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "XHYVE_BOOT_CMD",
 			Name:   "xhyve-boot-cmd",
 			Usage:  "Command of booting kexec protocol",
-			Value:  "loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base host=boot2docker",
+			Value:  defaultBootCmd,
 		},
 	}
 }
