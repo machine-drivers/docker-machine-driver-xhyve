@@ -10,8 +10,13 @@ else
 endif
 GO_BUILD=${GO_CMD} build -o ${OUTPUT}
 GO_BUILD_RACE=${GO_CMD} build -race -o ${OUTPUT}
-GO_TEST=${GO_CMD} test
-GO_TEST_VERBOSE=${GO_CMD} test -v
+ifeq ($(MACHINE_DEBUG_DRIVER),1)
+	GO_TEST=${GO_CMD} test -v
+else
+	GO_TEST=${GO_CMD} test
+endif
+GO_TEST_RUN=${GO_TEST} -run ${RUN}
+GO_TEST_ALL=test -v -race -cover -bench=.
 GO_RUN=${GO_CMD} run
 GO_INSTALL=${GO_CMD} install -v
 GO_CLEAN=${GO_CMD} clean
@@ -145,6 +150,16 @@ build:
 
 install: bin/docker-machine-driver-xhyve
 	sudo cp -p ./bin/docker-machine-driver-xhyve ${GOPATH}/bin/
+
+test: 
+	@echo "${CBLUE}==>${CRESET} Test ${CGREEN}${PACKAGE}${CRESET} ..."
+	@echo "${CBLACK} ${GO_TEST} ${TOP_PACKAGE_DIR}/${PACKAGE} ${CRESET}"; \
+	${GO_TEST} ${TOP_PACKAGE_DIR}/${PACKAGE} || exit 1
+
+test-run: 
+	@echo "${CBLUE}==>${CRESET} Test ${CGREEN}${PACKAGE} ${FUNC} only${CRESET} ..."
+	@echo "${CBLACK} ${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE} ${CRESET}"; \
+	${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE} || exit 1
 
 dep-save:
 	godep save $(shell go list ./... | grep -v vendor/)
