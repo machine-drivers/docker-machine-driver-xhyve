@@ -235,10 +235,8 @@ func (d *Driver) Create() error {
 	log.Debugf("uuidgen generated UUID: %s", d.UUID)
 
 	log.Infof("Convert UUID to MAC address...")
-	//Trim "0" string
-	re := regexp.MustCompile(`[0]`)
-	mac, _ := vmnet.GetMACAddressByUUID(d.UUID)
-	d.MacAddr = re.ReplaceAllString(mac, "")
+	rawUUID, _ := vmnet.GetMACAddressByUUID(d.UUID)
+	d.MacAddr = d.trimMacAddress(rawUUID)
 	log.Debugf("uuid2mac output MAC address: %s", d.MacAddr)
 
 	log.Infof("Starting %s...", d.MachineName)
@@ -378,6 +376,14 @@ func (d *Driver) imgPath() string {
 
 func (d *Driver) userdataPath() string {
 	return d.ResolveStorePath("userdata.tar")
+}
+
+//Trimming "0" of the ten's digit
+func (d *Driver) trimMacAddress(rawUUID string) string {
+	re := regexp.MustCompile(`[0]([A-Fa-f0-9][:])`)
+	mac := re.ReplaceAllString(rawUUID, "$1")
+
+	return mac
 }
 
 func (d *Driver) getIPfromDHCPLease() (string, error) {
