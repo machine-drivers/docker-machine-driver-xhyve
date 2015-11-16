@@ -4,7 +4,9 @@
 
 # Global go command environment variables
 ifeq ($(shell [ -d "./Godeps" ] && echo '1' || echo '0'),1)
-	GO_CMD := godep go
+	GODEP_BIN := $(GOPATH)/bin/godep
+	GODEP := $(shell [ -x $(GODEP_BIN) ] && echo $(GODEP_BIN) || echo '')
+	GO_CMD := $(if ${GODEP}, , $(error Please install godep: go get github.com/tools/godep)) ${GODEP} go
 else
 	GO_CMD := go
 endif
@@ -185,5 +187,8 @@ test-driver-status:
 test-driver-stop:
 test-driver-upgrade:
 test-driver-url:
+
+debug:
+		echo 'true'
 
 .PHONY: clean run kill
