@@ -71,9 +71,6 @@ $ make install
 
 ## Known isuue
 
-### Occasionally, hangs at get ip (MACaddress to IP)
-The cause is not still unknown, it is continuing to investigate.
-
 ### Not implement shared folder
 `docker-machine-xhyve` also `xhyve` does not implement shared folder system.  
 Please use the existing protocol for the time being, such as `sshd`.
