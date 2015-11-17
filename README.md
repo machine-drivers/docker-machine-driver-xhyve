@@ -73,7 +73,7 @@ $ make install
 
 ### Not implement shared folder
 `docker-machine-xhyve` also `xhyve` does not implement shared folder system.  
-Please use the existing protocol for the time being, such as `sshd`.
+Please use the existing protocol for the time being, such as `NFS`.
 
 ### Get state use `ssh`, do not know real vm state
 `docker-machine-xhyve` checking vm state use send `exit 0` on `ssh`.  
