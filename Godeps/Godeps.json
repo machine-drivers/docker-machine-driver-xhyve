@@ -9,6 +9,10 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/davecgh/go-spew/spew",
+			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
+		},
+		{
 			"ImportPath": "github.com/docker/docker/pkg/term",
 			"Comment": "v1.4.1-7111-g48fe12a",
 			"Rev": "48fe12af0c785d62ac852ea8428a9789a4e9d7fd"
@@ -27,6 +31,14 @@
 			"ImportPath": "github.com/docker/machine/libmachine",
 			"Comment": "v0.5.0-77-g45d38fd",
 			"Rev": "45d38fd31bba9764a644bcfef02c4e69755b2bee"
+		},
+		{
+			"ImportPath": "github.com/pmezard/go-difflib/difflib",
+			"Rev": "d8ed2627bdf02c080bf22230dbb337003b7aba2d"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Rev": "67106a5111a06241c8d84952c33214675f51a34a"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/curve25519",
