@@ -51,7 +51,7 @@ Create `ext.4` filesystem disk image using libguestfs golang binding.
 
 ```bash
 $ brew tap zchee/libguestfs
-$ brew install libguestfs --with-go --devel --env=std
+$ brew install libguestfs --devel --env=std
 ```
 Current status only support golang binding.
 

@@ -3,13 +3,7 @@
 #
 
 # Global go command environment variables
-ifeq ($(shell [ -d "./Godeps" ] && echo '1' || echo '0'),1)
-	GODEP_BIN := $(GOPATH)/bin/godep
-	GODEP := $(shell [ -x $(GODEP_BIN) ] && echo $(GODEP_BIN) || echo '')
-	GO_CMD := $(if ${GODEP}, , $(error Please install godep: go get github.com/tools/godep)) ${GODEP} go
-else
-	GO_CMD := go
-endif
+GO_CMD := go
 GO_BUILD=${GO_CMD} build -o ${OUTPUT}
 GO_BUILD_RACE=${GO_CMD} build -race -o ${OUTPUT}
 ifeq ($(MACHINE_DEBUG_DRIVER),1)
@@ -27,6 +21,8 @@ GO_DEPS_UPDATE=${GO_CMD} get -d -v -u
 GO_VET=${GO_CMD} vet
 GO_LINT=golint
 
+GODEP := $(shell [ -x $(GODEP_BIN) ] && echo $(GODEP_BIN) || echo '')
+GODEP_CMD := $(if ${GODEP}, , $(error Please install godep: go get github.com/tools/godep)) ${GODEP} go
 
 # Initialized build flags
 GO_LDFLAGS :=
@@ -139,7 +135,6 @@ makefile-debug:
 
 clean:
 	@${RM} ./bin/docker-machine-driver-xhyve
-	@${RM} ${GOPATH}/bin/docker-machine-driver-xhyve
 
 bin/docker-machine-driver-xhyve: build
 
@@ -147,11 +142,11 @@ build:
 	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET} ..."
 	@echo "${CBLACK} ${GO_BUILD} -ldflags ${GO_LDFLAGS} ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin ${CRESET}"; \
 	${GO_BUILD} -ldflags "${GO_LDFLAGS}" ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin || exit 1
-	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel${CRESET}"; \
+	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel. Please root password${CRESET}"; \
 	sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT} 
 
 install: bin/docker-machine-driver-xhyve
-	sudo cp -p ./bin/docker-machine-driver-xhyve ${GOPATH}/bin/
+	sudo cp -p ./bin/docker-machine-driver-xhyve /usr/local/bin
 
 test: 
 	@echo "${CBLUE}==>${CRESET} Test ${CGREEN}${PACKAGE}${CRESET} ..."
@@ -164,10 +159,10 @@ test-run:
 	${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE} || exit 1
 
 dep-save:
-	godep save $(shell go list ./... | grep -v vendor/)
+	${GODEP_CMD} save $(shell go list ./... | grep -v vendor/)
 
 dep-restore:
-	godep restore -v
+	${GODEP_CMD} restore -v
 
 run: driver-run
 
