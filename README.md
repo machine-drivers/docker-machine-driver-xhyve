@@ -19,11 +19,11 @@ It will interfere with the development of the docker-machine.
 If you were doubt problem either, please post to this repository. I will judge.
 
 Now, `libmachine-rpc` driver plugin method is merged `docker-machine` master branch.  
-https://github.com/docker/machine/commit/8aa1572e0dcd75762a7627e1056ef104317f44b9
+https://github.com/docker/machine/commit/8aa1572e0dcd75762a7627e1056ef104317f44b9  
 Awesome @nathanleclaire :tada:
 
 ```bash
-go get github.com/nathanleclaire/machine
+go get github.com/docker/machine
 cd $GOPATH/src/github.com/docker/machine
 # Build docker-machine and some docker-machine official(embedded) driver binary
 make build
