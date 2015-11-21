@@ -15,21 +15,19 @@ If you have issues or pull-requests, Desired to be posted to this repository.
 ### docker-machine
 https://github.com/docker/machine
 
+docker-machine-xhyve using docker-machine plugin model.
+
 **!! Please do not post the issue of this repository to the docker/machine !!**  
 It will interfere with the development of the docker-machine.  
-If you were doubt problem either, please post to this repository. I will judge.
-
-Now, `libmachine-rpc` driver plugin method is merged `docker-machine` master branch.  
-https://github.com/docker/machine/commit/8aa1572e0dcd75762a7627e1056ef104317f44b9  
-Awesome @nathanleclaire :tada:
+If you were doubt problem either, please post to this repository [issues](https://github.com/zchee/docker-machine-xhyve/issues).
 
 ```bash
-go get github.com/docker/machine
-cd $GOPATH/src/github.com/docker/machine
+> go get github.com/docker/machine
+> cd $GOPATH/src/github.com/docker/machine
 # Build docker-machine and some docker-machine official(embedded) driver binary
-make build
+> make build
 # Install all binary into /usr/local/bin/
-make install
+> make install
 ```
 
 ### xhyve-bindings
@@ -39,10 +37,10 @@ Separated xhyve Go bindings into [xhyve-bindings](https://github.com/zchee/xhyve
 Or, see experimental embedded xhyve branch [embed-xhyve](https://github.com/zchee/docker-machine-xhyve/tree/embed-xhyve)
 
 ```bash
-$ go get -d github.com/zchee/xhyve-bindings
-$ cd $GOPATH/src/github.com/zchee/xhyve-bindings
-$ make
-$ make install
+> go get -d github.com/zchee/xhyve-bindings
+> cd $GOPATH/src/github.com/zchee/xhyve-bindings
+> make
+> make install
 ```
 
 ### libguestfs
@@ -51,28 +49,31 @@ http://libguestfs.org/
 Create `ext.4` filesystem disk image use libguestfs Go bindings package.
 
 ```bash
-$ brew tap zchee/libguestfs
-$ brew install libguestfs --devel --env=std
+> brew tap zchee/libguestfs
+> brew install libguestfs --devel --env=std
 ```
 
 This Formula will download the `supermin appliance` kernel file with install libguestfs.  
-*Warning* Kernel file size over 4GB!
+**Warning** Kernel file size over 4GB!
 
 #### Tips
 Apple has introduced a System Integrity Protection(SIP) from OS X El Capitan.  
 Therefore, homebrew seems there is a case in which is not a symlink to `/usr/local/include`.  
-Please check of guestfs.h. `ls /usr/local/include/guestfs.h`.
+Please check exist of `guestfs.h`.
 
+```bash
+ls /usr/local/include/guestfs.h`.
+```
 
 ## Install
 
 Like the docker-machine's `Makefile`, install the `docker-machine-driver-xhyve` binary will be in `/usr/local/bin`.  
 
 ```bash
-$ go get -d github.com/zchee/docker-machine-xhyve
-$ cd $GOPATH/src/github.com/zchee/docker-machine-xhyve
-$ make
-$ make install
+> go get -d github.com/zchee/docker-machine-xhyve
+> cd $GOPATH/src/github.com/zchee/docker-machine-xhyve
+> make
+> make install
 ```
 
 
@@ -112,7 +113,7 @@ Hardware:
       Hardware UUID: ********-****-****-****-************
 
 > git clone https://github.com/mist64/xhyve && cd xhyve
-> make // Success
+> make
 > ./xhyverun.sh
 vmx_init: processor not supported by Hypervisor.framework
 Unable to create VM (-85377018)
@@ -150,7 +151,7 @@ but 192.168.64.**1** are not using anyone.
 
 `vmnet.framework` seems to have decided to IP based on `/var/db/dhcpd_leases` and `/Library/Preferences/SystemConfiguration/com.apple.vmnet.plist`  
 So, To remove it manually, or Don’t even bother.  
-Maybe `vmnet.framework` shared net address range `192.168.64.1` ~ `192.168.64.255`. You can make 255 vm :stuck_out_tongue_closed_eyes:
+Maybe `vmnet.framework` shared net address range `192.168.64.1` ~ `192.168.64.255`. You can make 255 vm.
 
 I will fix after I understand the `vmnet.framework`
 
