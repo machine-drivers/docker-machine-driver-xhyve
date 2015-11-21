@@ -21,7 +21,7 @@ GO_DEPS_UPDATE=${GO_CMD} get -d -v -u
 GO_VET=${GO_CMD} vet
 GO_LINT=golint
 
-GODEP := $(shell [ -x $(GODEP_BIN) ] && echo $(GODEP_BIN) || echo '')
+GODEP := ${GOPATH}/bin/godep
 GODEP_CMD := $(if ${GODEP}, , $(error Please install godep: go get github.com/tools/godep)) ${GODEP} go
 
 # Initialized build flags
