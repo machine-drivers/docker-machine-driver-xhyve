@@ -104,6 +104,10 @@ Unable to create VM (-85377018)
 `docker-machine-xhyve` also `xhyve` does not implement shared folder system.  
 Please use the existing protocol for the time being, such as `NFS`.
 
+`docker-machine-xhyve` can create a `NFS` share automatically for you, but this feature
+is highly experimental. To use it specify `--xhyve-experimental-nfs-share` when creating your
+machine.
+
 ### Get state use `ssh`, do not know real vm state
 `docker-machine-xhyve` checking vm state use send `exit 0` on `ssh`.  
 but, that is not real state of vm.  
@@ -149,3 +153,6 @@ I tested CoreOS and TinyCoreLinux by original `xhyve`,  but also could not be se
 - [ ] Replace generate uuid, native Go code instead of `uuidgen`
 - [ ] Get vm state, xpc or etc.
 - [ ] Cleanup code and more performance
+- [ ] NFS Share
+    - [ ] Validate created `/etc/exports` using `ntpd checkexports` and only overwrite when valid
+    - [ ] Remove from `/etc/exports` on `rm`

@@ -34,6 +34,7 @@ const (
 	defaultMemory                = 1024
 	defaultPrivateKeyPath        = ""
 	defaultUUID                  = ""
+	defaultNFSShare              = false
 )
 
 type Driver struct {
@@ -48,6 +49,7 @@ type Driver struct {
 	Memory                int
 	PrivateKeyPath        string
 	UUID                  string
+	NFSShare              bool
 }
 
 var (
@@ -72,6 +74,7 @@ func NewDriver(hostName, storePath string) *Driver {
 		Memory:                defaultMemory,
 		PrivateKeyPath:        defaultPrivateKeyPath,
 		UUID:                  defaultUUID,
+		NFSShare:              defaultNFSShare,
 	}
 }
 
@@ -108,6 +111,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "xhyve-boot-cmd",
 			Usage:  "Command of booting kexec protocol",
 			Value:  defaultBootCmd,
+		},
+		mcnflag.BoolFlag{
+			EnvVar: "XHYVE_EXPERIMENTAL_NFS_SHARE",
+			Name:   "xhyve-experimental-nfs-share",
+			Usage:  "Setup NFS shared folder (requires root)",
 		},
 	}
 }
@@ -155,6 +163,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = "docker"
 	d.SSHPort = 22
+	d.NFSShare = flags.Bool("xhyve-experimental-nfs-share")
 
 	return nil
 }
@@ -293,6 +302,14 @@ func (d *Driver) Create() error {
 
 	// We got an IP, let's copy ssh keys over
 	d.IPAddress = ip
+
+	// Setup NFS sharing
+	if d.NFSShare {
+		err = d.setupNFSShare()
+		if err != nil {
+			log.Errorf("NFS setup failed: %s", err.Error())
+		}
+	}
 
 	return nil
 }
@@ -538,4 +555,51 @@ func (d *Driver) generateKeyBundle() (*bytes.Buffer, error) {
 		return nil, err
 	}
 	return buf, nil
+}
+
+// Setup NFS share
+func (d *Driver) setupNFSShare() error {
+	nfsConfig := fmt.Sprintf("\n/Users %s -alldirs -maproot=root\n", d.IPAddress)
+
+	file, err := os.OpenFile("/etc/exports", os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	if _, err := file.Write([]byte(nfsConfig)); err != nil {
+		return err
+	}
+	file.Close()
+
+	// TODO Do nfsd checkexports
+
+	cmd := exec.Command("sudo", "nfsd", "restart")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	log.Debugf("executing: %v %v", cmd)
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	hostIP, err := vmnet.GetNetAddr()
+	if err != nil {
+		return err
+	}
+
+	bootScriptName := "/var/lib/boot2docker/bootlocal.sh"
+	bootScript := fmt.Sprintf("#/bin/bash\\n"+
+		"sudo mkdir -p /Users\\n"+
+		"sudo /usr/local/etc/init.d/nfs-client start\\n"+
+		"sudo mount -t nfs -o noacl,async %s:/Users /Users\\n", hostIP)
+
+	writeScriptCmd := fmt.Sprintf("echo -e \"%s\" | sudo tee %s && sudo chmod +x %s && %s",
+		bootScript, bootScriptName, bootScriptName, bootScriptName)
+
+	if _, err := drivers.RunSSHCommandFromDriver(d, writeScriptCmd); err != nil {
+		return err
+	}
+
+	return nil
 }
