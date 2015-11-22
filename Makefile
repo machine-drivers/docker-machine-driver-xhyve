@@ -4,20 +4,16 @@
 
 # Global go command environment variables
 GO_CMD := go
-GO_BUILD=${GO_CMD} build -o ${OUTPUT}
-GO_BUILD_RACE=${GO_CMD} build -race -o ${OUTPUT}
-ifeq ($(MACHINE_DRIVER_DEBUG),1)
-	GO_TEST=${GO_CMD} test -v
-else
-	GO_TEST=${GO_CMD} test
-endif
+GO_BUILD=${GO_CMD} build ${VERBOSE_GO} -o ${OUTPUT}
+GO_BUILD_RACE=${GO_CMD} build ${VERBOSE_GO} -race -o ${OUTPUT}
+GO_TEST=${GO_CMD} test ${VERBOSE_GO}
 GO_TEST_RUN=${GO_TEST} -run ${RUN}
-GO_TEST_ALL=test -v -race -cover -bench=.
+GO_TEST_ALL=test -race -cover -bench=.
 GO_RUN=${GO_CMD} run
-GO_INSTALL=${GO_CMD} install -v
+GO_INSTALL=${GO_CMD} install
 GO_CLEAN=${GO_CMD} clean
-GO_DEPS=${GO_CMD} get -d -v
-GO_DEPS_UPDATE=${GO_CMD} get -d -v -u
+GO_DEPS=${GO_CMD} get -d
+GO_DEPS_UPDATE=${GO_CMD} get -d -u
 GO_VET=${GO_CMD} vet
 GO_LINT=golint
 
@@ -71,6 +67,11 @@ endif
 # Parse git current branch commit-hash
 GO_LDFLAGS := ${GO_LDFLAGS} -X `go list ./version`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
 
+# Honor verbose
+VERBOSE_GO := 
+ifeq ($(VERBOSE),true)
+	VERBOSE_GO := -v
+endif
 
 # Environment variables
 
@@ -136,8 +137,8 @@ bin/docker-machine-driver-xhyve: build
 
 build:
 	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET} ..."
-	@echo "${CBLACK} ${GO_BUILD} ${CGO_CFLAGS} ${CGO_LDFLAGS} -ldflags "$(GO_LDFLAGS)" $(GO_GCFLAGS) ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin ${CRESET}"; \
-	${GO_BUILD} ${CGO_CFLAGS} ${CGO_LDFLAGS} -ldflags "$(GO_LDFLAGS)" $(GO_GCFLAGS) ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin || exit 1
+	@echo "${CBLACK} ${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${CGO_CFLAGS} ${CGO_LDFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin ${CRESET}"; \
+	${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${CGO_CFLAGS} ${CGO_LDFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin || exit 1
 	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel. Please root password${CRESET}"; \
 	sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT}
 
