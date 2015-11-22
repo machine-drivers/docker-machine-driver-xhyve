@@ -26,9 +26,6 @@ GODEP_CMD := $(if ${GODEP}, , $(error Please install godep: go get github.com/to
 
 # Initialized build flags
 GO_LDFLAGS :=
-# docker-machine-xhyve use vmnet.framework
-# It is a binding from C-land to Go
-CGO_ENABLED := 1
 CGO_CFLAGS :=
 CGO_LDFLAGS :=
 CGO_CFLAGS :=
@@ -86,6 +83,10 @@ export GOOS=darwin
 # Support go1.5 vendoring (let us avoid messing with GOPATH or using godep)
 export GO15VENDOREXPERIMENT=1
 
+# docker-machine-xhyve use vmnet.framework
+# It is a binding from C-land to Go
+export CGO_ENABLED=1
+
 # Whether the linker should use external linking mode
 # when using -linkmode=auto with code that uses cgo.
 # Set to 0 to disable external linking mode, 1 to enable it.
@@ -102,11 +103,6 @@ OUTPUT := bin/docker-machine-driver-xhyve
 # Parse "func main()" only '.go' file on current dir
 # FIXME: Not support main.go
 MAIN_FILE := `grep "func main\(\)" *.go -l`
-
-# Issue of no include header file in /usr/local/include
-# See https://github.com/zchee/docker-machine-xhyve/issues/4
-CGO_CFLAGS := ${CGO_CFLAGS} -I /usr/local/include 
-CGO_LDFLAGS := ${CGO_LDFLAGS} -L /usr/local/lib
 
 # Include driver debug makefile if $MACHINE_DRIVER_DEBUG=1
 ifeq ($(MACHINE_DRIVER_DEBUG),1)
@@ -140,8 +136,8 @@ bin/docker-machine-driver-xhyve: build
 
 build:
 	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET} ..."
-	@echo "${CBLACK} ${GO_BUILD} -ldflags ${GO_LDFLAGS} ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin ${CRESET}"; \
-	${GO_BUILD} -ldflags "${GO_LDFLAGS}" ${CGO_CFLAGS} ${CGO_LDFLAGS} ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin || exit 1
+	@echo "${CBLACK} ${GO_BUILD} ${CGO_CFLAGS} ${CGO_LDFLAGS} -ldflags "$(GO_LDFLAGS)" $(GO_GCFLAGS) ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin ${CRESET}"; \
+	${GO_BUILD} ${CGO_CFLAGS} ${CGO_LDFLAGS} -ldflags "$(GO_LDFLAGS)" $(GO_GCFLAGS) ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin || exit 1
 	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel. Please root password${CRESET}"; \
 	sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT}
 
