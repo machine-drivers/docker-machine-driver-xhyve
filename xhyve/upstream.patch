@@ -1,0 +1,38 @@
+diff --git a/upstream/include/xhyve/xhyve.h b/upstream/include/xhyve/xhyve.h
+index 4f85664..6f83463 100644
+--- a/upstream/include/xhyve/xhyve.h
++++ b/upstream/include/xhyve/xhyve.h
+@@ -78,3 +78,9 @@ void vcpu_add(int fromcpu, int newcpu, uint64_t rip);
+ int fbsdrun_vmexit_on_hlt(void);
+ int fbsdrun_vmexit_on_pause(void);
+ int fbsdrun_virtio_msix(void);
++
++#ifdef MAIN
++int MAIN(int, char*[]);
++#else
++#define MAIN main
++#endif
+diff --git a/upstream/src/xhyve.c b/upstream/src/xhyve.c
+index 97fd41f..5de8dc4 100644
+--- a/upstream/src/xhyve.c
++++ b/upstream/src/xhyve.c
+@@ -72,6 +72,10 @@
+ 
+ #define MB (1024UL * 1024)
+ 
++#ifndef VERSION
++#define VERSION "dev"
++#endif
++
+ typedef int (*vmexit_handler_t)(struct vm_exit *, int *vcpu);
+ extern int vmexit_task_switch(struct vm_exit *, int *vcpu);
+ 
+@@ -774,7 +778,7 @@ fail:
+ }
+ 
+ int
+-main(int argc, char *argv[])
++MAIN(int argc, char *argv[])
+ {
+ 	int c, error, gdb_port, bvmcons, fw;
+ 	int dump_guest_memory, max_vcpus, mptgen;
