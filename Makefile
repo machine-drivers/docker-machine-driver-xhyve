@@ -17,22 +17,9 @@ GO_DEPS_UPDATE=${GO_CMD} get -d -u
 GO_VET=${GO_CMD} vet
 GO_LINT=golint
 
+# Check godep binary
 GODEP := ${GOPATH}/bin/godep
 GODEP_CMD := $(if ${GODEP}, , $(error Please install godep: go get github.com/tools/godep)) ${GODEP} go
-
-# Initialized build flags
-GO_LDFLAGS :=
-CGO_CFLAGS :=
-CGO_LDFLAGS :=
-CGO_CFLAGS :=
-CGO_CPPFLAGS :=
-CGO_CXXFLAGS :=
-CGO_LDFLAGS :=
-# See https://godoc.org/runtime
-GODEBUG :=
-# `GOGC=off go run x.go` or runtime.SetGCPercent(-1)
-# `-1` for off, `50` for aggressive GC, `100` for default, `200` for lazy GC
-GOGC :=
 
 # Set debug gcflag, or optimize ldflags
 #   Usage: GDBDEBUG=1 make
@@ -64,14 +51,15 @@ ifeq ($(STATIC),true)
 	GO_LDFLAGS := $(GO_LDFLAGS) -extldflags -static
 endif
 
-# Parse git current branch commit-hash
-GO_LDFLAGS := ${GO_LDFLAGS} -X `go list ./version`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
-
-# Honor verbose
+# Verbose
 VERBOSE_GO := 
 ifeq ($(VERBOSE),true)
 	VERBOSE_GO := -v
 endif
+
+# Parse git current branch commit-hash
+GO_LDFLAGS := ${GO_LDFLAGS} -X `go list ./version`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
+
 
 # Environment variables
 
@@ -87,11 +75,6 @@ export GO15VENDOREXPERIMENT=1
 # docker-machine-xhyve use vmnet.framework
 # It is a binding from C-land to Go
 export CGO_ENABLED=1
-
-# Whether the linker should use external linking mode
-# when using -linkmode=auto with code that uses cgo.
-# Set to 0 to disable external linking mode, 1 to enable it.
-export GO_EXTLINK_ENABLED=
 
 
 # Package side settings
@@ -110,6 +93,7 @@ ifeq ($(MACHINE_DRIVER_DEBUG),1)
 	include mk/driver.mk
 endif
 
+
 # Colorable output
 CRESET := \x1b[0m
 CBLACK := \x1b[30;01m
@@ -127,20 +111,17 @@ CWHITE := \x1b[37;01m
 #
 default: build
 
-makefile-debug:
-	@echo ${GO_CMD}
-
 clean:
 	@${RM} ./bin/docker-machine-driver-xhyve
 
-bin/docker-machine-driver-xhyve: build
-
-build:
+bin/docker-machine-driver-xhyve:
 	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET} ..."
 	@echo "${CBLACK} ${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${CGO_CFLAGS} ${CGO_LDFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin ${CRESET}"; \
 	${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${CGO_CFLAGS} ${CGO_LDFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin || exit 1
 	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel. Please root password${CRESET}"; \
 	sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT}
+
+build: bin/docker-machine-driver-xhyve
 
 install: bin/docker-machine-driver-xhyve
 	sudo cp -p ./bin/docker-machine-driver-xhyve /usr/local/bin
