@@ -32,7 +32,7 @@ func GetMACAddressByUUID(uuid string) (string, error) {
 	return hw.String(), nil
 }
 
-func getNetAddr() (net.IP, error) {
+func GetNetAddr() (net.IP, error) {
 	out, err := exec.Command("defaults", "read", CONFIG_PLIST, NET_ADDR_KEY).Output()
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func getNetMask() (net.IPMask, error) {
 }
 
 func GetIPNet() (*net.IPNet, error) {
-	ip, err := getNetAddr()
+	ip, err := GetNetAddr()
 	if err != nil {
 		return nil, err
 	}
