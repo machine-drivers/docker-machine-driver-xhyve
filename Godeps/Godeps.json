@@ -51,10 +51,6 @@
 		{
 			"ImportPath": "golang.org/x/net/http2/hpack",
 			"Rev": "9946ad7d5eae91d8edca4f54d1a1e130a052e823"
-		},
-		{
-			"ImportPath": "libguestfs.org/guestfs",
-			"Rev": "2fbeeb2554c69f49ada8aad4515c69bb22351508"
 		}
 	]
 }

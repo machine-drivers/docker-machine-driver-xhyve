@@ -26,8 +26,8 @@ GODEP_CMD := $(if ${GODEP}, , $(error Please install godep: go get github.com/to
 
 # Initialized build flags
 GO_LDFLAGS :=
-# docker-machine-xhyve use vmnet.framework and libguestfs
-# They are binding from C-land to Go
+# docker-machine-xhyve use vmnet.framework
+# It is a binding from C-land to Go
 CGO_ENABLED := 1
 CGO_CFLAGS :=
 CGO_LDFLAGS :=
@@ -103,9 +103,9 @@ OUTPUT := bin/docker-machine-driver-xhyve
 # FIXME: Not support main.go
 MAIN_FILE := `grep "func main\(\)" *.go -l`
 
-# Issue of no include header file in /usr/local/include 
+# Issue of no include header file in /usr/local/include
 # See https://github.com/zchee/docker-machine-xhyve/issues/4
-CGO_CFLAGS=${CGO_CFLAGS} -I/usr/local/include 
+CGO_CFLAGS=${CGO_CFLAGS} -I/usr/local/include
 CGO_LDFLAGS=${CGO_LDFLAGS} -L/usr/local/lib
 
 # Include driver debug makefile if $MACHINE_DEBUG_DRIVER=1
@@ -138,22 +138,22 @@ clean:
 
 bin/docker-machine-driver-xhyve: build
 
-build: 
+build:
 	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET} ..."
 	@echo "${CBLACK} ${GO_BUILD} -ldflags ${GO_LDFLAGS} ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin ${CRESET}"; \
 	${GO_BUILD} -ldflags "${GO_LDFLAGS}" ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin || exit 1
 	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel. Please root password${CRESET}"; \
-	sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT} 
+	sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT}
 
 install: bin/docker-machine-driver-xhyve
 	sudo cp -p ./bin/docker-machine-driver-xhyve /usr/local/bin
 
-test: 
+test:
 	@echo "${CBLUE}==>${CRESET} Test ${CGREEN}${PACKAGE}${CRESET} ..."
 	@echo "${CBLACK} ${GO_TEST} ${TOP_PACKAGE_DIR}/${PACKAGE} ${CRESET}"; \
 	${GO_TEST} ${TOP_PACKAGE_DIR}/${PACKAGE} || exit 1
 
-test-run: 
+test-run:
 	@echo "${CBLUE}==>${CRESET} Test ${CGREEN}${PACKAGE} ${FUNC} only${CRESET} ..."
 	@echo "${CBLACK} ${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE} ${CRESET}"; \
 	${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE} || exit 1
