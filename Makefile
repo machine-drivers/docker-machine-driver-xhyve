@@ -6,7 +6,7 @@
 GO_CMD := go
 GO_BUILD=${GO_CMD} build -o ${OUTPUT}
 GO_BUILD_RACE=${GO_CMD} build -race -o ${OUTPUT}
-ifeq ($(MACHINE_DEBUG_DRIVER),1)
+ifeq ($(MACHINE_DRIVER_DEBUG),1)
 	GO_TEST=${GO_CMD} test -v
 else
 	GO_TEST=${GO_CMD} test
@@ -43,7 +43,7 @@ GOGC :=
 
 # Set debug gcflag, or optimize ldflags
 #   Usage: GDBDEBUG=1 make
-ifeq ($(GDBDEBUG),1)
+ifeq ($(DEBUG),true)
 	GO_GCFLAGS := -gcflags "-N -l"
 	# Disable function inlining and variable registerization. For lldb, gdb, dlv and the involved debugger tools
 	# See also Dave cheney's blog post: http://goo.gl/6QCJMj
@@ -67,7 +67,7 @@ endif
 
 # Set static build option
 #   Usage: STATIC=1 make
-ifeq ($(STATIC),1)
+ifeq ($(STATIC),true)
 	GO_LDFLAGS := $(GO_LDFLAGS) -extldflags -static
 endif
 
@@ -105,11 +105,11 @@ MAIN_FILE := `grep "func main\(\)" *.go -l`
 
 # Issue of no include header file in /usr/local/include
 # See https://github.com/zchee/docker-machine-xhyve/issues/4
-CGO_CFLAGS=${CGO_CFLAGS} -I/usr/local/include
-CGO_LDFLAGS=${CGO_LDFLAGS} -L/usr/local/lib
+CGO_CFLAGS := ${CGO_CFLAGS} -I /usr/local/include 
+CGO_LDFLAGS := ${CGO_LDFLAGS} -L /usr/local/lib
 
-# Include driver debug makefile if $MACHINE_DEBUG_DRIVER=1
-ifeq ($(MACHINE_DEBUG_DRIVER),1)
+# Include driver debug makefile if $MACHINE_DRIVER_DEBUG=1
+ifeq ($(MACHINE_DRIVER_DEBUG),1)
 	include mk/driver.mk
 endif
 
@@ -141,7 +141,7 @@ bin/docker-machine-driver-xhyve: build
 build:
 	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET} ..."
 	@echo "${CBLACK} ${GO_BUILD} -ldflags ${GO_LDFLAGS} ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin ${CRESET}"; \
-	${GO_BUILD} -ldflags "${GO_LDFLAGS}" ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin || exit 1
+	${GO_BUILD} -ldflags "${GO_LDFLAGS}" ${CGO_CFLAGS} ${CGO_LDFLAGS} ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin || exit 1
 	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel. Please root password${CRESET}"; \
 	sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT}
 
@@ -182,8 +182,5 @@ test-driver-status:
 test-driver-stop:
 test-driver-upgrade:
 test-driver-url:
-
-debug:
-		echo 'true'
 
 .PHONY: clean run kill
