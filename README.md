@@ -43,28 +43,6 @@ Or, see experimental embedded xhyve branch [embed-xhyve](https://github.com/zche
 > make install
 ```
 
-### libguestfs
-http://libguestfs.org/
-
-Create `ext.4` filesystem disk image use libguestfs Go bindings package.
-
-```bash
-> brew tap zchee/libguestfs
-> brew install libguestfs --devel --env=std
-```
-
-This Formula will download the `supermin appliance` kernel file with install libguestfs.  
-**Warning** Kernel file size over 4GB!
-
-#### Tips
-Apple has introduced a System Integrity Protection(SIP) from OS X El Capitan.  
-Therefore, homebrew seems there is a case in which is not a symlink to `/usr/local/include`.  
-Please check exist of `guestfs.h`.
-
-```bash
-ls /usr/local/include/guestfs.h`.
-```
-
 ## Install
 
 Like the docker-machine's `Makefile`, install the `docker-machine-driver-xhyve` binary will be in `/usr/local/bin`.  

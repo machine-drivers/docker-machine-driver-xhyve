@@ -11,16 +11,12 @@ env:
   global:
     - GO15VENDOREXPERIMENT=1
     - GOMAXPROCS=8
-    - HOMEBREW_MAKE_JOBS=9
 
 cache:
   directories:
   - ~/Library/Caches/Homebrew
 
 before_install:
-  - brew tap zchee/libguestfs
-  - brew update
-  - brew install libguestfs --with-go --devel --env=std
   - go get -d -v -u github.com/zchee/docker-machine-xhyve
 
 script:

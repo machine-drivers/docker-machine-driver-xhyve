@@ -44,6 +44,8 @@ func uuidgen() string {
 
 func hdiutil(args ...string) error {
 	cmd := exec.Command("hdiutil", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	log.Debugf("executing: %v %v", cmd, strings.Join(args, " "))
 

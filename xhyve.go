@@ -20,14 +20,13 @@ import (
 	"github.com/docker/machine/libmachine/state"
 	"github.com/zchee/docker-machine-xhyve/version"
 	"github.com/zchee/docker-machine-xhyve/vmnet"
-	"libguestfs.org/guestfs"
 )
 
 const (
 	isoFilename                  = "boot2docker.iso"
 	defaultBoot2DockerIsoVersion = ""
 	defaultBoot2DockerURL        = ""
-	defaultBootCmd               = "loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base host=boot2docker"
+	defaultBootCmd               = "loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10 base host=boot2docker"
 	defaultCPU                   = 1
 	defaultCaCertPath            = ""
 	defaultDiskSize              = 20000
@@ -239,11 +238,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Make a boot2docker userdata.tar key bundle...")
-	if err := d.generateKeyBundle(); err != nil {
-		return err
-	}
-
 	// Fix file permission root to current user.
 	// In order to avoid require sudo of vmnet.framework, Execute the root owner(and root uid)
 	// "docker-machine-xhyve" and "goxhyve" binary in golang.
@@ -255,11 +249,11 @@ func (d *Driver) Create() error {
 		os.Chown(d.ResolveStorePath(f.Name()), 501, 20)
 	}
 
-	log.Infof("Creating blank ext4 filesystem disk image...")
-	if err := d.generateBlankDiskImage(d.DiskSize); err != nil {
+	log.Infof("Generating disk image...")
+	if err := d.generateDiskImage(d.DiskSize); err != nil {
 		return err
 	}
-	os.Chown(d.ResolveStorePath(d.MachineName+".img"), 501, 20)
+	os.Chown(d.ResolveStorePath(d.MachineName+".dmg"), 501, 20)
 	log.Debugf("Created disk size: %dMB", d.DiskSize)
 
 	log.Infof("Generate UUID...")
@@ -308,7 +302,7 @@ func (d *Driver) Start() error {
 	vmlinuz := d.ResolveStorePath("vmlinuz64")
 	initrd := d.ResolveStorePath("initrd.img")
 	iso := d.ResolveStorePath(isoFilename)
-	img := d.ResolveStorePath(d.MachineName + ".img")
+	img := d.ResolveStorePath(d.MachineName + ".dmg")
 	bootcmd := d.BootCmd
 
 	cmd := exec.Command("goxhyve",
@@ -402,14 +396,6 @@ func (d *Driver) setMachineNameIfNotSet() {
 	}
 }
 
-func (d *Driver) imgPath() string {
-	return d.ResolveStorePath(fmt.Sprintf("%s.img", d.MachineName))
-}
-
-func (d *Driver) userdataPath() string {
-	return d.ResolveStorePath("userdata.tar")
-}
-
 //Trimming "0" of the ten's digit
 func (d *Driver) trimMacAddress(rawUUID string) string {
 	re := regexp.MustCompile(`[0]([A-Fa-f0-9][:])`)
@@ -483,122 +469,36 @@ func (d *Driver) extractKernelImages() error {
 	return nil
 }
 
-func (d *Driver) generateBlankDiskImage(count int64) error {
-	output := d.ResolveStorePath(d.MachineName + ".img")
+func (d *Driver) generateDiskImage(count int64) error {
+	output := d.ResolveStorePath(d.MachineName)
 
-	g, errno := guestfs.Create()
-	if errno != nil {
-		panic(errno)
-	}
-	defer g.Close()
-
-	/* Set $LIBGUESTFS_PATH(libguestfs appliance path) to root user */
-	p := toPtr("/usr/local/lib/guestfs")
-	g.Set_path(p)
-
-	/* Set the trace flag so that we can see each libguestfs call. */
-	if log.IsDebug == true {
-		g.Set_trace(true)
+	if err := hdiutil("create", "-megabytes", fmt.Sprintf("%d", d.DiskSize), output); err != nil {
+		return err
 	}
 
-	/* Create the disk image to libguestfs. */
-	optargsDiskCreate := guestfs.OptargsDisk_create{
-		Backingfile_is_set:   false,
-		Backingformat_is_set: false,
-		Preallocation_is_set: false,
-		Compat_is_set:        false,
-		Clustersize_is_set:   false,
-	}
-
-	/* Create a raw-format sparse disk image, d.DiskSize MB in size. */
-	if err := g.Disk_create(output, "raw", int64(d.DiskSize*1024*1024), &optargsDiskCreate); err != nil {
-		panic(err)
-	}
-
-	/* Attach the disk image to libguestfs. */
-	optargsAdd_drive := guestfs.OptargsAdd_drive{
-		Format_is_set:   true,
-		Format:          "raw",
-		Readonly_is_set: true,
-		Readonly:        false,
-	}
-
-	if err := g.Add_drive(output, &optargsAdd_drive); err != nil {
-		panic(err)
-	}
-
-	/* Run the libguestfs back-end. */
-	if err := g.Launch(); err != nil {
-		panic(err)
-	}
-
-	/* Get the list of devices.  Because we only added one drive
-	 * above, we expect that this list should contain a single
-	 * element.
-	 */
-	devices, err := g.List_devices()
+	tarBuf, err := d.generateKeyBundle()
 	if err != nil {
-		panic(err)
-	}
-	if len(devices) != 1 {
-		panic("expected a single device from list-devices")
+		return err
 	}
 
-	/* Partition the disk as one single MBR partition. */
-	err = g.Part_disk(devices[0], "mbr")
+	file, err := os.OpenFile(output+".dmg", os.O_WRONLY, 0644)
 	if err != nil {
-		panic(err)
+		return err
 	}
-
-	/* Get the list of partitions.  We expect a single element, which
-	 * is the partition we have just created.
-	 */
-	partitions, err := g.List_partitions()
+	defer file.Close()
+	file.Seek(0, os.SEEK_SET)
+	_, err = file.Write(tarBuf.Bytes())
 	if err != nil {
-		panic(err)
+		return err
 	}
-	if len(partitions) != 1 {
-		panic("expected a single partition from list-partitions")
-	}
-
-	/* Create a filesystem on the partition. */
-	err = g.Mkfs("ext4", partitions[0], nil)
-	if err != nil {
-		panic(err)
-	}
-
-	/* Now mount the filesystem so that we can add files. */
-	err = g.Mount(partitions[0], "/")
-	if err != nil {
-		panic(err)
-	}
-
-	/* Mkdir -p place of userdata.tar */
-	err = g.Mkdir_p("/var/lib/boot2docker")
-	if err != nil {
-		panic(err)
-	}
-
-	/* Uploads the local userdata.tar file into /var/lib/boot2docker */
-	err = g.Upload(d.ResolveStorePath("userdata.tar"), "/var/lib/boot2docker/userdata.tar")
-	if err != nil {
-		panic(err)
-	}
-
-	/* Because we wrote to the disk and we want to detect write
-	 * errors, call g:shutdown.  You don't need to do this:
-	 * g.Close will do it implicitly.
-	 */
-	if err = g.Shutdown(); err != nil {
-		panic(fmt.Sprintf("write to disk failed: %s", err))
-	}
+	file.Close()
 
 	return nil
 }
 
 // Make a boot2docker userdata.tar key bundle
-func (d *Driver) generateKeyBundle() error { // TODO
-	magicString := "boot2docker, this is xhyve speaking"
+func (d *Driver) generateKeyBundle() (*bytes.Buffer, error) {
+	magicString := "boot2docker, please format-me"
 
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
@@ -606,42 +506,36 @@ func (d *Driver) generateKeyBundle() error { // TODO
 	// magicString first so the automount script knows to format the disk
 	file := &tar.Header{Name: magicString, Size: int64(len(magicString))}
 	if err := tw.WriteHeader(file); err != nil {
-		return err
+		return nil, err
 	}
 	if _, err := tw.Write([]byte(magicString)); err != nil {
-		return err
+		return nil, err
 	}
 	// .ssh/key.pub => authorized_keys
 	file = &tar.Header{Name: ".ssh", Typeflag: tar.TypeDir, Mode: 0700}
 	if err := tw.WriteHeader(file); err != nil {
-		return err
+		return nil, err
 	}
 	pubKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	file = &tar.Header{Name: ".ssh/authorized_keys", Size: int64(len(pubKey)), Mode: 0644}
 	if err := tw.WriteHeader(file); err != nil {
-		return err
+		return nil, err
 	}
 	if _, err := tw.Write([]byte(pubKey)); err != nil {
-		return err
+		return nil, err
 	}
 	file = &tar.Header{Name: ".ssh/authorized_keys2", Size: int64(len(pubKey)), Mode: 0644}
 	if err := tw.WriteHeader(file); err != nil {
-		return err
+		return nil, err
 	}
 	if _, err := tw.Write([]byte(pubKey)); err != nil {
-		return err
+		return nil, err
 	}
 	if err := tw.Close(); err != nil {
-		return err
+		return nil, err
 	}
-	raw := buf.Bytes()
-
-	if err := ioutil.WriteFile(d.userdataPath(), raw, 0644); err != nil {
-		return err
-	}
-
-	return nil
+	return buf, nil
 }

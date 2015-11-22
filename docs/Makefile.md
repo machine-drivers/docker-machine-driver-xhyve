@@ -28,8 +28,8 @@ GO_LINT=golint
 GO_LDFLAGS :=
 CGO_ENABLED := 1
 ```
-docker-machine-xhyve use vmnet.framework and libguestfs  
-They are binding from C-land to Go
+docker-machine-xhyve use vmnet.framework  
+It is binding from C-land to Go
 ```
 CGO_CFLAGS :=
 CGO_LDFLAGS :=
@@ -133,10 +133,10 @@ OUTPUT := bin/docker-machine-driver-xhyve
 MAIN_FILE := `grep "func main\(\)" *.go -l`
 ```
 
-## Issue of no include header file in /usr/local/include 
+## Issue of no include header file in /usr/local/include
 See https://github.com/zchee/docker-machine-xhyve/issues/4
 ```
-CGO_CFLAGS=${CGO_CFLAGS} -I/usr/local/include 
+CGO_CFLAGS=${CGO_CFLAGS} -I/usr/local/include
 CGO_LDFLAGS=${CGO_LDFLAGS} -L/usr/local/lib
 ```
 
@@ -176,12 +176,12 @@ bin/docker-machine-driver-xhyve:
 	sudo chown root:wheel ./bin/docker-machine-driver-xhyve
 	sudo chmod u+s ./bin/docker-machine-driver-xhyve
 
-build: 
+build:
 	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET} ..."
 	@echo "${CBLACK} ${GO_BUILD} -ldflags ${GO_LDFLAGS} ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin ${CRESET}"; \
 	${GO_BUILD} -ldflags "${GO_LDFLAGS}" ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin || exit 1
 	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel${CRESET}"; \
-	sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT} 
+	sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT}
 
 
 install: bin/docker-machine-driver-xhyve
@@ -195,4 +195,3 @@ dep-restore:
 
 .PHONY: clean
 ```
-
