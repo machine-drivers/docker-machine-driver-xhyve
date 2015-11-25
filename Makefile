@@ -4,46 +4,26 @@
 
 # Global go command environment variables
 GO_CMD := go
-GO_BUILD=${GO_CMD} build -o ${OUTPUT}
-GO_BUILD_RACE=${GO_CMD} build -race -o ${OUTPUT}
-ifeq ($(MACHINE_DEBUG_DRIVER),1)
-	GO_TEST=${GO_CMD} test -v
-else
-	GO_TEST=${GO_CMD} test
-endif
+GO_BUILD=${GO_CMD} build ${VERBOSE_GO} -o ${OUTPUT}
+GO_BUILD_RACE=${GO_CMD} build ${VERBOSE_GO} -race -o ${OUTPUT}
+GO_TEST=${GO_CMD} test ${VERBOSE_GO}
 GO_TEST_RUN=${GO_TEST} -run ${RUN}
-GO_TEST_ALL=test -v -race -cover -bench=.
+GO_TEST_ALL=test -race -cover -bench=.
 GO_RUN=${GO_CMD} run
-GO_INSTALL=${GO_CMD} install -v
+GO_INSTALL=${GO_CMD} install
 GO_CLEAN=${GO_CMD} clean
-GO_DEPS=${GO_CMD} get -d -v
-GO_DEPS_UPDATE=${GO_CMD} get -d -v -u
+GO_DEPS=${GO_CMD} get -d
+GO_DEPS_UPDATE=${GO_CMD} get -d -u
 GO_VET=${GO_CMD} vet
 GO_LINT=golint
 
+# Check godep binary
 GODEP := ${GOPATH}/bin/godep
 GODEP_CMD := $(if ${GODEP}, , $(error Please install godep: go get github.com/tools/godep)) ${GODEP} go
 
-# Initialized build flags
-GO_LDFLAGS :=
-# docker-machine-xhyve use vmnet.framework
-# It is a binding from C-land to Go
-CGO_ENABLED := 1
-CGO_CFLAGS :=
-CGO_LDFLAGS :=
-CGO_CFLAGS :=
-CGO_CPPFLAGS :=
-CGO_CXXFLAGS :=
-CGO_LDFLAGS :=
-# See https://godoc.org/runtime
-GODEBUG :=
-# `GOGC=off go run x.go` or runtime.SetGCPercent(-1)
-# `-1` for off, `50` for aggressive GC, `100` for default, `200` for lazy GC
-GOGC :=
-
 # Set debug gcflag, or optimize ldflags
 #   Usage: GDBDEBUG=1 make
-ifeq ($(GDBDEBUG),1)
+ifeq ($(DEBUG),true)
 	GO_GCFLAGS := -gcflags "-N -l"
 	# Disable function inlining and variable registerization. For lldb, gdb, dlv and the involved debugger tools
 	# See also Dave cheney's blog post: http://goo.gl/6QCJMj
@@ -67,8 +47,14 @@ endif
 
 # Set static build option
 #   Usage: STATIC=1 make
-ifeq ($(STATIC),1)
+ifeq ($(STATIC),true)
 	GO_LDFLAGS := $(GO_LDFLAGS) -extldflags -static
+endif
+
+# Verbose
+VERBOSE_GO := 
+ifeq ($(VERBOSE),true)
+	VERBOSE_GO := -v
 endif
 
 # Parse git current branch commit-hash
@@ -86,10 +72,9 @@ export GOOS=darwin
 # Support go1.5 vendoring (let us avoid messing with GOPATH or using godep)
 export GO15VENDOREXPERIMENT=1
 
-# Whether the linker should use external linking mode
-# when using -linkmode=auto with code that uses cgo.
-# Set to 0 to disable external linking mode, 1 to enable it.
-export GO_EXTLINK_ENABLED=
+# docker-machine-xhyve use vmnet.framework
+# It is a binding from C-land to Go
+export CGO_ENABLED=1
 
 
 # Package side settings
@@ -103,15 +88,11 @@ OUTPUT := bin/docker-machine-driver-xhyve
 # FIXME: Not support main.go
 MAIN_FILE := `grep "func main\(\)" *.go -l`
 
-# Issue of no include header file in /usr/local/include
-# See https://github.com/zchee/docker-machine-xhyve/issues/4
-CGO_CFLAGS=${CGO_CFLAGS} -I/usr/local/include
-CGO_LDFLAGS=${CGO_LDFLAGS} -L/usr/local/lib
-
-# Include driver debug makefile if $MACHINE_DEBUG_DRIVER=1
-ifeq ($(MACHINE_DEBUG_DRIVER),1)
+# Include driver debug makefile if $MACHINE_DRIVER_DEBUG=1
+ifeq ($(MACHINE_DRIVER_DEBUG),1)
 	include mk/driver.mk
 endif
+
 
 # Colorable output
 CRESET := \x1b[0m
@@ -130,20 +111,17 @@ CWHITE := \x1b[37;01m
 #
 default: build
 
-makefile-debug:
-	@echo ${GO_CMD}
-
 clean:
 	@${RM} ./bin/docker-machine-driver-xhyve
 
-bin/docker-machine-driver-xhyve: build
-
-build:
+bin/docker-machine-driver-xhyve:
 	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET} ..."
-	@echo "${CBLACK} ${GO_BUILD} -ldflags ${GO_LDFLAGS} ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin ${CRESET}"; \
-	${GO_BUILD} -ldflags "${GO_LDFLAGS}" ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin || exit 1
+	@echo "${CBLACK} ${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${CGO_CFLAGS} ${CGO_LDFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin ${CRESET}"; \
+	${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${CGO_CFLAGS} ${CGO_LDFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE}/bin || exit 1
 	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel. Please root password${CRESET}"; \
 	sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT}
+
+build: bin/docker-machine-driver-xhyve
 
 install: bin/docker-machine-driver-xhyve
 	sudo cp -p ./bin/docker-machine-driver-xhyve /usr/local/bin
@@ -182,8 +160,5 @@ test-driver-status:
 test-driver-stop:
 test-driver-upgrade:
 test-driver-url:
-
-debug:
-		echo 'true'
 
 .PHONY: clean run kill
