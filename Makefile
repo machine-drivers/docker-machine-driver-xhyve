@@ -19,7 +19,7 @@ GO_LINT=golint
 
 # Check godep binary
 GODEP := ${GOPATH}/bin/godep
-GODEP_CMD := $(if ${GODEP}, , $(error Please install godep: go get github.com/tools/godep)) ${GODEP} go
+GODEP_CMD := $(if ${GODEP}, , $(error Please install godep: go get github.com/tools/godep)) ${GODEP}
 
 # Set debug gcflag, or optimize ldflags
 #   Usage: GDBDEBUG=1 make
