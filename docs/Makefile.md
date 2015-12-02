@@ -28,7 +28,7 @@ GO_LINT=golint
 GO_LDFLAGS :=
 CGO_ENABLED := 1
 ```
-docker-machine-xhyve use vmnet.framework  
+docker-machine-driver-xhyve use vmnet.framework  
 It is binding from C-land to Go
 ```
 CGO_CFLAGS :=
@@ -134,7 +134,7 @@ MAIN_FILE := `grep "func main\(\)" *.go -l`
 ```
 
 ## Issue of no include header file in /usr/local/include
-See https://github.com/zchee/docker-machine-xhyve/issues/4
+See https://github.com/zchee/docker-machine-driver-xhyve/issues/4
 ```
 CGO_CFLAGS=${CGO_CFLAGS} -I/usr/local/include
 CGO_LDFLAGS=${CGO_LDFLAGS} -L/usr/local/lib

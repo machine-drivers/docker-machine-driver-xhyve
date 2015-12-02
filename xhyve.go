@@ -18,8 +18,8 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
-	"github.com/zchee/docker-machine-xhyve/version"
-	"github.com/zchee/docker-machine-xhyve/vmnet"
+	"github.com/zchee/docker-machine-driver-xhyve/version"
+	"github.com/zchee/docker-machine-driver-xhyve/vmnet"
 )
 
 const (
@@ -249,7 +249,7 @@ func (d *Driver) Create() error {
 
 	// Fix file permission root to current user.
 	// In order to avoid require sudo of vmnet.framework, Execute the root owner(and root uid)
-	// "docker-machine-xhyve" and "goxhyve" binary in golang.
+	// "docker-machine-driver-xhyve" and "goxhyve" binary in golang.
 	log.Infof("Fix file permission...")
 	os.Chown(d.ResolveStorePath("."), 501, 20) //TODO Parse current user uid and gid
 	files, _ := ioutil.ReadDir(d.ResolveStorePath("."))

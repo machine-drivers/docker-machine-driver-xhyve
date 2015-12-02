@@ -1,11 +1,11 @@
 {
-	"ImportPath": "github.com/zchee/docker-machine-xhyve",
+	"ImportPath": "github.com/zchee/docker-machine-driver-xhyve",
 	"GoVersion": "devel",
 	"Packages": [
-		"github.com/zchee/docker-machine-xhyve",
-		"github.com/zchee/docker-machine-xhyve/bin",
-		"github.com/zchee/docker-machine-xhyve/version",
-		"github.com/zchee/docker-machine-xhyve/vmnet"
+		"github.com/zchee/docker-machine-driver-xhyve",
+		"github.com/zchee/docker-machine-driver-xhyve/bin",
+		"github.com/zchee/docker-machine-driver-xhyve/version",
+		"github.com/zchee/docker-machine-driver-xhyve/vmnet"
 	],
 	"Deps": [
 		{

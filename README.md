@@ -1,8 +1,8 @@
-# docker-machine-xhyve
+# docker-machine-driver-xhyve
 
 Docker Machine driver plugin for [xhyve](https://github.com/mist64/xhyve) native OS X Hypervisor
 
-Master branch inherited from [nathanleclaire/docker-machine-xhyve](https://github.com/nathanleclaire/docker-machine-xhyve). Thanks [@nathanleclaire](https://github.com/nathanleclaire) :)  
+Master branch inherited from [nathanleclaire/docker-machine-driver-xhyve](https://github.com/nathanleclaire/docker-machine-driver-xhyve). Thanks [@nathanleclaire](https://github.com/nathanleclaire) :)  
 If you have issues or pull-requests, Desired to be posted to this repository.
 
 
@@ -15,11 +15,11 @@ If you have issues or pull-requests, Desired to be posted to this repository.
 ### docker-machine
 https://github.com/docker/machine
 
-docker-machine-xhyve using docker-machine plugin model.
+docker-machine-driver-xhyve using docker-machine plugin model.
 
 **!! Please do not post the issue of this repository to the docker/machine !!**  
 It will interfere with the development of the docker-machine.  
-If you were doubt problem either, please post to this repository [issues](https://github.com/zchee/docker-machine-xhyve/issues).
+If you were doubt problem either, please post to this repository [issues](https://github.com/zchee/docker-machine-driver-xhyve/issues).
 
 ```bash
 > go get github.com/docker/machine
@@ -34,7 +34,7 @@ If you were doubt problem either, please post to this repository [issues](https:
 https://github.com/zchee/xhyve-bindings
 
 Separated xhyve Go bindings into [xhyve-bindings](https://github.com/zchee/xhyve-bindings).  
-Or, see experimental embedded xhyve branch [embed-xhyve](https://github.com/zchee/docker-machine-xhyve/tree/embed-xhyve)
+Or, see experimental embedded xhyve branch [embed-xhyve](https://github.com/zchee/docker-machine-driver-xhyve/tree/embed-xhyve)
 
 ```bash
 > go get -d github.com/zchee/xhyve-bindings
@@ -48,8 +48,8 @@ Or, see experimental embedded xhyve branch [embed-xhyve](https://github.com/zche
 Like the docker-machine's `Makefile`, install the `docker-machine-driver-xhyve` binary will be in `/usr/local/bin`.  
 
 ```bash
-> go get -d github.com/zchee/docker-machine-xhyve
-> cd $GOPATH/src/github.com/zchee/docker-machine-xhyve
+> go get -d github.com/zchee/docker-machine-driver-xhyve
+> cd $GOPATH/src/github.com/zchee/docker-machine-driver-xhyve
 > make
 > make install
 ```
@@ -57,8 +57,8 @@ Like the docker-machine's `Makefile`, install the `docker-machine-driver-xhyve` 
 
 ## Would you do me a favor?
 I'm very anxious whether other users(except me) are able to launch the xhyve.  
-So, if you were able to launch the xhyve use docker-machine-xhyve, Would you post a report to this issue thread?
-https://github.com/zchee/docker-machine-xhyve/issues/18
+So, if you were able to launch the xhyve use docker-machine-driver-xhyve, Would you post a report to this issue thread?
+https://github.com/zchee/docker-machine-driver-xhyve/issues/18
 
 At present, I do not have a way to automatically test.  
 `Travis CI` provide only the OS X 10.9 Marvericks. Not support `Hypervisor.framework` and `vmnet.framework`.  
@@ -101,15 +101,15 @@ Unable to create VM (-85377018)
 ## Known isuue
 
 ### Not implement shared folder
-`docker-machine-xhyve` also `xhyve` does not implement shared folder system.  
+`docker-machine-driver-xhyve` also `xhyve` does not implement shared folder system.  
 Please use the existing protocol for the time being, such as `NFS`.
 
-`docker-machine-xhyve` can create a `NFS` share automatically for you, but this feature
+`docker-machine-driver-xhyve` can create a `NFS` share automatically for you, but this feature
 is highly experimental. To use it specify `--xhyve-experimental-nfs-share` when creating your
 machine.
 
 ### Get state use `ssh`, do not know real vm state
-`docker-machine-xhyve` checking vm state use send `exit 0` on `ssh`.  
+`docker-machine-driver-xhyve` checking vm state use send `exit 0` on `ssh`.  
 but, that is not real state of vm.  
 
 `xhyve` has the XPC dictionary on backend. (still uncertain)  
@@ -117,7 +117,7 @@ XPC Services is part of libSystem, provides a lightweight mechanism for basic in
 In the future, get the state to use it.
 
 ### Does not clean up the vmnet when remove a VM
-Current state, `docker-machine-xhyve` does not clean up the vmnet configuration.  
+Current state, `docker-machine-driver-xhyve` does not clean up the vmnet configuration.  
 
 ```
 Running xhyve vm (e.g. IP: 192.168.64.1)
