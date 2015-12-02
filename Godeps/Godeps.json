@@ -18,19 +18,39 @@
 			"Rev": "48fe12af0c785d62ac852ea8428a9789a4e9d7fd"
 		},
 		{
-			"ImportPath": "github.com/docker/machine/commands/mcndirs",
-			"Comment": "v0.5.0-77-g45d38fd",
-			"Rev": "45d38fd31bba9764a644bcfef02c4e69755b2bee"
+			"ImportPath": "github.com/docker/machine/libmachine/drivers",
+			"Comment": "v0.5.0-303-g5ccd7f5",
+			"Rev": "5ccd7f57e77e6ca59d1587c6deaad88ef5d32f7c"
 		},
 		{
-			"ImportPath": "github.com/docker/machine/drivers/none",
-			"Comment": "v0.5.0-77-g45d38fd",
-			"Rev": "45d38fd31bba9764a644bcfef02c4e69755b2bee"
+			"ImportPath": "github.com/docker/machine/libmachine/log",
+			"Comment": "v0.5.0-303-g5ccd7f5",
+			"Rev": "5ccd7f57e77e6ca59d1587c6deaad88ef5d32f7c"
 		},
 		{
-			"ImportPath": "github.com/docker/machine/libmachine",
-			"Comment": "v0.5.0-77-g45d38fd",
-			"Rev": "45d38fd31bba9764a644bcfef02c4e69755b2bee"
+			"ImportPath": "github.com/docker/machine/libmachine/mcnflag",
+			"Comment": "v0.5.0-303-g5ccd7f5",
+			"Rev": "5ccd7f57e77e6ca59d1587c6deaad88ef5d32f7c"
+		},
+		{
+			"ImportPath": "github.com/docker/machine/libmachine/mcnutils",
+			"Comment": "v0.5.0-303-g5ccd7f5",
+			"Rev": "5ccd7f57e77e6ca59d1587c6deaad88ef5d32f7c"
+		},
+		{
+			"ImportPath": "github.com/docker/machine/libmachine/ssh",
+			"Comment": "v0.5.0-303-g5ccd7f5",
+			"Rev": "5ccd7f57e77e6ca59d1587c6deaad88ef5d32f7c"
+		},
+		{
+			"ImportPath": "github.com/docker/machine/libmachine/state",
+			"Comment": "v0.5.0-303-g5ccd7f5",
+			"Rev": "5ccd7f57e77e6ca59d1587c6deaad88ef5d32f7c"
+		},
+		{
+			"ImportPath": "github.com/docker/machine/libmachine/version",
+			"Comment": "v0.5.0-303-g5ccd7f5",
+			"Rev": "5ccd7f57e77e6ca59d1587c6deaad88ef5d32f7c"
 		},
 		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
@@ -42,15 +62,15 @@
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/curve25519",
-			"Rev": "575fdbe86e5dd89229707ebec0575ce7d088a4a6"
+			"Rev": "beef0f4390813b96e8e68fd78570396d0f4751fc"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh",
-			"Rev": "575fdbe86e5dd89229707ebec0575ce7d088a4a6"
+			"Rev": "beef0f4390813b96e8e68fd78570396d0f4751fc"
 		},
 		{
 			"ImportPath": "golang.org/x/net/http2/hpack",
-			"Rev": "9946ad7d5eae91d8edca4f54d1a1e130a052e823"
+			"Rev": "1d9fd3b8333e891c0e7353e1adcfe8a612573033"
 		}
 	]
 }
