@@ -147,18 +147,19 @@ run: driver-run
 kill: driver-kill
 
 # TODO: for zsh completion. zsh do not get jobs of includes makefile
-test-driver-env:
-test-driver-ip:
-test-driver-kill:
-test-driver-ls:
-test-driver-regenerate-certs:
-test-driver-restart:
-test-driver-rm:
-test-driver-ssh:
-test-driver-start:
-test-driver-status:
-test-driver-stop:
-test-driver-upgrade:
-test-driver-url:
+test-env:
+test-inspect:
+test-ip:
+test-kill:
+test-ls:
+test-regenerate-certs:
+test-restart:
+test-rm:
+test-ssh:
+test-start:
+test-status:
+test-stop:
+test-upgrade:
+test-url:
 
 .PHONY: clean run kill
