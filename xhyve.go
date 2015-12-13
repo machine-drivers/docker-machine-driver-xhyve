@@ -18,6 +18,7 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+	"github.com/satori/go.uuid"
 	"github.com/zchee/docker-machine-driver-xhyve/version"
 	"github.com/zchee/docker-machine-driver-xhyve/vmnet"
 )
@@ -247,6 +248,11 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	log.Infof("Generating %dMB disk image...", d.DiskSize)
+	if err := d.generateDiskImage(d.DiskSize); err != nil {
+		return err
+	}
+
 	// Fix file permission root to current user.
 	// In order to avoid require sudo of vmnet.framework, Execute the root owner(and root uid)
 	// "docker-machine-driver-xhyve" and "goxhyve" binary in golang.
@@ -258,21 +264,14 @@ func (d *Driver) Create() error {
 		os.Chown(d.ResolveStorePath(f.Name()), 501, 20)
 	}
 
-	log.Infof("Generating disk image...")
-	if err := d.generateDiskImage(d.DiskSize); err != nil {
-		return err
-	}
-	os.Chown(d.ResolveStorePath(d.MachineName+".dmg"), 501, 20)
-	log.Debugf("Created disk size: %dMB", d.DiskSize)
-
 	log.Infof("Generate UUID...")
-	d.UUID = uuidgen() //TODO Native golang instead execute "uuidgen"
-	log.Debugf("uuidgen generated UUID: %s", d.UUID)
+	d.UUID = uuid.NewV4().String()
+	log.Debugf("Generated UUID: %s", d.UUID)
 
 	log.Infof("Convert UUID to MAC address...")
 	rawUUID, _ := vmnet.GetMACAddressByUUID(d.UUID)
-	d.MacAddr = d.trimMacAddress(rawUUID)
-	log.Debugf("uuid2mac output MAC address: %s", d.MacAddr)
+	d.MacAddr = trimMacAddress(rawUUID)
+	log.Debugf("Converted MAC address: %s", d.MacAddr)
 
 	log.Infof("Starting %s...", d.MachineName)
 	if err := d.Start(); err != nil {
@@ -411,14 +410,6 @@ func (d *Driver) setMachineNameIfNotSet() {
 	if d.MachineName == "" {
 		d.MachineName = fmt.Sprintf("docker-machine-unknown")
 	}
-}
-
-//Trimming "0" of the ten's digit
-func (d *Driver) trimMacAddress(rawUUID string) string {
-	re := regexp.MustCompile(`[0]([A-Fa-f0-9][:])`)
-	mac := re.ReplaceAllString(rawUUID, "$1")
-
-	return mac
 }
 
 func (d *Driver) getIPfromDHCPLease() (string, error) {
@@ -602,4 +593,12 @@ func (d *Driver) setupNFSShare() error {
 	}
 
 	return nil
+}
+
+//Trimming "0" of the ten's digit
+func trimMacAddress(rawUUID string) string {
+	re := regexp.MustCompile(`[0]([A-Fa-f0-9][:])`)
+	mac := re.ReplaceAllString(rawUUID, "$1")
+
+	return mac
 }
