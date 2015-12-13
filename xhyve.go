@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -253,15 +254,13 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	// Fix file permission root to current user.
-	// In order to avoid require sudo of vmnet.framework, Execute the root owner(and root uid)
-	// "docker-machine-driver-xhyve" and "goxhyve" binary in golang.
+	// Fix file permission root to current user for vmnet.framework
 	log.Infof("Fix file permission...")
-	os.Chown(d.ResolveStorePath("."), 501, 20) //TODO Parse current user uid and gid
+	os.Chown(d.ResolveStorePath("."), syscall.Getuid(), syscall.Getegid())
 	files, _ := ioutil.ReadDir(d.ResolveStorePath("."))
 	for _, f := range files {
 		log.Debugf(d.ResolveStorePath(f.Name()))
-		os.Chown(d.ResolveStorePath(f.Name()), 501, 20)
+		os.Chown(d.ResolveStorePath(f.Name()), syscall.Getuid(), syscall.Getegid())
 	}
 
 	log.Infof("Generate UUID...")
