@@ -14,11 +14,8 @@ import (
 )
 
 var (
-	//	ErrMachineExist     = errors.New("machine already exists")
-	//	ErrMachineNotExist  = errors.New("machine does not exist")
 	ErrDdNotFound      = errors.New("xhyve not found")
 	ErrUuidgenNotFound = errors.New("uuidgen not found")
-	//	ErrUuid2macNotFound = errors.New("uuid2mac not found")
 	ErrHdiutilNotFound = errors.New("hdiutil not found")
 	ErrVBMNotFound     = errors.New("VBoxManage not found")
 	vboxManageCmd      = setVBoxManageCmd()
