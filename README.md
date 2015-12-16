@@ -17,7 +17,7 @@ https://github.com/docker/machine
 
 docker-machine-driver-xhyve using docker-machine plugin model.
 
-**!! Please do not post the issue of this repository to the docker/machine !!**  
+**Please do not post the issue of this repository to the docker/machine**  
 It will interfere with the development of the docker-machine.  
 If you were doubt problem either, please post to this repository [issues](https://github.com/zchee/docker-machine-driver-xhyve/issues).
 
@@ -54,6 +54,18 @@ Like the docker-machine's `Makefile`, install the `docker-machine-driver-xhyve` 
 > make install
 ```
 
+## Usage
+
+### Available flags
+
+| Flag name                        | Type   | Description                              | Default                                                                                                          |
+|----------------------------------|--------|------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| `--xhyve-boot2docker-url`        | string | The URL(Path) of the boot2docker image   | `$HOME/.docker/machine/cache/boot2docker.iso`                                                                    |
+| `--xhyve-cpu-count`              | int    | Number of CPUs to use the create the VM  | `1`                                                                                                              |
+| `--xhyve-memory-size`            | int    | Size of memory for the guest             | `1024`                                                                                                           |
+| `--xhyve-disk-size`              | int    | Size of disk for the guest (MB)          | `20000`                                                                                                          |
+| `--xhyve-boot-cmd`               | string | Booting xhyve iPXE commands              | `loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10 base host=boot2docker` |
+| `--xhyve-experimental-nfs-share` | bool   | Enable `NFS` folder share (experimental) | `false`                                                                                                          |
 
 ## Would you do me a favor?
 I'm very anxious whether other users(except me) are able to launch the xhyve.  
