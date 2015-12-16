@@ -21,24 +21,6 @@ var (
 	vboxManageCmd      = setVBoxManageCmd()
 )
 
-func uuidgen() string {
-	cmd := exec.Command("uuidgen")
-
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	log.Debugf("executing: %v", cmd)
-
-	err := cmd.Run()
-	if err != nil {
-		if ee, ok := err.(*exec.Error); ok && ee == exec.ErrNotFound {
-			err = ErrUuidgenNotFound
-		}
-	}
-
-	out := stdout.String()
-	return strings.Replace(out, "\n", "", 1)
-}
-
 func hdiutil(args ...string) error {
 	cmd := exec.Command("hdiutil", args...)
 	cmd.Stdout = os.Stdout
