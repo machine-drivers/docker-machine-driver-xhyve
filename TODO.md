@@ -1,8 +1,20 @@
 TODO
 ===
-Current TODO is listed in [README.md](https://github.com/zchee/docker-machine-driver-xhyve/blob/master/README.md#todo).
+
+- [ ] Shared folder support
+  - Use `9p` filesystem also `virtio-9p`? See https://github.com/mist64/xhyve/issues/70#issuecomment-144935541
+- [ ] Replace execute binary to Go `syscall`
+    - [ ] `hdutil`
+    - [x]  `dd`
+      - Create ext.4 filesystem disk image use `libguestfs`
+- [ ] Get vm state, xpc or etc.
+- [ ] Cleanup code and more performance
+- [ ] NFS Share
+    - [ ] Validate created `/etc/exports` using `ntpd checkexports` and only overwrite when valid
+    - [ ] Remove from `/etc/exports` on `rm`
 
 ## archived
+- [x] Replace generate uuid, native Go code instead of `uuidgen`
 - [x] Support(Ensure) `kill`, `ls`, `restart`, `status`, `stop` command
 
 - [x] Daemonize xhyve use `syscall` or `go execute external process myself` or `OS X launchd daemon` or other daemonize method
