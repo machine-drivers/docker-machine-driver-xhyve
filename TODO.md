@@ -5,8 +5,6 @@ TODO
   - Use `9p` filesystem also `virtio-9p`? See https://github.com/mist64/xhyve/issues/70#issuecomment-144935541
 - [ ] Replace execute binary to Go `syscall`
     - [ ] `hdutil`
-    - [x]  `dd`
-      - Create ext.4 filesystem disk image use `libguestfs`
 - [ ] Get vm state, xpc or etc.
 - [ ] Cleanup code and more performance
 - [ ] NFS Share
@@ -14,6 +12,8 @@ TODO
     - [ ] Remove from `/etc/exports` on `rm`
 
 ## archived
+- [x]  `dd`
+  - Create ext.4 filesystem disk image use `libguestfs`
 - [x] Replace generate uuid, native Go code instead of `uuidgen`
 - [x] Support(Ensure) `kill`, `ls`, `restart`, `status`, `stop` command
 
