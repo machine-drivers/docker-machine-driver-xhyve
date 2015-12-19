@@ -144,6 +144,8 @@ dep-restore:
 
 run: driver-run
 
+rm: test-rm
+
 kill: driver-kill
 
 # TODO: for zsh completion. zsh do not get jobs of includes makefile
