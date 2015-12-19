@@ -58,14 +58,14 @@ Like the docker-machine's `Makefile`, install the `docker-machine-driver-xhyve` 
 
 ### Available flags
 
-| Flag name                        | Type   | Description                              | Default                                                                                                          |
-|----------------------------------|--------|------------------------------------------|------------------------------------------------------------------------------------------------------------------|
-| `--xhyve-boot2docker-url`        | string | The URL(Path) of the boot2docker image   | `$HOME/.docker/machine/cache/boot2docker.iso`                                                                    |
-| `--xhyve-cpu-count`              | int    | Number of CPUs to use the create the VM  | `1`                                                                                                              |
-| `--xhyve-memory-size`            | int    | Size of memory for the guest             | `1024`                                                                                                           |
-| `--xhyve-disk-size`              | int    | Size of disk for the guest (MB)          | `20000`                                                                                                          |
-| `--xhyve-boot-cmd`               | string | Booting xhyve iPXE commands              | `loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10 base host=boot2docker` |
-| `--xhyve-experimental-nfs-share` | bool   | Enable `NFS` folder share (experimental) | `false`                                                                                                          |
+| Flag name                        | Environment variable            | Type   | Description                              | Default                                                  |
+|----------------------------------|--------------------------------|--------|------------------------------------------|----------------------------------------------------------|
+| `--xhyve-boot2docker-url`        | `XHYVE_BOOT2DOCKER_URL`        | string | The URL(Path) of the boot2docker image   | `$HOME/.docker/machine/cache/boot2docker.iso`            |
+| `--xhyve-cpu-count`              | `XHYVE_CPU_COUNT`              | int    | Number of CPUs to use the create the VM  | `1`                                                      |
+| `--xhyve-memory-size`            | `XHYVE_MEMORY_SIZE`            | int    | Size of memory for the guest             | `1024`                                                   |
+| `--xhyve-disk-size`              | `XHYVE_DISK_SIZE`              | int    | Size of disk for the guest (MB)          | `20000`                                                  |
+| `--xhyve-boot-cmd`               | `XHYVE_BOOT_CMD`               | string | Booting xhyve iPXE commands              | See [boot2docker/boot2docker/doc/AUTOMATED_SCRIPT.md][1] |
+| `--xhyve-experimental-nfs-share` | `XHYVE_EXPERIMENTAL_NFS_SHARE` | bool   | Enable `NFS` folder share (experimental) | `false`                                                  |
 
 ## Would you do me a favor?
 I'm very anxious whether other users(except me) are able to launch the xhyve.  
@@ -152,3 +152,6 @@ I will fix after I understand the `vmnet.framework`
 ### Total Memory can not be set more than 3GB
 This seems to be a bug from bhyve.  
 I tested CoreOS and TinyCoreLinux by original `xhyve`,  but also could not be set more than 3GB.  
+
+
+[1]: https://github.com/boot2docker/boot2docker/blob/master/doc/AUTOMATED_SCRIPT.md#extracting-boot-parameters
