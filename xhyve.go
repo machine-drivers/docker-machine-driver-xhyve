@@ -316,7 +316,7 @@ func (d *Driver) Start() error {
 	uuid := d.UUID
 	vmlinuz := d.ResolveStorePath("vmlinuz64")
 	initrd := d.ResolveStorePath("initrd.img")
-	iso := d.Boot2DockerURL
+	iso := d.ResolveStorePath(isoFilename)
 	img := d.ResolveStorePath(d.MachineName + ".dmg")
 	bootcmd := d.BootCmd
 
