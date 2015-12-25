@@ -15,8 +15,8 @@ env:
     - MACHINE_DRIVER_DEBUG=1
 
 before_install:
-- go get github.com/docker/machine
-- pushd $GOPATH/src/github.com/docker/machine && make build && make install && popd
+- curl -L https://github.com/docker/machine/releases/download/v0.5.4/docker-machine_darwin-amd64 >/usr/local/bin/docker-machine
+- chmod +x /usr/local/bin/docker-machine
 
 before_script:
   - make
