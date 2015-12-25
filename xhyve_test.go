@@ -26,7 +26,7 @@ func TestPreCreateCheck(t *testing.T) {
 
 func TestTrimMacAddress(t *testing.T) {
 	// test MAC address 02:f0:0d:60:0f:30 and reverse
-	testMacAddress := newTestDriver("default").trimMacAddress("02:f0:0d:60:01:03")
+	testMacAddress := trimMacAddress("02:f0:0d:60:01:03")
 	newMacAddress := "2:f0:d:60:1:03"
 
 	if !assert.Equal(t, testMacAddress, newMacAddress) {
