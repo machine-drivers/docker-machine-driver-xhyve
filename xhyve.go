@@ -444,14 +444,12 @@ func (d *Driver) extractKernelImages() error {
 	l, _ := ioutil.ReadDir(iso.Name())
 	s := make([]string, 0, 100)
 	for _, f := range l {
-		re := regexp.MustCompile(`(.*)-(.*)`)
-		re2 := regexp.MustCompile(`(^v.*)`)
+		re := regexp.MustCompile(`Boot2Docker-(v.*)`)
 		s = re.FindStringSubmatch(f.Name())
-		for _, v := range s {
-			if re2.MatchString(v) {
-				d.Boot2DockerIsoVersion = v
-				break
-			}
+
+		if len(s) == 2 {
+			d.Boot2DockerIsoVersion = s[1]
+			break
 		}
 	}
 	log.Debugf("Boot2docker version: %s", d.Boot2DockerIsoVersion)
