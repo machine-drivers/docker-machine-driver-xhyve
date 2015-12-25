@@ -12,6 +12,11 @@ env:
   global:
     - GO15VENDOREXPERIMENT=1
     - GOMAXPROCS=8
+    - MACHINE_DRIVER_DEBUG=1
+
+before_install:
+- go get github.com/docker/machine
+- pushd $GOPATH/src/github.com/docker/machine && make build && make install && popd
 
 before_script:
   - make
@@ -19,3 +24,4 @@ before_script:
 
 script:
   - make test
+  - make driver-run
