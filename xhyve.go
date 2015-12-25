@@ -434,24 +434,27 @@ func (d *Driver) extractKernelImages() error {
 	}
 
 	log.Debugf("Getting Boot2docker version ...")
-	iso, err := os.Open("/Volumes")
+
+	// TODO: More faster parse
+	l, err := ioutil.ReadDir("/Volumes")
 	if err != nil {
 		return err
 	}
-	defer iso.Close()
 
-	// TODO: More faster parse
-	l, _ := ioutil.ReadDir(iso.Name())
-	s := make([]string, 0, 100)
 	for _, f := range l {
 		re := regexp.MustCompile(`Boot2Docker-(v.*)`)
-		s = re.FindStringSubmatch(f.Name())
+		s := re.FindStringSubmatch(f.Name())
 
 		if len(s) == 2 {
 			d.Boot2DockerIsoVersion = s[1]
 			break
 		}
 	}
+
+	if d.Boot2DockerIsoVersion == "" {
+		return fmt.Errorf("Couldn't find Boot2Docker volume in %#v", l)
+	}
+
 	log.Debugf("Boot2docker version: %s", d.Boot2DockerIsoVersion)
 
 	volumeRootDir := "/Volumes/Boot2Docker-" + d.Boot2DockerIsoVersion
