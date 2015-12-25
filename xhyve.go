@@ -98,7 +98,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.IntFlag{
 			EnvVar: "XHYVE_MEMORY_SIZE",
-			Name:   "xhyve-memory",
+			Name:   "xhyve-memory-size",
 			Usage:  "Size of memory for host in MB",
 			Value:  defaultMemory,
 		},
