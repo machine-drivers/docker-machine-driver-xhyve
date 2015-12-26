@@ -21,19 +21,21 @@ var (
 	vboxManageCmd      = setVBoxManageCmd()
 )
 
-func hdiutil(args ...string) error {
+func hdiutil(args ...string) ([]byte, error) {
 	cmd := exec.Command("hdiutil", args...)
-	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	log.Debugf("executing: %v %v", cmd, strings.Join(args, " "))
 
-	err := cmd.Run()
+	out, err := cmd.Output()
 	if err != nil {
 		log.Error(err)
+		return nil, nil
 	}
 
-	return nil
+	log.Debugf("output: \n%s", out)
+
+	return out, nil
 }
 
 // detect the VBoxManage cmd's path if needed

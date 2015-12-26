@@ -429,30 +429,23 @@ func (d *Driver) publicSSHKeyPath() string {
 
 func (d *Driver) extractKernelImages() error {
 	log.Debugf("Mounting %s", isoFilename)
-	if err := hdiutil("attach", d.ResolveStorePath(isoFilename)); err != nil {
+
+	out, err := hdiutil("attach", d.ResolveStorePath(isoFilename))
+	if err != nil {
 		return err
 	}
 
 	log.Debugf("Getting Boot2docker version ...")
 
-	// TODO: More faster parse
-	l, err := ioutil.ReadDir("/Volumes")
-	if err != nil {
-		return err
-	}
+	re := regexp.MustCompile(`Boot2Docker-(v.*\d)`)
+	s := re.FindStringSubmatch(string(out))
 
-	for _, f := range l {
-		re := regexp.MustCompile(`Boot2Docker-(v.*)`)
-		s := re.FindStringSubmatch(f.Name())
-
-		if len(s) == 2 {
-			d.Boot2DockerIsoVersion = s[1]
-			break
-		}
+	if len(s) == 2 {
+		d.Boot2DockerIsoVersion = s[1]
 	}
 
 	if d.Boot2DockerIsoVersion == "" {
-		return fmt.Errorf("Couldn't find Boot2Docker volume in %#v", l)
+		return fmt.Errorf("Couldn't find Boot2Docker volume in %#v", out)
 	}
 
 	log.Debugf("Boot2docker version: %s", d.Boot2DockerIsoVersion)
@@ -470,7 +463,7 @@ func (d *Driver) extractKernelImages() error {
 		return err
 	}
 	log.Debugf("Unmounting %s", isoFilename)
-	if err := hdiutil("detach", volumeRootDir); err != nil {
+	if _, err := hdiutil("detach", volumeRootDir); err != nil {
 		return err
 	}
 
@@ -480,7 +473,7 @@ func (d *Driver) extractKernelImages() error {
 func (d *Driver) generateDiskImage(count int64) error {
 	output := d.ResolveStorePath(d.MachineName)
 
-	if err := hdiutil("create", "-megabytes", fmt.Sprintf("%d", d.DiskSize), output); err != nil {
+	if _, err := hdiutil("create", "-megabytes", fmt.Sprintf("%d", d.DiskSize), output); err != nil {
 		return err
 	}
 
