@@ -1,6 +1,7 @@
 sudo: false
 
 os: osx
+osx_image: xcode7.2
 
 language: go
 
@@ -12,12 +13,9 @@ env:
     - GO15VENDOREXPERIMENT=1
     - GOMAXPROCS=8
 
-cache:
-  directories:
-  - ~/Library/Caches/Homebrew
-
-before_install:
-  - go get -d -v -u github.com/zchee/docker-machine-xhyve
+before_script:
+  - make
+  - make install
 
 script:
-  - make install
+  - make test
