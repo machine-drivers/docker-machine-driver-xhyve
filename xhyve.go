@@ -157,7 +157,7 @@ func (d *Driver) DriverName() string {
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Boot2DockerURL = flags.String("xhyve-boot2docker-url")
 	d.CPU = flags.Int("xhyve-cpu-count")
-	d.Memory = flags.Int("xhyve-memory")
+	d.Memory = flags.Int("xhyve-memory-size")
 	d.DiskSize = int64(flags.Int("xhyve-disk-size"))
 	d.BootCmd = flags.String("xhyve-boot-cmd")
 	d.SwarmMaster = flags.Bool("swarm-master")
