@@ -329,11 +329,19 @@ func (d *Driver) Start() error {
 		fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd),
 		"-d", //TODO fix daemonize flag
 	)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	log.Debug(cmd)
+
+	err := cmd.Start()
+	if err != nil {
+		return err
+	}
+
 	go func() {
-		err := cmd.Run()
+		err := cmd.Wait()
 		if err != nil {
-			log.Error(err, cmd.Stdout)
+			log.Error(err)
 		}
 	}()
 
