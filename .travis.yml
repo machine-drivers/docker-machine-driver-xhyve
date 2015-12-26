@@ -12,6 +12,13 @@ env:
   global:
     - GO15VENDOREXPERIMENT=1
     - GOMAXPROCS=8
+    - MACHINE_DRIVER_DEBUG=1
+
+before_install:
+- curl -L https://github.com/docker/machine/releases/download/v0.5.4/docker-machine_darwin-amd64 >/usr/local/bin/docker-machine
+- chmod +x /usr/local/bin/docker-machine
+- go get -d github.com/zchee/xhyve-bindings
+- pushd $GOPATH/src/github.com/zchee/xhyve-bindings && make && make install && popd
 
 before_script:
   - make
@@ -19,3 +26,4 @@ before_script:
 
 script:
   - make test
+  - make driver-run

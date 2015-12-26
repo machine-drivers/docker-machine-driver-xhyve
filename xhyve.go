@@ -329,11 +329,19 @@ func (d *Driver) Start() error {
 		fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd),
 		"-d", //TODO fix daemonize flag
 	)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	log.Debug(cmd)
+
+	err := cmd.Start()
+	if err != nil {
+		return err
+	}
+
 	go func() {
-		err := cmd.Run()
+		err := cmd.Wait()
 		if err != nil {
-			log.Error(err, cmd.Stdout)
+			log.Error(err)
 		}
 	}()
 
@@ -429,31 +437,25 @@ func (d *Driver) publicSSHKeyPath() string {
 
 func (d *Driver) extractKernelImages() error {
 	log.Debugf("Mounting %s", isoFilename)
-	if err := hdiutil("attach", d.ResolveStorePath(isoFilename)); err != nil {
+
+	out, err := hdiutil("attach", d.ResolveStorePath(isoFilename))
+	if err != nil {
 		return err
 	}
 
 	log.Debugf("Getting Boot2docker version ...")
-	iso, err := os.Open("/Volumes")
-	if err != nil {
-		return err
-	}
-	defer iso.Close()
 
-	// TODO: More faster parse
-	l, _ := ioutil.ReadDir(iso.Name())
-	s := make([]string, 0, 100)
-	for _, f := range l {
-		re := regexp.MustCompile(`(.*)-(.*)`)
-		re2 := regexp.MustCompile(`(^v.*)`)
-		s = re.FindStringSubmatch(f.Name())
-		for _, v := range s {
-			if re2.MatchString(v) {
-				d.Boot2DockerIsoVersion = v
-				break
-			}
-		}
+	re := regexp.MustCompile(`Boot2Docker-(v.*\d)`)
+	s := re.FindStringSubmatch(string(out))
+
+	if len(s) == 2 {
+		d.Boot2DockerIsoVersion = s[1]
 	}
+
+	if d.Boot2DockerIsoVersion == "" {
+		return fmt.Errorf("Couldn't find Boot2Docker volume in %#v", out)
+	}
+
 	log.Debugf("Boot2docker version: %s", d.Boot2DockerIsoVersion)
 
 	volumeRootDir := "/Volumes/Boot2Docker-" + d.Boot2DockerIsoVersion
@@ -469,7 +471,7 @@ func (d *Driver) extractKernelImages() error {
 		return err
 	}
 	log.Debugf("Unmounting %s", isoFilename)
-	if err := hdiutil("detach", volumeRootDir); err != nil {
+	if _, err := hdiutil("detach", volumeRootDir); err != nil {
 		return err
 	}
 
@@ -479,7 +481,7 @@ func (d *Driver) extractKernelImages() error {
 func (d *Driver) generateDiskImage(count int64) error {
 	output := d.ResolveStorePath(d.MachineName)
 
-	if err := hdiutil("create", "-megabytes", fmt.Sprintf("%d", d.DiskSize), output); err != nil {
+	if _, err := hdiutil("create", "-megabytes", fmt.Sprintf("%d", d.DiskSize), output); err != nil {
 		return err
 	}
 
