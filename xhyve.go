@@ -25,33 +25,32 @@ import (
 )
 
 const (
-	isoFilename                  = "boot2docker.iso"
-	defaultBoot2DockerIsoVersion = ""
-	defaultBoot2DockerURL        = ""
-	defaultBootCmd               = "loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10 base host=boot2docker"
-	defaultCPU                   = 1
-	defaultCaCertPath            = ""
-	defaultDiskSize              = 20000
-	defaultMacAddr               = ""
-	defaultMemory                = 1024
-	defaultPrivateKeyPath        = ""
-	defaultUUID                  = ""
-	defaultNFSShare              = false
+	isoFilename           = "boot2docker.iso"
+	isoMountPath          = "b2d-image"
+	defaultBoot2DockerURL = ""
+	defaultBootCmd        = "loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10 base host=boot2docker"
+	defaultCPU            = 1
+	defaultCaCertPath     = ""
+	defaultDiskSize       = 20000
+	defaultMacAddr        = ""
+	defaultMemory         = 1024
+	defaultPrivateKeyPath = ""
+	defaultUUID           = ""
+	defaultNFSShare       = false
 )
 
 type Driver struct {
 	*drivers.BaseDriver
-	Boot2DockerIsoVersion string
-	Boot2DockerURL        string
-	BootCmd               string
-	CPU                   int
-	CaCertPath            string
-	DiskSize              int64
-	MacAddr               string
-	Memory                int
-	PrivateKeyPath        string
-	UUID                  string
-	NFSShare              bool
+	Boot2DockerURL string
+	BootCmd        string
+	CPU            int
+	CaCertPath     string
+	DiskSize       int64
+	MacAddr        string
+	Memory         int
+	PrivateKeyPath string
+	UUID           string
+	NFSShare       bool
 }
 
 var (
@@ -66,17 +65,16 @@ func NewDriver(hostName, storePath string) *Driver {
 			MachineName: hostName,
 			StorePath:   storePath,
 		},
-		Boot2DockerIsoVersion: defaultBoot2DockerIsoVersion,
-		Boot2DockerURL:        defaultBoot2DockerURL,
-		BootCmd:               defaultBootCmd,
-		CPU:                   defaultCPU,
-		CaCertPath:            defaultCaCertPath,
-		DiskSize:              defaultDiskSize,
-		MacAddr:               defaultMacAddr,
-		Memory:                defaultMemory,
-		PrivateKeyPath:        defaultPrivateKeyPath,
-		UUID:                  defaultUUID,
-		NFSShare:              defaultNFSShare,
+		Boot2DockerURL: defaultBoot2DockerURL,
+		BootCmd:        defaultBootCmd,
+		CPU:            defaultCPU,
+		CaCertPath:     defaultCaCertPath,
+		DiskSize:       defaultDiskSize,
+		MacAddr:        defaultMacAddr,
+		Memory:         defaultMemory,
+		PrivateKeyPath: defaultPrivateKeyPath,
+		UUID:           defaultUUID,
+		NFSShare:       defaultNFSShare,
 	}
 }
 
@@ -429,34 +427,13 @@ func (d *Driver) publicSSHKeyPath() string {
 
 func (d *Driver) extractKernelImages() error {
 	log.Debugf("Mounting %s", isoFilename)
-	if err := hdiutil("attach", d.ResolveStorePath(isoFilename)); err != nil {
-		return err
-	}
 
-	log.Debugf("Getting Boot2docker version ...")
-	iso, err := os.Open("/Volumes")
+	err := hdiutil("attach", d.ResolveStorePath(isoFilename), "-mountpoint", d.ResolveStorePath("b2d-image"))
 	if err != nil {
 		return err
 	}
-	defer iso.Close()
 
-	// TODO: More faster parse
-	l, _ := ioutil.ReadDir(iso.Name())
-	s := make([]string, 0, 100)
-	for _, f := range l {
-		re := regexp.MustCompile(`(.*)-(.*)`)
-		re2 := regexp.MustCompile(`(^v.*)`)
-		s = re.FindStringSubmatch(f.Name())
-		for _, v := range s {
-			if re2.MatchString(v) {
-				d.Boot2DockerIsoVersion = v
-				break
-			}
-		}
-	}
-	log.Debugf("Boot2docker version: %s", d.Boot2DockerIsoVersion)
-
-	volumeRootDir := "/Volumes/Boot2Docker-" + d.Boot2DockerIsoVersion
+	volumeRootDir := d.ResolveStorePath(isoMountPath)
 	vmlinuz64 := volumeRootDir + "/boot/vmlinuz64"
 	initrd := volumeRootDir + "/boot/initrd.img"
 
