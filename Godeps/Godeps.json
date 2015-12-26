@@ -62,6 +62,10 @@
 			"Rev": "5ccd7f57e77e6ca59d1587c6deaad88ef5d32f7c"
 		},
 		{
+			"ImportPath": "github.com/hooklift/xhyve",
+			"Rev": "9622b3100eaeebde930c87c55a2a08e0ade2c3af"
+		},
+		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
 			"Rev": "d8ed2627bdf02c080bf22230dbb337003b7aba2d"
 		},
