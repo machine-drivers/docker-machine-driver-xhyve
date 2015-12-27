@@ -54,12 +54,15 @@ test-upgrade:
 test-url:
 	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} url ${DOCKER_MACHINE_VM_NAME}
 
-driver-run: clean build install driver-kill
-	rm -rf ${DOCKER_MACHINE_STORAGEPATH}/machines/${DOCKER_MACHINE_VM_NAME} && ${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} create --driver xhyve --xhyve-disk-size ${DOCKER_MACHINE_VM_DISKSIZE} ${DOCKER_MACHINE_VM_NAME}
+driver-run: clean build install driver-remove driver-kill
+	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} create --driver xhyve --xhyve-disk-size ${DOCKER_MACHINE_VM_DISKSIZE} ${DOCKER_MACHINE_VM_NAME}
 
 driver-kill:
 	@PID=$$(pgrep goxhyve) || PID=none; \
 	echo "${CBLUE}==>${CRESET}${CGREEN}Kill goxhyve test process. PID:$$PID ${CRESET} ..."; \
 	sudo kill $$PID 2>/dev/null || true
+
+driver-remove:
+	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} rm -f ${DOCKER_MACHINE_VM_NAME} || true
 
 .PHONY: driver-kill
