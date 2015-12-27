@@ -10,6 +10,7 @@ package xhyve
 import "C"
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"syscall"
 	"unsafe"
@@ -21,7 +22,7 @@ var termios syscall.Termios
 func getTermios() syscall.Termios {
 	var state syscall.Termios
 	if _, _, err := syscall.Syscall6(syscall.SYS_IOCTL, uintptr(0), uintptr(syscall.TIOCGETA), uintptr(unsafe.Pointer(&state)), 0, 0, 0); err != 0 {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 	}
 	return state
 }
