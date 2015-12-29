@@ -19,6 +19,7 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+	"github.com/johanneswuerbach/nfsexports"
 	"github.com/zchee/docker-machine-driver-xhyve/vmnet"
 )
 
@@ -388,6 +389,14 @@ func (d *Driver) Remove() error {
 		if err := d.Stop(); err != nil {
 			return err
 		}
+
+		if _, err := nfsexports.Remove("", d.nfsExportIdentifier()); err != nil {
+			log.Errorf("failed removing nfs share: %s", err.Error())
+		}
+
+		if err := nfsexports.ReloadDaemon(); err != nil {
+			log.Errorf("failed reload nfs daemon: %s", err.Error())
+		}
 	}
 	return nil
 }
@@ -539,27 +548,13 @@ func (d *Driver) generateKeyBundle() (*bytes.Buffer, error) {
 
 // Setup NFS share
 func (d *Driver) setupNFSShare() error {
-	nfsConfig := fmt.Sprintf("\n/Users %s -alldirs -maproot=root\n", d.IPAddress)
+	nfsConfig := fmt.Sprintf("/Users %s -alldirs -maproot=root", d.IPAddress)
 
-	file, err := os.OpenFile("/etc/exports", os.O_WRONLY|os.O_APPEND, 0644)
-	if err != nil {
+	if _, err := nfsexports.Add("", d.nfsExportIdentifier(), nfsConfig); err != nil {
 		return err
 	}
-	defer file.Close()
-	if _, err := file.Write([]byte(nfsConfig)); err != nil {
-		return err
-	}
-	file.Close()
 
-	// TODO Do nfsd checkexports
-
-	cmd := exec.Command("sudo", "nfsd", "restart")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	log.Debugf("executing: %v %v", cmd)
-
-	if err := cmd.Run(); err != nil {
+	if err := nfsexports.ReloadDaemon(); err != nil {
 		return err
 	}
 
@@ -582,6 +577,10 @@ func (d *Driver) setupNFSShare() error {
 	}
 
 	return nil
+}
+
+func (d *Driver) nfsExportIdentifier() string {
+	return fmt.Sprintf("docker-machine-driver-xhyve %s", d.MachineName)
 }
 
 //Trimming "0" of the ten's digit
