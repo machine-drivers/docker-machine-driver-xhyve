@@ -2,6 +2,10 @@ JOBS=1
 
 DOCKER_MACHINE_CMD := docker-machine
 DOCKER_MACHINE_VM_NAME := xhyve-test
+# Set CPU size to hw.ncpu/2
+DOCKER_MACHINE_VM_CPU_COUNT := ${shell /usr/bin/python -c "print(${shell sysctl -n hw.ncpu}/2)"}
+# Set memory size to hw.memsize/2 MB
+DOCKER_MACHINE_VM_MEMORY_SIZE := ${shell /usr/bin/python -c "print(${shell sysctl -n hw.memsize}/2097152)"}
 DOCKER_MACHINE_VM_DISKSIZE := 2000
 DOCKER_MACHINE_STORAGEPATH := $(HOME)/.docker/machine-test
 
@@ -55,7 +59,12 @@ test-url:
 	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} url ${DOCKER_MACHINE_VM_NAME}
 
 driver-run: clean build install driver-remove driver-kill
-	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} create --driver xhyve --xhyve-disk-size ${DOCKER_MACHINE_VM_DISKSIZE} ${DOCKER_MACHINE_VM_NAME}
+	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} create --driver xhyve \
+		--xhyve-cpu-count ${DOCKER_MACHINE_VM_CPU_COUNT} \
+		--xhyve-memory-size ${DOCKER_MACHINE_VM_MEMORY_SIZE} \
+		--xhyve-disk-size ${DOCKER_MACHINE_VM_DISKSIZE} \
+		--xhyve-experimental-nfs-share \
+		${DOCKER_MACHINE_VM_NAME}
 
 driver-kill:
 	@PID=$$(pgrep goxhyve) || PID=none; \
