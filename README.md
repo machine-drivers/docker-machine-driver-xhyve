@@ -30,19 +30,6 @@ If you were doubt problem either, please post to this repository [issues](https:
 > make install
 ```
 
-### xhyve-bindings
-https://github.com/zchee/xhyve-bindings
-
-Separated xhyve Go bindings into [xhyve-bindings](https://github.com/zchee/xhyve-bindings).  
-Or, see experimental embedded xhyve branch [embed-xhyve](https://github.com/zchee/docker-machine-driver-xhyve/tree/embed-xhyve)
-
-```bash
-> go get -d github.com/zchee/xhyve-bindings
-> cd $GOPATH/src/github.com/zchee/xhyve-bindings
-> make
-> make install
-```
-
 ## Install
 
 Like the docker-machine's `Makefile`, install the `docker-machine-driver-xhyve` binary will be in `/usr/local/bin`.  

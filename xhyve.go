@@ -318,17 +318,23 @@ func (d *Driver) Start() error {
 	img := d.ResolveStorePath(d.MachineName + ".dmg")
 	bootcmd := d.BootCmd
 
-	cmd := exec.Command("goxhyve",
-		fmt.Sprintf("%s", uuid),
-		fmt.Sprintf("%d", d.CPU),
-		fmt.Sprintf("%d", d.Memory),
-		fmt.Sprintf("%s", iso),
-		fmt.Sprintf("%s", img),
-		fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd),
-		"-d", //TODO fix daemonize flag
-	)
-	log.Debug(cmd)
+	args := []string{
+		"xhyve",
+		"-A",
+		"-U", fmt.Sprintf("%s", uuid),
+		"-c", fmt.Sprintf("%d", d.CPU),
+		"-m", fmt.Sprintf("%dM", d.Memory),
+		"-l", "com1",
+		"-s", "0:0,hostbridge",
+		"-s", "31,lpc",
+		"-s", "2:0,virtio-net",
+		"-s", fmt.Sprintf("3,ahci-cd,%s", iso),
+		"-s", fmt.Sprintf("4,virtio-blk,%s", img),
+		"-f", fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd)}
 
+	log.Debug(args)
+
+	cmd := exec.Command(os.Args[0], args...)
 	cmd.Stdout = &bytes.Buffer{}
 	cmd.Stderr = &bytes.Buffer{}
 
