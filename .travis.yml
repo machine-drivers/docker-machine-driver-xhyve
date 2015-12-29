@@ -1,5 +1,3 @@
-sudo: false
-
 os: osx
 osx_image: xcode7.2
 
@@ -19,7 +17,7 @@ before_script:
   - make install
 
 script:
-  - make test
+  - ./scripts/travis.bash go test -v
 
 notifications:
   email: false
