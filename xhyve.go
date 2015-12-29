@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -317,11 +318,16 @@ func (d *Driver) Start() error {
 	img := d.ResolveStorePath(d.MachineName + ".dmg")
 	bootcmd := d.BootCmd
 
+	cpus := d.CPU
+	if cpus < 1 {
+		cpus = int(runtime.NumCPU())
+	}
+
 	args := []string{
 		"xhyve",
 		"-A",
 		"-U", fmt.Sprintf("%s", uuid),
-		"-c", fmt.Sprintf("%d", d.CPU),
+		"-c", fmt.Sprintf("%d", cpus),
 		"-m", fmt.Sprintf("%dM", d.Memory),
 		"-l", "com1",
 		"-s", "0:0,hostbridge",
