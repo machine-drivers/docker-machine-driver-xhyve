@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/exec"
 	"regexp"
@@ -266,7 +267,10 @@ func (d *Driver) Create() error {
 	log.Debugf("Generated UUID: %s", d.UUID)
 
 	log.Infof("Convert UUID to MAC address...")
-	rawUUID, _ := vmnet.GetMACAddressByUUID(d.UUID)
+	rawUUID, err := d.getMACAdress()
+	if err != nil {
+		return err
+	}
 	d.MacAddr = trimMacAddress(rawUUID)
 	log.Debugf("Converted MAC address: %s", d.MacAddr)
 
@@ -277,7 +281,6 @@ func (d *Driver) Create() error {
 	log.Infof("Waiting for VM to come online...")
 
 	var ip string
-	var err error
 	for i := 1; i <= 60; i++ {
 		ip, err = d.getIPfromDHCPLease()
 		if err != nil {
@@ -311,31 +314,7 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	uuid := d.UUID
-	vmlinuz := d.ResolveStorePath("vmlinuz64")
-	initrd := d.ResolveStorePath("initrd.img")
-	iso := d.ResolveStorePath(isoFilename)
-	img := d.ResolveStorePath(d.MachineName + ".dmg")
-	bootcmd := d.BootCmd
-
-	cpus := d.CPU
-	if cpus < 1 {
-		cpus = int(runtime.NumCPU())
-	}
-
-	args := []string{
-		"xhyve",
-		"-A",
-		"-U", fmt.Sprintf("%s", uuid),
-		"-c", fmt.Sprintf("%d", cpus),
-		"-m", fmt.Sprintf("%dM", d.Memory),
-		"-l", "com1",
-		"-s", "0:0,hostbridge",
-		"-s", "31,lpc",
-		"-s", "2:0,virtio-net",
-		"-s", fmt.Sprintf("3,ahci-cd,%s", iso),
-		"-s", fmt.Sprintf("4,virtio-blk,%s", img),
-		"-f", fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd)}
+	args := d.xhyveArgs()
 
 	log.Debug(args)
 
@@ -595,4 +574,53 @@ func trimMacAddress(rawUUID string) string {
 	mac := re.ReplaceAllString(rawUUID, "$1")
 
 	return mac
+}
+
+func (d *Driver) xhyveArgs() []string {
+	uuid := d.UUID
+	vmlinuz := d.ResolveStorePath("vmlinuz64")
+	initrd := d.ResolveStorePath("initrd.img")
+	iso := d.ResolveStorePath(isoFilename)
+	img := d.ResolveStorePath(d.MachineName + ".dmg")
+	bootcmd := d.BootCmd
+
+	cpus := d.CPU
+	if cpus < 1 {
+		cpus = int(runtime.NumCPU())
+	}
+
+	return []string{
+		"xhyve",
+		"-A",
+		"-U", fmt.Sprintf("%s", uuid),
+		"-c", fmt.Sprintf("%d", cpus),
+		"-m", fmt.Sprintf("%dM", d.Memory),
+		"-l", "com1",
+		"-s", "0:0,hostbridge",
+		"-s", "31,lpc",
+		"-s", "2:0,virtio-net",
+		"-s", fmt.Sprintf("3,ahci-cd,%s", iso),
+		"-s", fmt.Sprintf("4,virtio-blk,%s", img),
+		"-f", fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd)}
+}
+
+func (d *Driver) getMACAdress() (string, error) {
+	args := append(d.xhyveArgs(), "-M")
+
+	stdout := bytes.Buffer{}
+
+	cmd := exec.Command(os.Args[0], args...) // TODO: Should be possible without exec
+	cmd.Stdout = &stdout
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+
+	mac := bytes.TrimPrefix(stdout.Bytes(), []byte("MAC: "))
+	mac = bytes.TrimSpace(mac)
+
+	hw, err := net.ParseMAC(string(mac))
+	if err != nil {
+		return "", err
+	}
+	return hw.String(), nil
 }

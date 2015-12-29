@@ -69,11 +69,6 @@ export GOOS=darwin
 # Support go1.5 vendoring (let us avoid messing with GOPATH or using godep)
 export GO15VENDOREXPERIMENT=1
 
-# docker-machine-driver-xhyve use vmnet.framework
-# It is a binding from C-land to Go
-export CGO_ENABLED=1
-
-
 # Package side settings
 
 # Build package infomation
