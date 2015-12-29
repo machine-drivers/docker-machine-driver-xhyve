@@ -1,5 +1,7 @@
 # docker-machine-driver-xhyve
 
+[![Build Status](https://travis-ci.org/zchee/docker-machine-driver-xhyve.svg?branch=master)](https://travis-ci.org/zchee/docker-machine-driver-xhyve)
+
 Docker Machine driver plugin for [xhyve](https://github.com/mist64/xhyve) native OS X Hypervisor
 
 Master branch inherited from [nathanleclaire/docker-machine-driver-xhyve](https://github.com/nathanleclaire/docker-machine-driver-xhyve). Thanks [@nathanleclaire](https://github.com/nathanleclaire) :)  
