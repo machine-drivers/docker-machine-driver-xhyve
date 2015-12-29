@@ -2,11 +2,6 @@
 // import by https://github.com/ailispaw/xhyvectl/tree/master/vmnet
 package vmnet
 
-// #cgo CFLAGS: -framework vmnet
-// #cgo LDFLAGS: -framework vmnet
-// #include "vmnet.c"
-import "C"
-
 import (
 	"fmt"
 	"net"
@@ -19,18 +14,6 @@ const (
 	NET_ADDR_KEY = "Shared_Net_Address"
 	NET_MASK_KEY = "Shared_Net_Mask"
 )
-
-func GetMACAddressByUUID(uuid string) (string, error) {
-	mac := C.vmnet_get_mac_address_from_uuid(C.CString(uuid))
-	if mac == nil {
-		return "", fmt.Errorf("Could not get a MAC address for %s", uuid)
-	}
-	hw, err := net.ParseMAC(C.GoString(mac))
-	if err != nil {
-		return "", err
-	}
-	return hw.String(), nil
-}
 
 func GetNetAddr() (net.IP, error) {
 	out, err := exec.Command("defaults", "read", CONFIG_PLIST, NET_ADDR_KEY).Output()
