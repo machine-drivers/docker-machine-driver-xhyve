@@ -144,7 +144,7 @@ dep-restore:
 
 run: driver-run
 
-rm: test-rm
+rm: driver-remove
 
 kill: driver-kill
 
