@@ -6,7 +6,8 @@ osx_image: xcode7.2
 language: go
 
 go:
-  - 1.5.1
+  - 1.5.2
+  - 1.6beta1
 
 env:
   global:
@@ -19,3 +20,9 @@ before_script:
 
 script:
   - make test
+
+notifications:
+  email: false
+  slack:
+    rooms:
+      secure: W37wQbWT+IR389zOGorMgWp7lG8xdVp9qb4aGES9yi6ohkIaQ/NHmzY9fT+3YeRy2MzMs+alX5SFIQTYqBVMVNtYCuygxz0zwtuZvIksjM/FwkVtMC6CTGQuPOsnSprOhB23DMKiIgGnB0ggsJDaQoGzUOG8EoBmuiKniWDqc0DCrS/vwk/iI6g68FQVCkWA2oQw3GgStKKrLwcUjEA5Y6aTrIYscPjmCFtJh5UOxCgQ+8Y/oqcxvqkb/mnuhYABySbVKhGSdtVnaQwNziLqfwHbCiRVzlwdJFfp3OlRKhHHStBe+Bu83pZYWMXAKZ/CFSXCADadX4x0P5eO6dbbJd2h1gS2BO/JppSJNlbk2WBhUAs5YniKHOxde7h9JilOgJceRF5CLzLb/5N+5/5w8CKBs8tzEcU13ilzyJ2BiRgvOsJ6eLmblQDLS29arL393W0IVTccuxqeKIL0asrXLOwFhK13UeQqPwPGRCKIMbLkEPARer+wteMMLNglGjPx9GbsTb9JyLqqoe7e4Wc7cm0OcPcMKxGnpyrxVk/57q32r6hcko4tL2PTySYHaqFx5CIPFk3TtsM/d6g4MSvmoh5Oys4vib2vZ5sJbHWIk1Fn/+ukRMRLuie7GYCyDwz/J0gPKsc+wG/4OZJIx16Oi89flA59mNPQdAGKb7+I5O0=
