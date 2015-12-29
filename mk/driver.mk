@@ -17,8 +17,6 @@ export MACHINE_DEBUG=1
 
 default: build
 
-driver-test: test-ls
-
 test-env:
 	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} env ${DOCKER_MACHINE_VM_NAME}
 
@@ -61,7 +59,7 @@ test-upgrade:
 test-url:
 	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} url ${DOCKER_MACHINE_VM_NAME}
 
-driver-run: clean build install driver-remove driver-kill
+driver-run: clean build install driver-remove
 	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} create --driver xhyve \
 		--xhyve-boot2docker-url ${DOCKER_MACHINE_VM_BOOT2DOCKER_URL} \
 		--xhyve-cpu-count ${DOCKER_MACHINE_VM_CPU_COUNT} \
@@ -77,5 +75,6 @@ driver-kill:
 
 driver-remove:
 	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} rm -f ${DOCKER_MACHINE_VM_NAME} || true
+	$(if $(shell ls $(HOME)/.docker/machine-test), sudo rm -rf ${DOCKER_MACHINE_STORAGEPATH},)
 
 .PHONY: driver-kill
