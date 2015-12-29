@@ -5,6 +5,7 @@ import (
 
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/stretchr/testify/assert"
+	"github.com/zchee/docker-machine-driver-xhyve/vmnet"
 )
 
 func TestDriverName(t *testing.T) {
@@ -22,6 +23,18 @@ func TestDefaultSSHUsername(t *testing.T) {
 func TestPreCreateCheck(t *testing.T) {
 	err := newTestDriver("default").PreCreateCheck()
 	assert.NoError(t, err)
+}
+
+func TestGenerateUUID(t *testing.T) {
+	uuid := uuidgen()
+	t.Logf(uuid)
+}
+
+func TestConvertUUIDToMac(t *testing.T) {
+	uuid := uuidgen()
+	mac, _ := vmnet.GetMACAddressByUUID(uuid)
+	t.Logf(uuid)
+	t.Logf(mac)
 }
 
 func TestTrimMacAddress(t *testing.T) {
