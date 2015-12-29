@@ -348,9 +348,8 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
-	log.Infof("Stopping %s use send ACPI signals poweroff ...", d.MachineName)
-	if _, err := drivers.RunSSHCommandFromDriver(d, "sudo poweroff"); err != nil {
-		log.Debugf("Error getting ssh command 'exit 0' : %s", err)
+	log.Infof("Stopping %s ...", d.MachineName)
+	if err := d.SendSignal(syscall.SIGTERM); err != nil {
 		return err
 	}
 
@@ -590,6 +589,24 @@ func (d *Driver) GetPid() (int, error) {
 	}
 
 	return int(pid), nil
+}
+
+func (d *Driver) SendSignal(sig os.Signal) error {
+	pid, err := d.GetPid()
+	if err != nil {
+		return err
+	}
+
+	proc, err := os.FindProcess(int(pid))
+	if err != nil {
+		return err
+	}
+
+	if err := proc.Signal(sig); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 //Trimming "0" of the ten's digit
