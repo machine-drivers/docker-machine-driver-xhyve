@@ -328,10 +328,19 @@ func (d *Driver) Start() error {
 		"-d", //TODO fix daemonize flag
 	)
 	log.Debug(cmd)
+
+	cmd.Stdout = &bytes.Buffer{}
+	cmd.Stderr = &bytes.Buffer{}
+
+	err := cmd.Start()
+	if err != nil {
+		return err
+	}
+
 	go func() {
-		err := cmd.Run()
+		err := cmd.Wait()
 		if err != nil {
-			log.Error(err, cmd.Stdout)
+			log.Error(err, cmd.Stdout, cmd.Stderr)
 		}
 	}()
 
