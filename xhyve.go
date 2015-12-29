@@ -19,7 +19,6 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
-	"github.com/satori/go.uuid"
 	"github.com/zchee/docker-machine-driver-xhyve/version"
 	"github.com/zchee/docker-machine-driver-xhyve/vmnet"
 )
@@ -262,7 +261,7 @@ func (d *Driver) Create() error {
 	}
 
 	log.Infof("Generate UUID...")
-	d.UUID = uuid.NewV4().String()
+	d.UUID = uuidgen()
 	log.Debugf("Generated UUID: %s", d.UUID)
 
 	log.Infof("Convert UUID to MAC address...")
