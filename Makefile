@@ -52,10 +52,7 @@ ifeq ($(STATIC),true)
 endif
 
 # Verbose
-VERBOSE_GO := 
-ifeq ($(VERBOSE),true)
-	VERBOSE_GO := -v
-endif
+VERBOSE_GO := -v
 
 # Parse git current branch commit-hash
 GO_LDFLAGS := ${GO_LDFLAGS} -X `go list .`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
