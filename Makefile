@@ -58,7 +58,7 @@ ifeq ($(VERBOSE),true)
 endif
 
 # Parse git current branch commit-hash
-GO_LDFLAGS := ${GO_LDFLAGS} -X `go list ./version`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
+GO_LDFLAGS := ${GO_LDFLAGS} -X `go list .`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
 
 
 # Environment variables

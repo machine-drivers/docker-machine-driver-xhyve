@@ -19,7 +19,6 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
-	"github.com/zchee/docker-machine-driver-xhyve/version"
 	"github.com/zchee/docker-machine-driver-xhyve/vmnet"
 )
 
@@ -205,8 +204,8 @@ func (d *Driver) GetSShState() (bool, error) {
 // Print driver version, Check VirtualBox version
 func (d *Driver) PreCreateCheck() error {
 	//TODO:libmachine PLEASE output driver version API!
-	v := version.Version
-	c := version.GitCommit
+	v := Version
+	c := GitCommit
 	log.Debugf("===== Docker Machine %s Driver Version %s (%s) =====\n", d.DriverName(), v, c)
 
 	ver, err := vboxVersionDetect()

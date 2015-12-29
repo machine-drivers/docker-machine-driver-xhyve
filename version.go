@@ -1,4 +1,4 @@
-package version
+package xhyve
 
 var (
 	// ConfigVersion dictates which version of the config.json format is
