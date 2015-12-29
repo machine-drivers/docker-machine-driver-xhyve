@@ -6,6 +6,8 @@ Go util to manage NFS exports `/etc/exports`.
 
 * Add and remove exports
 * Verify the added export is valid, before updating
+* Auto-creates missing exports file, which auto starts nfsd on OS X
+* Handles missing line breaks
 
 ```go
 package main

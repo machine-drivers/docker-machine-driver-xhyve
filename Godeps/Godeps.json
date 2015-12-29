@@ -4,7 +4,6 @@
 	"Packages": [
 		"github.com/zchee/docker-machine-driver-xhyve",
 		"github.com/zchee/docker-machine-driver-xhyve/bin",
-		"github.com/zchee/docker-machine-driver-xhyve/version",
 		"github.com/zchee/docker-machine-driver-xhyve/vmnet"
 	],
 	"Deps": [
@@ -67,7 +66,7 @@
 		},
 		{
 			"ImportPath": "github.com/johanneswuerbach/nfsexports",
-			"Rev": "1e8afef6424da9a94852ae9a959168662000bfc5"
+			"Rev": "a9068f3f0daa39616953aec11c3eb1209ebc4086"
 		},
 		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
