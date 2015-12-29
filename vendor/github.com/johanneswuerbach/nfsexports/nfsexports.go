@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 )
 
@@ -18,15 +19,25 @@ func Add(exportsFile string, identifier string, export string) ([]byte, error) {
 	}
 
 	exports, err := ioutil.ReadFile(exportsFile)
+
 	if err != nil {
-		return nil, err
+		if os.IsNotExist(err) {
+			exports = []byte{}
+		} else {
+			return nil, err
+		}
 	}
 
 	if containsExport(exports, identifier) {
 		return exports, nil
 	}
 
-	newExports := append(exports, []byte(exportEntry(identifier, export))...)
+	newExports := exports
+	if len(newExports) > 0 && !bytes.HasSuffix(exports, []byte("\n")) {
+		newExports = append(newExports, '\n')
+	}
+
+	newExports = append(newExports, []byte(exportEntry(identifier, export))...)
 
 	if err := verifyNewExports(newExports); err != nil {
 		return nil, err
@@ -50,7 +61,7 @@ func Remove(exportsFile string, identifier string) ([]byte, error) {
 		return nil, err
 	}
 
-	beginMark := []byte(fmt.Sprintf("\n# BEGIN: %s", identifier))
+	beginMark := []byte(fmt.Sprintf("# BEGIN: %s", identifier))
 	endMark := []byte(fmt.Sprintf("# END: %s\n", identifier))
 
 	begin := bytes.Index(exports, beginMark)
@@ -61,6 +72,7 @@ func Remove(exportsFile string, identifier string) ([]byte, error) {
 	}
 
 	newExports := append(exports[:begin], exports[end+len(endMark):]...)
+	newExports = append(bytes.TrimSpace(newExports), '\n')
 
 	if err := ioutil.WriteFile(exportsFile, newExports, 0644); err != nil {
 		return nil, err
@@ -86,7 +98,7 @@ func containsExport(exports []byte, identifier string) bool {
 }
 
 func exportEntry(identifier string, export string) string {
-	return fmt.Sprintf("\n# BEGIN: %s\n%s\n# END: %s\n", identifier, export, identifier)
+	return fmt.Sprintf("# BEGIN: %s\n%s\n# END: %s\n", identifier, export, identifier)
 }
 
 func verifyNewExports(newExports []byte) error {

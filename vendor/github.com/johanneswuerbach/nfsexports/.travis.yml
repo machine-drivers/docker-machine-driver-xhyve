@@ -4,7 +4,7 @@ go:
   - 1.5.1
 
 before_script:
-  - sudo touch /etc/exports
-  - sudo nfsd start
+  - sudo nfsd status
+  - sudo touch /etc/exports # Auto-starts nfsd on OS X
   - sleep 5
   - sudo nfsd status
