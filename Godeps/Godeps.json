@@ -70,10 +70,6 @@
 			"Rev": "d8ed2627bdf02c080bf22230dbb337003b7aba2d"
 		},
 		{
-			"ImportPath": "github.com/satori/go.uuid",
-			"Rev": "d41af8bb6a7704f00bc3b7cba9355ae6a5a80048"
-		},
-		{
 			"ImportPath": "github.com/stretchr/testify/assert",
 			"Rev": "67106a5111a06241c8d84952c33214675f51a34a"
 		},
