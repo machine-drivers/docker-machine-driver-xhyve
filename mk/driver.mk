@@ -1,4 +1,4 @@
-JOBS=1
+MAKEFLAGS := -j 1
 
 DOCKER_MACHINE_CMD := docker-machine
 DOCKER_MACHINE_VM_NAME := xhyve-test
