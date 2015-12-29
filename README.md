@@ -101,10 +101,7 @@ Unable to create VM (-85377018)
 
 ## Known isuue
 
-### Not implement shared folder
-`docker-machine-driver-xhyve` also `xhyve` does not implement shared folder system.  
-Please use the existing protocol for the time being, such as `NFS`.
-
+### experimental shared folders
 `docker-machine-driver-xhyve` can create a `NFS` share automatically for you, but this feature
 is highly experimental. To use it specify `--xhyve-experimental-nfs-share` when creating your
 machine.
