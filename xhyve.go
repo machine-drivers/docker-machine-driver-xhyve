@@ -406,7 +406,12 @@ func (d *Driver) Restart() error {
 			return err
 		}
 	}
-	return d.Start()
+
+	if err := d.Start(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (d *Driver) Kill() error {
