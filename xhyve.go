@@ -190,6 +190,7 @@ func (d *Driver) GetIP() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
+	log.Infof("Getting to VM state...")
 	pid, err := d.GetPid()
 	if err != nil {
 		// TODO: If err instead of nil, will be occurred error when first GetState() of Start()
