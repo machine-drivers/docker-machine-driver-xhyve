@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -189,19 +190,22 @@ func (d *Driver) GetIP() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	s, _ := d.GetSShState()
-	if !s {
+	pid, err := d.GetPid()
+	if err != nil {
+		// TODO: If err instead of nil, will be occurred error when first GetState() of Start()
+		return state.Error, nil
+	}
+
+	proc, err := os.FindProcess(int(pid))
+	if err != nil {
+		return state.Error, err
+	}
+
+	if err := proc.Signal(syscall.Signal(0)); err != nil {
 		return state.Stopped, nil
 	}
-	return state.Running, nil
-}
 
-func (d *Driver) GetSShState() (bool, error) {
-	log.Debug("Getting to VM SSH status...")
-	if _, err := drivers.RunSSHCommandFromDriver(d, "exit 0"); err != nil {
-		return false, nil
-	}
-	return true, nil
+	return state.Running, nil
 }
 
 // Print driver version, Check VirtualBox version
@@ -314,7 +318,13 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
+	pid := d.ResolveStorePath(d.MachineName + ".pid")
+	if _, err := os.Stat(pid); err == nil {
+		os.Remove(pid)
+	}
+
 	args := d.xhyveArgs()
+	args = append(args, "-F", fmt.Sprintf("%s", pid))
 
 	log.Debug(args)
 
@@ -566,6 +576,20 @@ func (d *Driver) setupNFSShare() error {
 
 func (d *Driver) nfsExportIdentifier() string {
 	return fmt.Sprintf("docker-machine-driver-xhyve %s", d.MachineName)
+}
+
+func (d *Driver) GetPid() (int, error) {
+	p, err := ioutil.ReadFile(d.ResolveStorePath(d.MachineName + ".pid"))
+	if err != nil {
+		return 0, err
+	}
+
+	pid, err := strconv.ParseInt(string(p), 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(pid), nil
 }
 
 //Trimming "0" of the ten's digit
