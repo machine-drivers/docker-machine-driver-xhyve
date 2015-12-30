@@ -410,9 +410,8 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) Kill() error {
-	log.Infof("Killing %s use hardware to stop all CPU ...", d.MachineName)
-	if _, err := drivers.RunSSHCommandFromDriver(d, "sudo halt"); err != nil {
-		log.Debugf("Error getting ssh command 'exit 0' : %s", err)
+	log.Infof("Killing %s ...", d.MachineName)
+	if err := d.SendSignal(syscall.SIGKILL); err != nil {
 		return err
 	}
 
