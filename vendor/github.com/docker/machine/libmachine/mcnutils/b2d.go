@@ -1,7 +1,10 @@
 package mcnutils
 
 import (
+	"archive/tar"
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -15,8 +18,26 @@ import (
 	"github.com/docker/machine/libmachine/log"
 )
 
+const (
+	defaultURL            = "https://api.github.com/repos/boot2docker/boot2docker/releases/latest"
+	defaultISOFilename    = "boot2docker.iso"
+	defaultVolumeIDOffset = int64(0x8028)
+	defaultVolumeIDLength = 32
+)
+
 var (
 	GithubAPIToken string
+)
+
+var (
+	errGitHubAPIResponse = errors.New(`Error getting a version tag from the Github API response.
+You may be getting rate limited by Github.`)
+)
+
+var (
+	AUFSBugB2DVersions = map[string]string{
+		"v1.9.1": "https://github.com/docker/docker/issues/18180",
+	}
 )
 
 func defaultTimeout(network, addr string) (net.Conn, error) {
@@ -30,35 +51,12 @@ func getClient() *http.Client {
 		Dial:              defaultTimeout,
 	}
 
-	client := http.Client{
+	return &http.Client{
 		Transport: &transport,
 	}
-
-	return &client
 }
 
-type B2dUtils struct {
-	storePath        string
-	isoFilename      string
-	commonIsoPath    string
-	imgCachePath     string
-	githubAPIBaseURL string
-	githubBaseURL    string
-}
-
-func NewB2dUtils(storePath string) *B2dUtils {
-	imgCachePath := filepath.Join(storePath, "cache")
-	isoFilename := "boot2docker.iso"
-
-	return &B2dUtils{
-		storePath:     storePath,
-		isoFilename:   isoFilename,
-		imgCachePath:  imgCachePath,
-		commonIsoPath: filepath.Join(imgCachePath, isoFilename),
-	}
-}
-
-func (b *B2dUtils) getReleasesRequest(apiURL string) (*http.Request, error) {
+func getRequest(apiURL string) (*http.Request, error) {
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
 		return nil, err
@@ -71,68 +69,100 @@ func (b *B2dUtils) getReleasesRequest(apiURL string) (*http.Request, error) {
 	return req, nil
 }
 
-// GetLatestBoot2DockerReleaseURL gets the latest boot2docker release tag name (e.g. "v0.6.0").
-// FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
-func (b *B2dUtils) GetLatestBoot2DockerReleaseURL(apiURL string) (string, error) {
+// releaseGetter is a client that gets release information of a product and downloads it.
+type releaseGetter interface {
+	// filename returns filename of the product.
+	filename() string
+	// getReleaseTag gets a release tag from the given URL.
+	getReleaseTag(apiURL string) (string, error)
+	// getReleaseURL gets the latest release download URL from the given URL.
+	getReleaseURL(apiURL string) (string, error)
+	// download downloads a file from the given dlURL and saves it under dir.
+	download(dir, file, dlURL string) error
+}
+
+// b2dReleaseGetter implements the releaseGetter interface for getting the release of Boot2Docker.
+type b2dReleaseGetter struct {
+	isoFilename string
+}
+
+func (b *b2dReleaseGetter) filename() string {
+	if b == nil {
+		return ""
+	}
+	return b.isoFilename
+}
+
+// getReleaseTag gets the release tag of Boot2Docker from apiURL.
+func (*b2dReleaseGetter) getReleaseTag(apiURL string) (string, error) {
 	if apiURL == "" {
-		apiURL = "https://api.github.com/repos/boot2docker/boot2docker/releases"
+		apiURL = defaultURL
 	}
-	isoURL := ""
+
+	client := getClient()
+	req, err := getRequest(apiURL)
+	if err != nil {
+		return "", err
+	}
+	rsp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer rsp.Body.Close()
+
+	var t struct {
+		TagName string `json:"tag_name"`
+	}
+	if err := json.NewDecoder(rsp.Body).Decode(&t); err != nil {
+		return "", err
+	}
+	if t.TagName == "" {
+		return "", errGitHubAPIResponse
+	}
+	return t.TagName, nil
+}
+
+// getReleaseURL gets the latest release URL of Boot2Docker.
+// FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
+func (b *b2dReleaseGetter) getReleaseURL(apiURL string) (string, error) {
+	if apiURL == "" {
+		apiURL = defaultURL
+	}
+
 	// match github (enterprise) release urls:
-	// https://api.github.com/repos/../../releases or
-	// https://some.github.enterprise/api/v3/repos/../../releases
-	re := regexp.MustCompile("(https?)://([^/]+)(/api/v3)?/repos/([^/]+)/([^/]+)/releases")
-	if matches := re.FindStringSubmatch(apiURL); len(matches) == 6 {
-		scheme := matches[1]
-		host := matches[2]
-		org := matches[4]
-		repo := matches[5]
-		if host == "api.github.com" {
-			host = "github.com"
-		}
-		client := getClient()
-		req, err := b.getReleasesRequest(apiURL)
-		if err != nil {
-			return "", err
-		}
-		rsp, err := client.Do(req)
-		if err != nil {
-			return "", err
-		}
-		defer rsp.Body.Close()
-
-		var t []struct {
-			TagName string `json:"tag_name"`
-		}
-		if err := json.NewDecoder(rsp.Body).Decode(&t); err != nil {
-			return "", fmt.Errorf("Error demarshaling the Github API response: %s\nYou may be getting rate limited by Github.", err)
-		}
-		if len(t) == 0 {
-			return "", fmt.Errorf("no releases found")
-		}
-
-		tag := t[0].TagName
-		log.Infof("Latest release for %s/%s/%s is %s", host, org, repo, tag)
-		isoURL = fmt.Sprintf("%s://%s/%s/%s/releases/download/%s/boot2docker.iso", scheme, host, org, repo, tag)
-	} else {
-		//does not match a github releases api url
-		isoURL = apiURL
+	// https://api.github.com/repos/../../releases/latest or
+	// https://some.github.enterprise/api/v3/repos/../../releases/latest
+	re := regexp.MustCompile("(https?)://([^/]+)(/api/v3)?/repos/([^/]+)/([^/]+)/releases/latest")
+	matches := re.FindStringSubmatch(apiURL)
+	if len(matches) != 6 {
+		// does not match a github releases api URL
+		return apiURL, nil
 	}
 
-	return isoURL, nil
-}
-
-func removeFileIfExists(name string) error {
-	if _, err := os.Stat(name); err == nil {
-		if err := os.Remove(name); err != nil {
-			return fmt.Errorf("Error removing temporary download file: %s", err)
-		}
+	scheme, host, org, repo := matches[1], matches[2], matches[4], matches[5]
+	if host == "api.github.com" {
+		host = "github.com"
 	}
-	return nil
+
+	tag, err := b.getReleaseTag(apiURL)
+	if err != nil {
+		return "", err
+	}
+
+	log.Infof("Latest release for %s/%s/%s is %s", host, org, repo, tag)
+	bugURL, ok := AUFSBugB2DVersions[tag]
+	if ok {
+		log.Warnf(`
+Boot2Docker %s has a known issue with AUFS.
+See here for more details: %s
+Consider specifying another storage driver (e.g. 'overlay') using '--engine-storage-driver' instead.
+`, tag, bugURL)
+	}
+	url := fmt.Sprintf("%s://%s/%s/%s/releases/download/%s/%s", scheme, host, org, repo, tag, b.isoFilename)
+	return url, nil
 }
 
-// DownloadISO downloads boot2docker ISO image for the given tag and save it at dest.
-func (b *B2dUtils) DownloadISO(dir, file, isoURL string) error {
+func (*b2dReleaseGetter) download(dir, file, isoURL string) error {
 	u, err := url.Parse(isoURL)
 
 	var src io.ReadCloser
@@ -188,11 +218,105 @@ func (b *B2dUtils) DownloadISO(dir, file, isoURL string) error {
 		return err
 	}
 
-	if err := os.Rename(f.Name(), dest); err != nil {
-		return err
+	return os.Rename(f.Name(), dest)
+}
+
+// iso is an ISO volume.
+type iso interface {
+	// path returns the path of the ISO.
+	path() string
+	// exists reports whether the ISO exists.
+	exists() bool
+	// version returns version information of the ISO.
+	version() (string, error)
+}
+
+// b2dISO represents a Boot2Docker ISO. It implements the ISO interface.
+type b2dISO struct {
+	// path of Boot2Docker ISO
+	commonIsoPath string
+
+	// offset and length of ISO volume ID
+	// cf. http://serverfault.com/questions/361474/is-there-a-way-to-change-a-iso-files-volume-id-from-the-command-line
+	volumeIDOffset int64
+	volumeIDLength int
+}
+
+func (b *b2dISO) path() string {
+	if b == nil {
+		return ""
+	}
+	return b.commonIsoPath
+}
+
+func (b *b2dISO) exists() bool {
+	if b == nil {
+		return false
 	}
 
+	_, err := os.Stat(b.commonIsoPath)
+	return !os.IsNotExist(err)
+}
+
+// version scans the volume ID in b and returns its version tag.
+func (b *b2dISO) version() (string, error) {
+	if b == nil {
+		return "", nil
+	}
+
+	iso, err := os.Open(b.commonIsoPath)
+	if err != nil {
+		return "", err
+	}
+	defer iso.Close()
+
+	isoMetadata := make([]byte, b.volumeIDLength)
+	_, err = iso.ReadAt(isoMetadata, b.volumeIDOffset)
+	if err != nil {
+		return "", err
+	}
+
+	verRegex := regexp.MustCompile(`v\d+\.\d+\.\d+`)
+	ver := string(verRegex.Find(isoMetadata))
+	log.Debug("local Boot2Docker ISO version: ", ver)
+	return ver, nil
+}
+
+func removeFileIfExists(name string) error {
+	if _, err := os.Stat(name); err == nil {
+		if err := os.Remove(name); err != nil {
+			return fmt.Errorf("Error removing temporary download file: %s", err)
+		}
+	}
 	return nil
+}
+
+type B2dUtils struct {
+	releaseGetter
+	iso
+	storePath    string
+	imgCachePath string
+}
+
+func NewB2dUtils(storePath string) *B2dUtils {
+	imgCachePath := filepath.Join(storePath, "cache")
+
+	return &B2dUtils{
+		releaseGetter: &b2dReleaseGetter{isoFilename: defaultISOFilename},
+		iso: &b2dISO{
+			commonIsoPath:  filepath.Join(imgCachePath, defaultISOFilename),
+			volumeIDOffset: defaultVolumeIDOffset,
+			volumeIDLength: defaultVolumeIDLength,
+		},
+		storePath:    storePath,
+		imgCachePath: imgCachePath,
+	}
+}
+
+// DownloadISO downloads boot2docker ISO image for the given tag and save it at dest.
+func (b *B2dUtils) DownloadISO(dir, file, isoURL string) error {
+	log.Infof("Downloading %s from %s...", b.path(), isoURL)
+	return b.download(dir, file, isoURL)
 }
 
 type ReaderWithProgress struct {
@@ -229,7 +353,7 @@ func (r *ReaderWithProgress) Close() error {
 }
 
 func (b *B2dUtils) DownloadLatestBoot2Docker(apiURL string) error {
-	latestReleaseURL, err := b.GetLatestBoot2DockerReleaseURL(apiURL)
+	latestReleaseURL, err := b.getReleaseURL(apiURL)
 	if err != nil {
 		return err
 	}
@@ -238,61 +362,138 @@ func (b *B2dUtils) DownloadLatestBoot2Docker(apiURL string) error {
 }
 
 func (b *B2dUtils) DownloadISOFromURL(latestReleaseURL string) error {
-	log.Infof("Downloading %s to %s...", latestReleaseURL, b.commonIsoPath)
-	if err := b.DownloadISO(b.imgCachePath, b.isoFilename, latestReleaseURL); err != nil {
-		return err
+	return b.DownloadISO(b.imgCachePath, b.filename(), latestReleaseURL)
+}
+
+func (b *B2dUtils) UpdateISOCache(isoURL string) error {
+	// recreate the cache dir if it has been manually deleted
+	if _, err := os.Stat(b.imgCachePath); os.IsNotExist(err) {
+		log.Infof("Image cache directory does not exist, creating it at %s...", b.imgCachePath)
+		if err := os.Mkdir(b.imgCachePath, 0700); err != nil {
+			return err
+		}
+	}
+
+	if isoURL != "" {
+		// Non-default B2D are not cached
+		return nil
+	}
+
+	exists := b.exists()
+	if !exists {
+		log.Info("No default Boot2Docker ISO found locally, downloading the latest release...")
+		return b.DownloadLatestBoot2Docker("")
+	}
+
+	latest := b.isLatest()
+	if !latest {
+		log.Info("Default Boot2Docker ISO is out-of-date, downloading the latest release...")
+		return b.DownloadLatestBoot2Docker("")
 	}
 
 	return nil
 }
 
 func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string) error {
-	// TODO: This is a bit off-color.
-	machineDir := filepath.Join(b.storePath, "machines", machineName)
-	machineIsoPath := filepath.Join(machineDir, b.isoFilename)
-
-	// just in case the cache dir has been manually deleted,
-	// check for it and recreate it if it's gone
-	if _, err := os.Stat(b.imgCachePath); os.IsNotExist(err) {
-		log.Infof("Image cache does not exist, creating it at %s...", b.imgCachePath)
-		if err := os.Mkdir(b.imgCachePath, 0700); err != nil {
-			return err
-		}
-	}
-
-	// By default just copy the existing "cached" iso to
-	// the machine's directory...
-	if isoURL == "" {
-		if err := b.copyDefaultIsoToMachine(machineIsoPath); err != nil {
-			return err
-		}
-	} else {
-		//if ISO is specified, check if it matches a github releases url or fallback
-		//to a direct download
-		if downloadURL, err := b.GetLatestBoot2DockerReleaseURL(isoURL); err == nil {
-			log.Infof("Downloading %s from %s...", b.isoFilename, downloadURL)
-			if err := b.DownloadISO(machineDir, b.isoFilename, downloadURL); err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (b *B2dUtils) copyDefaultIsoToMachine(machineIsoPath string) error {
-	if _, err := os.Stat(b.commonIsoPath); os.IsNotExist(err) {
-		log.Info("No default boot2docker iso found locally, downloading the latest release...")
-		if err := b.DownloadLatestBoot2Docker(""); err != nil {
-			return err
-		}
-	}
-
-	if err := CopyFile(b.commonIsoPath, machineIsoPath); err != nil {
+	if err := b.UpdateISOCache(isoURL); err != nil {
 		return err
 	}
 
-	return nil
+	// TODO: This is a bit off-color.
+	machineDir := filepath.Join(b.storePath, "machines", machineName)
+	machineIsoPath := filepath.Join(machineDir, b.filename())
+
+	// By default just copy the existing "cached" iso to the machine's directory...
+	if isoURL == "" {
+		log.Infof("Copying %s to %s...", b.path(), machineIsoPath)
+		return CopyFile(b.path(), machineIsoPath)
+	}
+
+	// if ISO is specified, check if it matches a github releases url or fallback to a direct download
+	downloadURL, err := b.getReleaseURL(isoURL)
+	if err != nil {
+		return err
+	}
+
+	return b.DownloadISO(machineDir, b.filename(), downloadURL)
+}
+
+// isLatest checks the latest release tag and
+// reports whether the local ISO cache is the latest version.
+//
+// It returns false if failing to get the local ISO version
+// and true if failing to fetch the latest release tag.
+func (b *B2dUtils) isLatest() bool {
+	localVer, err := b.version()
+	if err != nil {
+		log.Warn("Unable to get the local Boot2Docker ISO version: ", err)
+		return false
+	}
+
+	latestVer, err := b.getReleaseTag("")
+	if err != nil {
+		log.Warn("Unable to get the latest Boot2Docker ISO release version: ", err)
+		return true
+	}
+
+	return localVer == latestVer
+}
+
+// MakeDiskImage makes a boot2docker VM disk image.
+// See https://github.com/boot2docker/boot2docker/blob/master/rootfs/rootfs/etc/rc.d/automount
+func MakeDiskImage(publicSSHKeyPath string) (*bytes.Buffer, error) {
+	magicString := "boot2docker, please format-me"
+
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
+
+	// magicString first so the automount script knows to format the disk
+	file := &tar.Header{Name: magicString, Size: int64(len(magicString))}
+
+	log.Debug("Writing magic tar header")
+
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+
+	if _, err := tw.Write([]byte(magicString)); err != nil {
+		return nil, err
+	}
+
+	// .ssh/key.pub => authorized_keys
+	file = &tar.Header{Name: ".ssh", Typeflag: tar.TypeDir, Mode: 0700}
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+
+	log.Debug("Writing SSH key tar header")
+
+	pubKey, err := ioutil.ReadFile(publicSSHKeyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	file = &tar.Header{Name: ".ssh/authorized_keys", Size: int64(len(pubKey)), Mode: 0644}
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+
+	if _, err := tw.Write([]byte(pubKey)); err != nil {
+		return nil, err
+	}
+
+	file = &tar.Header{Name: ".ssh/authorized_keys2", Size: int64(len(pubKey)), Mode: 0644}
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+
+	if _, err := tw.Write([]byte(pubKey)); err != nil {
+		return nil, err
+	}
+
+	if err := tw.Close(); err != nil {
+		return nil, err
+	}
+
+	return buf, nil
 }

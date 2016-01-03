@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	heartbeatTimeout = 500 * time.Millisecond
+	heartbeatTimeout = 10 * time.Second
 )
 
 func RegisterDriver(d drivers.Driver) {
@@ -29,7 +29,8 @@ Please use this plugin through the main 'docker-machine' binary.
 		os.Exit(1)
 	}
 
-	log.IsDebug = true
+	log.SetDebug(true)
+	os.Setenv("MACHINE_DEBUG", "1")
 
 	rpcd := rpcdriver.NewRPCServerDriver(d)
 	rpc.RegisterName(rpcdriver.RPCServiceNameV0, rpcd)
@@ -50,10 +51,12 @@ Please use this plugin through the main 'docker-machine' binary.
 	for {
 		select {
 		case <-rpcd.CloseCh:
+			log.Debug("Closing plugin on server side")
 			os.Exit(0)
 		case <-rpcd.HeartbeatCh:
 			continue
 		case <-time.After(heartbeatTimeout):
+			// TODO: Add heartbeat retry logic
 			os.Exit(1)
 		}
 	}

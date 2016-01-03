@@ -48,15 +48,15 @@ const (
 
 var (
 	baseSSHArgs = []string{
+		"-o", "BatchMode=yes",
 		"-o", "PasswordAuthentication=no",
-		"-o", "IdentitiesOnly=yes",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
 		"-o", "ConnectionAttempts=3", // retry 3 times if SSH connection fails
 		"-o", "ConnectTimeout=10", // timeout after 10 seconds
 		"-o", "ControlMaster=no", // disable ssh multiplexing
-		"-o", "ControlPath=no",
+		"-o", "ControlPath=none",
 	}
 	defaultClientType = External
 )
@@ -77,16 +77,22 @@ func NewClient(user string, host string, port int, auth *Auth) (Client, error) {
 	sshBinaryPath, err := exec.LookPath("ssh")
 	if err != nil {
 		log.Debug("SSH binary not found, using native Go implementation")
-		return NewNativeClient(user, host, port, auth)
+		client, err := NewNativeClient(user, host, port, auth)
+		log.Debug(client)
+		return client, err
 	}
 
 	if defaultClientType == Native {
 		log.Debug("Using SSH client type: native")
-		return NewNativeClient(user, host, port, auth)
+		client, err := NewNativeClient(user, host, port, auth)
+		log.Debug(client)
+		return client, err
 	}
 
 	log.Debug("Using SSH client type: external")
-	return NewExternalClient(sshBinaryPath, user, host, port, auth)
+	client, err := NewExternalClient(sshBinaryPath, user, host, port, auth)
+	log.Debug(client)
+	return client, err
 }
 
 func NewNativeClient(user, host string, port int, auth *Auth) (Client, error) {
@@ -262,9 +268,17 @@ func NewExternalClient(sshBinaryPath, user, host string, port int, auth *Auth) (
 
 	args := append(baseSSHArgs, fmt.Sprintf("%s@%s", user, host))
 
+	// If no identities are explicitly provided, also look at the identities
+	// offered by ssh-agent
+	if len(auth.Keys) > 0 {
+		args = append(args, "-o", "IdentitiesOnly=yes")
+	}
+
 	// Specify which private keys to use to authorize the SSH request.
 	for _, privateKeyPath := range auth.Keys {
-		args = append(args, "-i", privateKeyPath)
+		if privateKeyPath != "" {
+			args = append(args, "-i", privateKeyPath)
+		}
 	}
 
 	// Set which port to use for SSH.

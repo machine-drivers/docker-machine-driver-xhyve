@@ -2,123 +2,81 @@ package log
 
 import (
 	"io"
-	"os"
-	"sync"
+	"regexp"
 )
 
-// Logger - Why the interface?  We may only want to print to STDOUT and STDERR for now,
-// but it won't neccessarily be that way forever.  This interface is intended
-// to provide a "framework" for a variety of different logging types in the
-// future (log to file, log to logstash, etc.) There could be a driver model
-// similar to what is done with OS or machine providers.
-type Logger interface {
-	Debug(...interface{})
-	Debugf(string, ...interface{})
-
-	Error(...interface{})
-	Errorf(string, ...interface{})
-
-	Info(...interface{})
-	Infof(string, ...interface{})
-
-	Fatal(...interface{})
-	Fatalf(string, ...interface{})
-
-	Print(...interface{})
-	Printf(string, ...interface{})
-
-	Warn(...interface{})
-	Warnf(string, ...interface{})
-
-	WithFields(Fields) Logger
-}
+const redactedText = "<REDACTED>"
 
 var (
-	l = StandardLogger{
-		mu: &sync.Mutex{},
-	}
-	IsDebug = false
+	logger = NewFmtMachineLogger()
+
+	// (?s) enables '.' to match '\n' -- see https://golang.org/pkg/regexp/syntax/
+	certRegex = regexp.MustCompile("(?s)-----BEGIN CERTIFICATE-----.*-----END CERTIFICATE-----")
+	keyRegex  = regexp.MustCompile("(?s)-----BEGIN RSA PRIVATE KEY-----.*-----END RSA PRIVATE KEY-----")
 )
 
-type Fields map[string]interface{}
-
-func init() {
-	// TODO: Is this really the best approach?  I worry that it will create
-	// implicit behavior which may be problmatic for users of the lib.
-	SetOutWriter(os.Stdout)
-	SetErrWriter(os.Stderr)
-}
-
-func SetOutWriter(w io.Writer) {
-	l.OutWriter = w
-}
-
-func SetErrWriter(w io.Writer) {
-	l.ErrWriter = w
+func stripSecrets(original []string) []string {
+	stripped := []string{}
+	for _, line := range original {
+		line = certRegex.ReplaceAllString(line, redactedText)
+		line = keyRegex.ReplaceAllString(line, redactedText)
+		stripped = append(stripped, line)
+	}
+	return stripped
 }
 
 func Debug(args ...interface{}) {
-	l.Debug(args...)
+	logger.Debug(args...)
 }
 
 func Debugf(fmtString string, args ...interface{}) {
-	l.Debugf(fmtString, args...)
+	logger.Debugf(fmtString, args...)
 }
 
 func Error(args ...interface{}) {
-	l.Error(args...)
+	logger.Error(args...)
 }
 
 func Errorf(fmtString string, args ...interface{}) {
-	l.Errorf(fmtString, args...)
-}
-
-func Errorln(args ...interface{}) {
-	l.Errorln(args...)
+	logger.Errorf(fmtString, args...)
 }
 
 func Info(args ...interface{}) {
-	l.Info(args...)
+	logger.Info(args...)
 }
 
 func Infof(fmtString string, args ...interface{}) {
-	l.Infof(fmtString, args...)
-}
-
-func Infoln(args ...interface{}) {
-	l.Infoln(args...)
+	logger.Infof(fmtString, args...)
 }
 
 func Fatal(args ...interface{}) {
-	l.Fatal(args...)
+	logger.Fatal(args...)
 }
 
 func Fatalf(fmtString string, args ...interface{}) {
-	l.Fatalf(fmtString, args...)
-}
-
-func Print(args ...interface{}) {
-	l.Print(args...)
-}
-
-func Printf(fmtString string, args ...interface{}) {
-	l.Printf(fmtString, args...)
+	logger.Fatalf(fmtString, args...)
 }
 
 func Warn(args ...interface{}) {
-	l.Warn(args...)
+	logger.Warn(args...)
 }
 
 func Warnf(fmtString string, args ...interface{}) {
-	l.Warnf(fmtString, args...)
+	logger.Warnf(fmtString, args...)
 }
 
-func WithField(fieldName string, field interface{}) Logger {
-	return l.WithFields(Fields{
-		fieldName: field,
-	})
+func SetDebug(debug bool) {
+	logger.SetDebug(debug)
 }
 
-func WithFields(fields Fields) Logger {
-	return l.WithFields(fields)
+func SetOutWriter(out io.Writer) {
+	logger.SetOutWriter(out)
+}
+
+func SetErrWriter(err io.Writer) {
+	logger.SetErrWriter(err)
+}
+
+func History() []string {
+	return stripSecrets(logger.History())
 }
