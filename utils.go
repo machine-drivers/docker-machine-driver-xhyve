@@ -30,7 +30,7 @@ func hdiutil(args ...string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		log.Error(err)
+		return err
 	}
 
 	return nil
