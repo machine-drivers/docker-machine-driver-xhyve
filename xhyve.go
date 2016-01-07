@@ -39,6 +39,8 @@ const (
 	defaultPrivateKeyPath = ""
 	defaultUUID           = ""
 	defaultNFSShare       = false
+	rootVolumeName        = "root-volume"
+	defaultDiskNumber     = -1
 )
 
 type Driver struct {
@@ -53,11 +55,13 @@ type Driver struct {
 	PrivateKeyPath string
 	UUID           string
 	NFSShare       bool
+	DiskNumber     int
 }
 
 var (
 	ErrMachineExist    = errors.New("machine already exists")
 	ErrMachineNotExist = errors.New("machine does not exist")
+	diskRegexp         = regexp.MustCompile("^/dev/disk([0-9]+)")
 )
 
 // NewDriver creates a new VirtualBox driver with default settings.
@@ -77,6 +81,7 @@ func NewDriver(hostName, storePath string) *Driver {
 		PrivateKeyPath: defaultPrivateKeyPath,
 		UUID:           defaultUUID,
 		NFSShare:       defaultNFSShare,
+		DiskNumber:     defaultDiskNumber,
 	}
 }
 
@@ -238,11 +243,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Creating SSH key...")
-	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
-		return err
-	}
-
 	log.Infof("Creating VM...")
 	if err := os.MkdirAll(d.ResolveStorePath("."), 0755); err != nil {
 		return err
@@ -324,14 +324,16 @@ func (d *Driver) Start() error {
 		os.Remove(pid)
 	}
 
+	d.attachDiskImage()
+
 	args := d.xhyveArgs()
 	args = append(args, "-F", fmt.Sprintf("%s", pid))
 
 	log.Debug(args)
 
 	cmd := exec.Command(os.Args[0], args...)
-	cmd.Stdout = &bytes.Buffer{}
-	cmd.Stderr = &bytes.Buffer{}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	err := cmd.Start()
 	if err != nil {
@@ -367,6 +369,7 @@ func (d *Driver) Stop() error {
 	}
 
 	d.IPAddress = ""
+	d.detachDiskImage()
 
 	return nil
 }
@@ -384,7 +387,13 @@ func (d *Driver) Remove() error {
 		if err := d.Stop(); err != nil {
 			return err
 		}
+	}
 
+	if err := d.removeDiskImage(); err != nil {
+		return err
+	}
+
+	if d.NFSShare {
 		if _, err := nfsexports.Remove("", d.nfsExportIdentifier()); err != nil {
 			log.Errorf("failed removing nfs share: %s", err.Error())
 		}
@@ -475,9 +484,13 @@ func (d *Driver) extractKernelImages() error {
 }
 
 func (d *Driver) generateDiskImage(count int64) error {
-	output := d.ResolveStorePath(d.MachineName)
+	diskPath := d.ResolveStorePath(rootVolumeName)
 
-	if err := hdiutil("create", "-megabytes", fmt.Sprintf("%d", d.DiskSize), output); err != nil {
+	if err := hdiutil("create", "-megabytes", fmt.Sprintf("%d", count), "-type", "SPARSEBUNDLE", diskPath); err != nil {
+		return err
+	}
+
+	if err := d.attachDiskImage(); err != nil {
 		return err
 	}
 
@@ -486,7 +499,7 @@ func (d *Driver) generateDiskImage(count int64) error {
 		return err
 	}
 
-	file, err := os.OpenFile(output+".dmg", os.O_WRONLY, 0644)
+	file, err := os.OpenFile(fmt.Sprintf("/dev/rdisk%d", d.DiskNumber), os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
@@ -501,9 +514,50 @@ func (d *Driver) generateDiskImage(count int64) error {
 	return nil
 }
 
+func (d *Driver) attachDiskImage() error {
+	diskPath := d.ResolveStorePath(rootVolumeName + ".sparsebundle")
+	cmd := exec.Command("hdiutil", "attach", "-nomount", "-noverify", "-noautofsck", diskPath)
+	output, err := cmd.Output()
+	if err != nil {
+		return err
+	}
+
+	matches := diskRegexp.FindSubmatch(output)
+	if len(matches) != 2 {
+		return fmt.Errorf("Failed parsing disk number, hdiutil output: %s", string(output))
+	}
+
+	d.DiskNumber, err = strconv.Atoi(string(matches[1]))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) detachDiskImage() error {
+	if err := hdiutil("detach", fmt.Sprintf("/dev/disk%d", d.DiskNumber)); err != nil {
+		return err
+	}
+
+	d.DiskNumber = -1
+
+	return nil
+}
+
+func (d *Driver) removeDiskImage() error {
+	diskPath := d.ResolveStorePath(rootVolumeName + ".sparsebundle")
+	return os.RemoveAll(diskPath)
+}
+
 // Make a boot2docker userdata.tar key bundle
 func (d *Driver) generateKeyBundle() (*bytes.Buffer, error) {
 	magicString := "boot2docker, please format-me"
+
+	log.Infof("Creating SSH key...")
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
+		return nil, err
+	}
 
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
@@ -627,7 +681,7 @@ func (d *Driver) xhyveArgs() []string {
 	vmlinuz := d.ResolveStorePath("vmlinuz64")
 	initrd := d.ResolveStorePath("initrd.img")
 	iso := d.ResolveStorePath(isoFilename)
-	img := d.ResolveStorePath(d.MachineName + ".dmg")
+	img := fmt.Sprintf("/dev/rdisk%d", d.DiskNumber)
 	bootcmd := d.BootCmd
 
 	cpus := d.CPU
@@ -641,12 +695,12 @@ func (d *Driver) xhyveArgs() []string {
 		"-U", fmt.Sprintf("%s", uuid),
 		"-c", fmt.Sprintf("%d", cpus),
 		"-m", fmt.Sprintf("%dM", d.Memory),
-		"-l", "com1",
+		"-l", "com1,autopty",
 		"-s", "0:0,hostbridge",
 		"-s", "31,lpc",
 		"-s", "2:0,virtio-net",
 		"-s", fmt.Sprintf("3,ahci-cd,%s", iso),
-		"-s", fmt.Sprintf("4,virtio-blk,%s", img),
+		"-s", fmt.Sprintf("4:0,ahci-hd,%s", img),
 		"-f", fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd)}
 }
 

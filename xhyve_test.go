@@ -1,6 +1,8 @@
 package xhyve
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -54,6 +56,39 @@ func TestSetConfigFromFlags(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Empty(t, checkFlags.InvalidFlags)
+}
+
+func TestGeneratingAndDetachingDiskImage(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "driver-xkyve")
+	assert.NoError(t, err)
+
+	driver := NewDriver("default", tempDir)
+	if err := os.MkdirAll(driver.ResolveStorePath(""), 0700); err != nil {
+		assert.NoError(t, err)
+	}
+
+	if err := driver.generateDiskImage(500); err != nil {
+		assert.NoError(t, err)
+	}
+
+	if _, err := os.Stat(driver.ResolveStorePath("root-volume.sparsebundle")); err != nil {
+		assert.NoError(t, err)
+	}
+
+	assert.NotEqual(t, -1, driver.DiskNumber)
+
+	if err := driver.detachDiskImage(); err != nil {
+		assert.NoError(t, err)
+	}
+	assert.Equal(t, -1, driver.DiskNumber)
+
+	if err := driver.removeDiskImage(); err != nil {
+		assert.NoError(t, err)
+	}
+
+	if _, err := os.Stat(driver.ResolveStorePath("root-volume.sparsebundle")); err == nil {
+		assert.Error(t, err)
+	}
 }
 
 func reverse(s string) string {
