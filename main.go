@@ -6,7 +6,7 @@ import (
 
 	"github.com/docker/machine/libmachine/drivers/plugin"
 	goxhyve "github.com/hooklift/xhyve"
-	"github.com/zchee/docker-machine-driver-xhyve"
+	"github.com/zchee/docker-machine-driver-xhyve/xhyve"
 )
 
 func main() {
