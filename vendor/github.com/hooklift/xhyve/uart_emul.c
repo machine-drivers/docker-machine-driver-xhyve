@@ -90,7 +90,7 @@ struct fifo {
 struct ttyfd {
 	bool	opened;
 	int	fd;		/* tty device file descriptor */
-	char *name; /* tty filesystem device path in case of using autopty*/
+	char *name; /* slave pty name when using autopty*/
 	struct termios tio_orig, tio_new;    /* I/O Terminals */
 };
 
@@ -662,9 +662,11 @@ uart_set_backend(struct uart_softc *sc, const char *opts)
 		}
 
 		if ((retval = unlockpt(ptyfd)) == -1) {
-			perror("error unlocking slave pseudo terminal to allow its usage");
+			perror("error unlocking slave pseudo terminal, to allow its usage");
 			return retval;
 		}
+
+		fprintf(stdout, "Hook up a terminal emulator to %s in order to access your VM\n", ptyname);
 
 		// Sends to Go land the device path name for the slave pseudo-terminal.
 		go_set_pty_name(ptyname);
