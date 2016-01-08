@@ -139,8 +139,8 @@ usage(int code)
 		"       -g: gdb port\n"
 		"       -h: help\n"
 		"       -H: vmexit from the guest on hlt\n"
-		"       -l: LPC device configuration\n"
-		"       -m: memory size in MB\n"
+		"       -l: LPC device configuration. Ex: -l com1,stdio -l com2,autopty -l com2,/dev/myownpty\n"
+		"       -m: memory size in MB, may be suffixed with one of K, M, G or T\n"
 		"       -M: print MAC address and exit if using vmnet\n"
 		"       -p: pin 'vcpu' to 'hostcpu'\n"
 		"       -P: vmexit from the guest on pause\n"
@@ -163,7 +163,7 @@ show_version()
         fprintf(stderr, "%s: %s\n\n%s\n",progname, "VERSION",
 		"xhyve is a port of FreeBSD's bhyve hypervisor to OS X that\n"
 		"works entirely in userspace and has no other dependencies.\n\n"
-		"Homepage: https://github.com/mist64/xhyve\n"
+		"Homepage: http://www.xhyve.xyz\n"
 		"License: BSD\n");
 		exit(0);
 }
@@ -571,7 +571,7 @@ vcpu_set_capabilities(int cpu)
 			handler[VM_EXITCODE_HLT] = vmexit_hlt;
 	}
 
-		if (fbsdrun_vmexit_on_pause()) {
+        if (fbsdrun_vmexit_on_pause()) {
 		/*
 		 * pause exit support required for this mode
 		 */
@@ -779,7 +779,7 @@ firmware_parse(const char *opt) {
 	return 0;
 
 fail:
-	fprintf(stderr, "Invalid firmare argument\n"
+	fprintf(stderr, "Invalid firmware argument\n"
 		"    -f kexec,'kernel','initrd','\"cmdline\"'\n"
 		"    -f fbsd,'userboot','boot volume','\"kernel env\"'\n");
 
@@ -789,48 +789,56 @@ fail:
 static void
 remove_pidfile()
 {
+	int error;
+
 	if (pidfile == NULL)
 		return;
 
-	if (unlink(pidfile))
+	error = unlink(pidfile);
+	if (error < 0)
 		fprintf(stderr, "Failed to remove pidfile\n");
 }
 
 static int
 setup_pidfile()
 {
-	int f, pid, serrno;
+	int f, error, pid;
 	char pid_str[21];
 
 	if (pidfile == NULL)
-		return (0);
+		return 0;
 
 	pid = getpid();
 
-	if (sprintf(pid_str, "%d", pid) < 0)
-		return (errno);
+	error = sprintf(pid_str, "%d", pid);
+	if (error < 0)
+		goto fail;
 
 	f = open(pidfile, O_CREAT|O_EXCL|O_WRONLY, 0644);
 	if (f < 0)
-		return (errno);
+		goto fail;
 
-	if (atexit(remove_pidfile)) {
-		serrno = errno;
+	error = atexit(remove_pidfile);
+	if (error < 0) {
 		close(f);
 		remove_pidfile();
-		return (serrno);
+		goto fail;
 	}
 
-	if (write(f, (void*)pid_str, strlen(pid_str)) < 0) {
-		serrno = errno;
+	if (0 > (write(f, (void*)pid_str, strlen(pid_str)))) {
 		close(f);
-		return (serrno);
+		goto fail;
 	}
 
-	if (close(f))
-		return (errno);
+	error = close(f);
+	if (error < 0)
+		goto fail;
 
-	return (0);
+	return 0;
+
+fail:
+	fprintf(stderr, "Failed to set up pidfile\n");
+	return -1;
 }
 
 int
@@ -897,8 +905,8 @@ run_xhyve(int argc, char* argv[])
 				errx(EX_USAGE, "invalid memsize '%s'", optarg);
 			break;
 		case 'M':
-	 		print_mac = 1;
-	 		break;
+			print_mac = 1;
+			break;
 		case 'H':
 			guest_vmexit_on_hlt = 1;
 			break;

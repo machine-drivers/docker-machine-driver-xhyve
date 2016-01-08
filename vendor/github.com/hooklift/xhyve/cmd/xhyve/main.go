@@ -3,19 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/signal"
 
 	"github.com/hooklift/xhyve"
 )
 
-func init() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
-	go func() {
-		s := <-c
-		fmt.Printf("Signal %s received\n", s)
-	}()
-}
 
 func main() {
 	done := make(chan bool)
@@ -28,10 +19,15 @@ func main() {
 		done <- true
 	}()
 
+	if len(os.Args) <= 1 {
+		fmt.Println("No arguments found, there is nothing to do.")
+		return
+	}
+
 	fmt.Printf("Waiting on a pseudo-terminal to be ready... ")
 	pty := <-ptyCh
-	fmt.Printf("done\n")
-	fmt.Printf("Hook up your terminal emulator to %s in order to connect to your VM\n", pty)
+	fmt.Println("done")
+	fmt.Printf("PTY allocated at %s\n", pty)
 
 	<-done
 	fmt.Println("Hypervisor goroutine finished!")
