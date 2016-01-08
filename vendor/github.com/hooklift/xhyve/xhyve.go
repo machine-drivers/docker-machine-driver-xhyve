@@ -38,10 +38,18 @@ func setTermios(state syscall.Termios) {
 // on multiple OS threads again by Go's scheduler.
 //export go_callback_exit
 func go_callback_exit(status C.int) {
+	exitStatus := map[int]string{
+		0:   "Reset",
+		1:   "PowerOFF",
+		2:   "Halt",
+		3:   "TripleFault",
+		100: "Internal error",
+	}
+
 	// Restores stty settings to the values that existed before running xhyve.
 	setTermios(termios)
 
-	fmt.Printf("Exiting with status code %d\n", status)
+	fmt.Printf("VM has been suspended by %s event\n", exitStatus[int(status)])
 	fmt.Printf("Releasing allocated memory from Go land... ")
 	for _, arg := range argv {
 		C.free(unsafe.Pointer(arg))
@@ -50,10 +58,12 @@ func go_callback_exit(status C.int) {
 
 	// Turns exit flag On for mevent busy loop so that the next time kevent
 	// receives an event, mevent handles it and exits the loop.
+	fmt.Print("Signaling xhyve mevent dispatch loop to exit... ")
 	C.exit_mevent_dispatch_loop = true
 
 	// Forces kevent() to exit by using the self-pipe trick.
 	C.mevent_exit()
+	fmt.Println("done")
 
 	// Allows Go's scheduler to move the goroutine to a different OS thread.
 	runtime.UnlockOSThread()

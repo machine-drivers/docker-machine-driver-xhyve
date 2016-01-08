@@ -1,3 +1,4 @@
 cmd/xhyve/imgs/stable*
 cmd/xhyve/xhyve
 vendor
+xhyve

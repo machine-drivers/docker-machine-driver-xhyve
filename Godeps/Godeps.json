@@ -62,7 +62,7 @@
 		},
 		{
 			"ImportPath": "github.com/hooklift/xhyve",
-			"Rev": "9622b3100eaeebde930c87c55a2a08e0ade2c3af"
+			"Rev": "219dc33c05fa5c7c0529751c029b4ac66844d67a"
 		},
 		{
 			"ImportPath": "github.com/johanneswuerbach/nfsexports",
