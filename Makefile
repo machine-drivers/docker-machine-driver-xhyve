@@ -104,7 +104,7 @@ CWHITE := \x1b[37;01m
 default: build
 
 clean:
-	@${RM} ./bin/docker-machine-driver-xhyve
+	@${RM} -r ./bin
 
 bin/docker-machine-driver-xhyve:
 	test -d bin || mkdir -p bin
