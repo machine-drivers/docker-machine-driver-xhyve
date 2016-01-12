@@ -63,6 +63,10 @@ export GOOS=darwin
 # Support go1.5 vendoring (let us avoid messing with GOPATH or using godep)
 export GO15VENDOREXPERIMENT=1
 
+# TODO: uuid.go need cgo
+export CGO_ENABLED=1
+
+
 # Package side settings
 
 # Build package infomation
