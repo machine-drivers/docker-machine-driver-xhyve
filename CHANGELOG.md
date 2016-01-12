@@ -1,3 +1,30 @@
+# [v0.2.1](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.2.1) (2016-01-12)
+[Full Changelog](https://github.com/zchee/docker-machine-driver-xhyve/compare/v0.2.0...v0.2.1)
+
+## Features
+
+### Add wait for SSH
+Add wait for available SSH login when start and restart commands.
+
+### Misc
+- Fix folder structure. Thanks [@saljam](https://github.com/saljam).
+
+## Auto generated Change Log
+
+**Closed issues:**
+
+- make docker-machine-driver-xhyve go gettable [\#49](https://github.com/zchee/docker-machine-driver-xhyve/issues/49)
+- Might want to re-release a binary [\#45](https://github.com/zchee/docker-machine-driver-xhyve/issues/45)
+- Build isn't including the updated --memory-size flags? [\#40](https://github.com/zchee/docker-machine-driver-xhyve/issues/40)
+
+**Merged pull requests:**
+
+- Bump version to 0.2.1 [\#58](https://github.com/zchee/docker-machine-driver-xhyve/pull/58) ([zchee](https://github.com/zchee))
+- Add wait for SSH when \(Re\)Start [\#57](https://github.com/zchee/docker-machine-driver-xhyve/pull/57) ([zchee](https://github.com/zchee))
+- Update vendor for docker/docker and docker/machine [\#56](https://github.com/zchee/docker-machine-driver-xhyve/pull/56) ([zchee](https://github.com/zchee))
+- Fix Makefile for develop [\#55](https://github.com/zchee/docker-machine-driver-xhyve/pull/55) ([zchee](https://github.com/zchee))
+- make main binary go installable [\#53](https://github.com/zchee/docker-machine-driver-xhyve/pull/53) ([saljam](https://github.com/saljam))
+
 # [v0.2.0](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.2.0) (2016-01-09)
 [Full Changelog](https://github.com/zchee/docker-machine-driver-xhyve/compare/v0.1.0...v0.2.0)
 
