@@ -26,9 +26,9 @@ If you were doubt problem either, please post to this repository [issues](https:
 ```bash
 > go get github.com/docker/machine
 > cd $GOPATH/src/github.com/docker/machine
-# Build docker-machine and some docker-machine official(embedded) driver binary
+# Build docker-machine binary
 > make build
-# Install all binary into /usr/local/bin/
+# Install docker-machine binary into /usr/local/bin/
 > make install
 ```
 
@@ -37,10 +37,10 @@ If you were doubt problem either, please post to this repository [issues](https:
 Like the docker-machine's `Makefile`, install the `docker-machine-driver-xhyve` binary will be in `/usr/local/bin`.  
 
 ```bash
-> go get -d github.com/zchee/docker-machine-driver-xhyve
-> cd $GOPATH/src/github.com/zchee/docker-machine-driver-xhyve
-> make
-> make install
+$ go get -u github.com/zchee/docker-machine-driver-xhyve
+# docker-machine-driver-xhyve need root owner and uid
+$ sudo chown root:wheel $GOPATH/bin/docker-machine-driver-xhyve
+$ sudo chmod u+s $GOPATH/bin/docker-machine-driver-xhyve
 ```
 
 ## Usage
