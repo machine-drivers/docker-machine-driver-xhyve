@@ -183,6 +183,7 @@ func (d *Driver) GetURL() (string, error) {
 	if ip == "" {
 		return "", nil
 	}
+
 	return fmt.Sprintf("tcp://%s:2376", ip), nil
 }
 
@@ -212,6 +213,39 @@ func (d *Driver) GetState() (state.State, error) {
 	}
 
 	return state.Running, nil
+}
+
+func (d *Driver) waitForIP() error {
+	var ip string
+	var err error
+
+	log.Infof("Waiting for VM to come online...")
+	for i := 1; i <= 60; i++ {
+		ip, err = d.getIPfromDHCPLease()
+		if err != nil {
+			log.Debugf("Not there yet %d/%d, error: %s", i, 60, err)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		if ip != "" {
+			log.Debugf("Got an ip: %s", ip)
+			d.IPAddress = ip
+
+			break
+		}
+	}
+
+	if ip == "" {
+		return fmt.Errorf("Machine didn't return an IP after 120 seconds, aborting")
+	}
+
+	// Wait for SSH over NAT to be available before returning to user
+	if err := drivers.WaitForSSH(d); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Print driver version, Check VirtualBox version
@@ -283,29 +317,6 @@ func (d *Driver) Create() error {
 	if err := d.Start(); err != nil {
 		return err
 	}
-	log.Infof("Waiting for VM to come online...")
-
-	var ip string
-	for i := 1; i <= 60; i++ {
-		ip, err = d.getIPfromDHCPLease()
-		if err != nil {
-			log.Debugf("Not there yet %d/%d, error: %s", i, 60, err)
-			time.Sleep(2 * time.Second)
-			continue
-		}
-
-		if ip != "" {
-			log.Debugf("Got an ip: %s", ip)
-			break
-		}
-	}
-
-	if ip == "" {
-		return fmt.Errorf("Machine didn't return an IP after 120 seconds, aborting")
-	}
-
-	// We got an IP, let's copy ssh keys over
-	d.IPAddress = ip
 
 	// Setup NFS sharing
 	if d.NFSShare {
@@ -347,7 +358,7 @@ func (d *Driver) Start() error {
 		}
 	}()
 
-	return nil
+	return d.waitForIP()
 }
 
 func (d *Driver) Stop() error {
@@ -410,7 +421,6 @@ func (d *Driver) Restart() error {
 	if err != nil {
 		return err
 	}
-
 	if s == state.Running {
 		if err := d.Stop(); err != nil {
 			return err
@@ -421,7 +431,7 @@ func (d *Driver) Restart() error {
 		return err
 	}
 
-	return nil
+	return d.waitForIP()
 }
 
 func (d *Driver) Kill() error {
