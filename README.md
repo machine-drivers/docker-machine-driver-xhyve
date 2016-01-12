@@ -63,11 +63,7 @@ I'm very anxious whether other users(except me) are able to launch the xhyve.
 So, if you were able to launch the xhyve use docker-machine-driver-xhyve, Would you post a report to this issue thread?
 https://github.com/zchee/docker-machine-driver-xhyve/issues/18
 
-At present, I do not have a way to automatically test.  
-`Travis CI` provide only the OS X 10.9 Marvericks. Not support `Hypervisor.framework` and `vmnet.framework`.  
-`Circle CI` does not provide OS X. Also iOS build is currently beta.
-
-And, if OS X launched by the `Vagrant`, can be build, but will not be able to launch the Hypervisor.  
+If OS X launched by the `Vagrant`, can be build, but will not be able to launch the Hypervisor.  
 The cause probably because backend vm (Virtualbox, VMWare, parallels...) to hide the CPU infomation.
 
 In the case of VMWare,
