@@ -34,8 +34,6 @@ If you were doubt problem either, please post to this repository [issues](https:
 
 ## Install
 
-Like the docker-machine's `Makefile`, install the `docker-machine-driver-xhyve` binary will be in `/usr/local/bin`.  
-
 ```bash
 $ go get -u github.com/zchee/docker-machine-driver-xhyve
 # docker-machine-driver-xhyve need root owner and uid
