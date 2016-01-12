@@ -99,18 +99,10 @@ Unable to create VM (-85377018)
 
 ## Known isuue
 
-### experimental shared folders
+### Experimental shared folders
 `docker-machine-driver-xhyve` can create a `NFS` share automatically for you, but this feature
 is highly experimental. To use it specify `--xhyve-experimental-nfs-share` when creating your
 machine.
-
-### Get state use `ssh`, do not know real vm state
-`docker-machine-driver-xhyve` checking vm state use send `exit 0` on `ssh`.  
-but, that is not real state of vm.  
-
-`xhyve` has the XPC dictionary on backend. (still uncertain)  
-XPC Services is part of libSystem, provides a lightweight mechanism for basic interprocess communication integrated with Grand Central Dispatch and launchd.  
-In the future, get the state to use it.
 
 ### Does not clean up the vmnet when remove a VM
 Current state, `docker-machine-driver-xhyve` does not clean up the vmnet configuration.  
