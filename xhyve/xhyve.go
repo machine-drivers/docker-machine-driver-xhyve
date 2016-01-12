@@ -320,6 +320,7 @@ func (d *Driver) Create() error {
 
 	// Setup NFS sharing
 	if d.NFSShare {
+		log.Infof("NFS share folder must be root. Please insert root password.")
 		err = d.setupNFSShare()
 		if err != nil {
 			log.Errorf("NFS setup failed: %s", err.Error())
@@ -405,6 +406,7 @@ func (d *Driver) Remove() error {
 	}
 
 	if d.NFSShare {
+		log.Infof("Remove NFS share folder must be root. Please insert root password.")
 		if _, err := nfsexports.Remove("", d.nfsExportIdentifier()); err != nil {
 			log.Errorf("failed removing nfs share: %s", err.Error())
 		}
