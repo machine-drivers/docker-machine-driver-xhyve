@@ -2,7 +2,7 @@ MAKEFLAGS := -j 1
 
 DOCKER_MACHINE_CMD := docker-machine
 
-DOCKER_MACHINE_STORAGEPATH := $(HOME)/.docker/machine-test
+DOCKER_MACHINE_STORAGEPATH := $(HOME)/.docker/machine
 DOCKER_MACHINE_VM_NAME := xhyve-test
 # Set boot2docker-url to already exists iso path
 DOCKER_MACHINE_VM_BOOT2DOCKER_URL := $(HOME)/.docker/machine/cache/boot2docker.iso
