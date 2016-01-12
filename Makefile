@@ -107,9 +107,9 @@ clean:
 	@${RM} -r ./bin
 
 bin/docker-machine-driver-xhyve:
-	test -d bin || mkdir -p bin
 	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET} ..."
 	@echo "${CBLACK} ${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${CGO_CFLAGS} ${CGO_LDFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE} ${CRESET}"; \
+	test -d bin || mkdir -p bin
 	${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${CGO_CFLAGS} ${CGO_LDFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE} || exit 1
 	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel. Please root password${CRESET}"; \
 	sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT}
@@ -121,13 +121,13 @@ install: bin/docker-machine-driver-xhyve
 
 test:
 	@echo "${CBLUE}==>${CRESET} Test ${CGREEN}${PACKAGE}${CRESET} ..."
-	@echo "${CBLACK} ${GO_TEST} ${TOP_PACKAGE_DIR}/${PACKAGE} ${CRESET}"; \
-	${GO_TEST} ${TOP_PACKAGE_DIR}/${PACKAGE} || exit 1
+	@echo "${CBLACK} ${GO_TEST} ${TOP_PACKAGE_DIR}/${PACKAGE}/xhyve ${CRESET}"; \
+	${GO_TEST} ${TOP_PACKAGE_DIR}/${PACKAGE}/xhyve || exit 1
 
 test-run:
 	@echo "${CBLUE}==>${CRESET} Test ${CGREEN}${PACKAGE} ${FUNC} only${CRESET} ..."
-	@echo "${CBLACK} ${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE} ${CRESET}"; \
-	${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE} || exit 1
+	@echo "${CBLACK} ${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE}/xhyve ${CRESET}"; \
+	${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE}/xhyve || exit 1
 
 dep-save:
 	${GODEP_CMD} save $(shell go list ./... | grep -v vendor/)
