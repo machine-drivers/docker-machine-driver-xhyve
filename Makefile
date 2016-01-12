@@ -45,12 +45,6 @@ else
 	# 	- `strip -s` is like passing '-s' flag to -ldflags, but it doesn't strip quite as much
 endif
 
-# Set static build option
-#   Usage: STATIC=1 make
-ifeq ($(STATIC),true)
-	GO_LDFLAGS := $(GO_LDFLAGS) -extldflags -static
-endif
-
 # Verbose
 VERBOSE_GO := -v
 
@@ -68,6 +62,10 @@ export GOOS=darwin
 
 # Support go1.5 vendoring (let us avoid messing with GOPATH or using godep)
 export GO15VENDOREXPERIMENT=1
+
+# TODO: uuid.go need cgo
+export CGO_ENABLED=1
+
 
 # Package side settings
 
@@ -157,4 +155,4 @@ test-stop:
 test-upgrade:
 test-url:
 
-.PHONY: clean run kill
+.PHONY: clean run rm kill

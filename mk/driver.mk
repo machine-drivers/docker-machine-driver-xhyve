@@ -2,7 +2,7 @@ MAKEFLAGS := -j 1
 
 DOCKER_MACHINE_CMD := docker-machine
 
-DOCKER_MACHINE_STORAGEPATH := $(HOME)/.docker/machine-test
+DOCKER_MACHINE_STORAGEPATH := $(HOME)/.docker/machine
 DOCKER_MACHINE_VM_NAME := xhyve-test
 # Set boot2docker-url to already exists iso path
 DOCKER_MACHINE_VM_BOOT2DOCKER_URL := $(HOME)/.docker/machine/cache/boot2docker.iso
@@ -10,7 +10,7 @@ DOCKER_MACHINE_VM_BOOT2DOCKER_URL := $(HOME)/.docker/machine/cache/boot2docker.i
 DOCKER_MACHINE_VM_CPU_COUNT := ${shell /usr/bin/python -c "print(${shell sysctl -n hw.ncpu}/2)"}
 # Set memory size to hw.memsize/2 MB
 DOCKER_MACHINE_VM_MEMORY_SIZE := ${shell /usr/bin/python -c "print(${shell sysctl -n hw.memsize}/2097152)"}
-DOCKER_MACHINE_VM_DISKSIZE := 2000
+DOCKER_MACHINE_VM_DISKSIZE := 20000
 
 # Always enable debug mode
 export MACHINE_DEBUG=1
