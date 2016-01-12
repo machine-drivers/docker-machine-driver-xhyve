@@ -35,7 +35,11 @@ If you were doubt problem either, please post to this repository [issues](https:
 ## Install
 
 ```bash
+# Need Go 1.5 vendoring support
+$ export GO15VENDOREXPERIMENT=1
+
 $ go get -u github.com/zchee/docker-machine-driver-xhyve
+
 # docker-machine-driver-xhyve need root owner and uid
 $ sudo chown root:wheel $GOPATH/bin/docker-machine-driver-xhyve
 $ sudo chmod u+s $GOPATH/bin/docker-machine-driver-xhyve
