@@ -95,7 +95,6 @@ CMAGENTA := \x1b[35;01m
 CCYAN := \x1b[36;01m
 CWHITE := \x1b[37;01m
 
-
 #
 # Build jobs settings
 #
@@ -115,7 +114,8 @@ bin/docker-machine-driver-xhyve:
 build: bin/docker-machine-driver-xhyve
 
 install: bin/docker-machine-driver-xhyve
-	sudo cp -p ./bin/docker-machine-driver-xhyve /usr/local/bin
+	@test -d /usr/local/bin || mkdir -p /usr/local/bin
+	sudo cp -p ./bin/docker-machine-driver-xhyve /usr/local/bin/
 
 test:
 	@echo "${CBLUE}==>${CRESET} Test ${CGREEN}${PACKAGE}${CRESET} ..."
