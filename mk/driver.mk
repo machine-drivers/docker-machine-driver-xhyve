@@ -75,6 +75,6 @@ driver-kill:
 
 driver-remove:
 	${DOCKER_MACHINE_CMD} --storage-path ${DOCKER_MACHINE_STORAGEPATH} rm -f ${DOCKER_MACHINE_VM_NAME} || true
-	$(if $(shell ls $(HOME)/.docker/machine-test), sudo rm -rf ${DOCKER_MACHINE_STORAGEPATH},)
+	$(if $(shell ls $(HOME)/.docker/machine/machines/xhyve-test), sudo rm -rf ${DOCKER_MACHINE_STORAGEPATH}/machines/xhyve-test,)
 
 .PHONY: driver-kill
