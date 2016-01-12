@@ -49,7 +49,7 @@ endif
 VERBOSE_GO := -v
 
 # Parse git current branch commit-hash
-GO_LDFLAGS := ${GO_LDFLAGS} -X `go list .`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
+GO_LDFLAGS := ${GO_LDFLAGS} -X `go list ./xhyve`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
 
 
 # Environment variables
