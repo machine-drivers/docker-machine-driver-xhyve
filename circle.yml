@@ -1,0 +1,24 @@
+machine:
+  # https://github.com/circleci/docker/blob/docker-1.9.1/circle.yml#L2-L5
+  pre:
+    - echo 'DOCKER_OPTS="-s btrfs -e lxc -D --userland-proxy=false"' | sudo tee -a /etc/default/docker
+    - sudo curl -L -o /usr/bin/docker 'https://s3-external-1.amazonaws.com/circle-downloads/docker-1.9.1-circleci'
+    - sudo chmod 0755 /usr/bin/docker
+  services:
+    - docker
+
+dependencies:
+  cache_directories:
+    - "~/docker"
+  override:
+    - docker version
+    - docker info
+    - if [[ -e ~/docker/osxcc-golang_devel.tar ]]; then docker load -i ~/docker/osxcc-golang_devel.tar; fi
+    - docker build -t "zchee/docker-machine-driver-xhyve:latest" .
+    - mkdir -p ~/docker; docker save osxcc/golang:devel > ~/docker/osxcc-golang_devel.tar
+
+test:
+  override:
+    - docker run --rm "zchee/docker-machine-driver-xhyve:latest" > "docker-machine-driver-xhyve"
+    - file "docker-machine-driver-xhyve"
+    - shasum -a 256 "docker-machine-driver-xhyve"
