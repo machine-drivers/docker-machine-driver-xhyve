@@ -1,7 +1,7 @@
 # docker-machine-driver-xhyve
 
-| Go 1.5.2 & 1.6beta1 | Go devel |
-|:-------------------:|:--------:|
+| Travis-CI | CircleCI |
+|:---------:|:---------:|
 | [![Build Status](https://travis-ci.org/zchee/docker-machine-driver-xhyve.svg?branch=master)](https://travis-ci.org/zchee/docker-machine-driver-xhyve) | [![Circle CI](https://circleci.com/gh/zchee/docker-machine-driver-xhyve/tree/master.svg?style=svg)](https://circleci.com/gh/zchee/docker-machine-driver-xhyve/tree/master) |
 
 Docker Machine driver plugin for [xhyve](https://github.com/mist64/xhyve) native OS X Hypervisor
