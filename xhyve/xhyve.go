@@ -184,10 +184,28 @@ func (d *Driver) GetURL() (string, error) {
 		return "", nil
 	}
 
+	// Wait for SSH over NAT to be available before returning to user
+	for {
+		err := drivers.WaitForSSH(d)
+		if err != nil {
+			time.Sleep(1 * time.Second)
+		} else {
+			break
+		}
+	}
+
 	return fmt.Sprintf("tcp://%s:2376", ip), nil
 }
 
 func (d *Driver) GetIP() (string, error) {
+	s, err := d.GetState()
+	if err != nil {
+		return "", err
+	}
+	if s != state.Running {
+		return "", drivers.ErrHostIsNotRunning
+	}
+
 	if d.IPAddress != "" {
 		return d.IPAddress, nil
 	}
@@ -196,7 +214,6 @@ func (d *Driver) GetIP() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	log.Infof("Getting to VM state...")
 	pid, err := d.GetPid()
 	if err != nil {
 		// TODO: If err instead of nil, will be occurred error when first GetState() of Start()
