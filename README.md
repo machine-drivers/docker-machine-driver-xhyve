@@ -36,6 +36,18 @@ If you were doubt problem either, please post to this repository [issues](https:
 
 ## Install
 
+Use [Homebrew/homebrew](https://github.com/Homebrew/homebrew),
+
+```bash
+$ brew install docker-machine-driver-xhyve
+
+# docker-machine-driver-xhyve need root owner and uid
+$ sudo chown root:wheel $(brew --prefix)/opt/docker-machine-driver-xhyve/bin/docker-machine-driver-xhyve
+$ sudo chmod u+s $(brew --prefix)/opt/docker-machine-driver-xhyve/bin/docker-machine-driver-xhyve
+```
+
+Use `go get`,
+
 ```bash
 # Need Go 1.5 vendoring support
 $ export GO15VENDOREXPERIMENT=1
