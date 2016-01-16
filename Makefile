@@ -105,7 +105,7 @@ clean:
 
 bin/docker-machine-driver-xhyve:
 	@test -d bin || mkdir -p bin;
-	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET} ..."
+	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET}..."
 	@echo "${CBLACK} ${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${CGO_CFLAGS} ${CGO_LDFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE} ${CRESET}"; \
 	${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${CGO_CFLAGS} ${CGO_LDFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE} || exit 1
 	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel. Please root password${CRESET}"; \
@@ -114,16 +114,17 @@ bin/docker-machine-driver-xhyve:
 build: bin/docker-machine-driver-xhyve
 
 install: bin/docker-machine-driver-xhyve
+	@echo "${CBLUE}==>${CRESET} Install ${CGREEN}${PACKAGE}${CRESET}..."
 	@test -d /usr/local/bin || mkdir -p /usr/local/bin
 	sudo cp -p ./bin/docker-machine-driver-xhyve /usr/local/bin/
 
 test:
-	@echo "${CBLUE}==>${CRESET} Test ${CGREEN}${PACKAGE}${CRESET} ..."
+	@echo "${CBLUE}==>${CRESET} Test ${CGREEN}${PACKAGE}${CRESET}..."
 	@echo "${CBLACK} ${GO_TEST} ${TOP_PACKAGE_DIR}/${PACKAGE}/xhyve ${CRESET}"; \
 	${GO_TEST} ${TOP_PACKAGE_DIR}/${PACKAGE}/xhyve || exit 1
 
 test-run:
-	@echo "${CBLUE}==>${CRESET} Test ${CGREEN}${PACKAGE} ${FUNC} only${CRESET} ..."
+	@echo "${CBLUE}==>${CRESET} Test ${CGREEN}${PACKAGE} ${FUNC} only${CRESET}..."
 	@echo "${CBLACK} ${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE}/xhyve ${CRESET}"; \
 	${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE}/xhyve || exit 1
 
@@ -136,8 +137,6 @@ dep-restore:
 run: driver-run
 
 rm: driver-remove
-
-kill: driver-kill
 
 # TODO: for zsh completion. zsh do not get jobs of includes makefile
 test-env:
