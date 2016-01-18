@@ -17,6 +17,7 @@ sudo sh -c "rm -f /usr/local/bin/docker && \
   curl -fL -o /usr/local/bin/docker ${DOCKER_DOWNLOAD_URL} && \
   chmod +x /usr/local/bin/docker && \
   /etc/init.d/docker stop && \
-  /etc/init.d/docker start"
+  /etc/init.d/docker start && \
+  docker version"
 
 exit 0
