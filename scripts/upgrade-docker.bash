@@ -10,7 +10,7 @@ if [[ "$VERSION" == "master" ]]; then
   DOCKER_DOWNLOAD_URL="https://master.dockerproject.org/linux/amd64/docker"
 else
   DOCKER_VERSION=${VERSION}
-  DOCKER_DOWNLOAD_URL="https://test.docker.com/builds/Linux/x86_64/docker-${VERSION}"
+  DOCKER_DOWNLOAD_URL="https://test.docker.com/builds/Linux/x86_64/docker-${DOCKER_VERSION}"
 fi
 
 sudo sh -c "rm -f /usr/local/bin/docker && \
