@@ -18,6 +18,7 @@ sudo sh -c "rm -f /usr/local/bin/docker && \
   chmod +x /usr/local/bin/docker && \
   /etc/init.d/docker stop && \
   /etc/init.d/docker start && \
+  sleep 3 && \
   docker version"
 
 exit 0
