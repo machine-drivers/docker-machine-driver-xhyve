@@ -21,6 +21,8 @@ GO_LINT=golint
 GODEP := ${GOPATH}/bin/godep
 GODEP_CMD := $(if ${GODEP}, , $(error Please install godep: go get github.com/tools/godep)) ${GODEP}
 
+DOCKER_CMD := docker
+
 # Set debug gcflag, or optimize ldflags
 #   Usage: GDBDEBUG=1 make
 ifeq ($(DEBUG),true)
@@ -133,6 +135,12 @@ dep-save:
 
 dep-restore:
 	${GODEP_CMD} restore -v
+
+docker-build:
+	${DOCKER_CMD} build --rm -t ${GITHUB_USER}/${PACKAGE} .
+
+docker-build-nocache:
+	${DOCKER_CMD} build --rm --no-cache -t ${GITHUB_USER}/${PACKAGE} .
 
 run: driver-run
 
