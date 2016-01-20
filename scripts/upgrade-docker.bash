@@ -17,8 +17,7 @@ fi
 sudo sh -c "rm -f /usr/local/bin/docker \
   && curl -fL -o /usr/local/bin/docker ${DOCKER_DOWNLOAD_URL} \
   && chmod +x /usr/local/bin/docker \
-  && /etc/init.d/docker stop \
-  && /etc/init.d/docker start \
+  && /etc/init.d/docker restart \
   && printf '\033[0;36mWait for restart docker server...\033[0m\n\n' \
   && sleep 3 \
   && printf '\033[0;36mUpgraded.\033[0m\n' \
