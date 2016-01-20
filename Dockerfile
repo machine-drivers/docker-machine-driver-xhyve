@@ -1,5 +1,5 @@
 FROM osxcc/golang:devel
-MAINTAINER zchee <zchee.io@gmail.com>
+MAINTAINER zchee <k@zchee.io>
 
 RUN set -ex \
 	&& uname -a \
