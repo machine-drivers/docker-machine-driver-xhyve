@@ -175,7 +175,33 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
+// PreCommandCheck Check required of docker-machine-driver-xhyve before any func
+// func: GetURL, PreCreateCheck, Start, Stop, Restart
+func (d *Driver) PreCommandCheck() error {
+	bin, err := os.Stat(os.Args[0])
+	if err != nil {
+		return err
+	}
+
+	// Check of own binary owner and uid
+	if int(bin.Sys().(*syscall.Stat_t).Uid) == 501 {
+		return fmt.Errorf("%s binary needs root owner and uid. See https://github.com/zchee/docker-machine-driver-xhyve#install", bin.Name())
+	}
+
+	// Check of execute user
+	user := syscall.Getuid()
+	if user == 0 {
+		return fmt.Errorf("%s needs to be executed with the privileges of the user. please remove sudo on execute command", bin.Name())
+	}
+
+	return nil
+}
+
 func (d *Driver) GetURL() (string, error) {
+	if err := d.PreCommandCheck(); err != nil {
+		return "", err
+	}
+
 	ip, err := d.GetIP()
 	if err != nil {
 		return "", err
@@ -265,9 +291,14 @@ func (d *Driver) waitForIP() error {
 	return nil
 }
 
-// Print driver version, Check VirtualBox version
+// PreCreateCheck Prints driver version, and Check VirtualBox version
 func (d *Driver) PreCreateCheck() error {
-	//TODO:libmachine PLEASE output driver version API!
+	// Check required of docker-machine-driver-xhyve
+	if err := d.PreCommandCheck(); err != nil {
+		return err
+	}
+
+	//TODO: libmachine PLEASE output driver version API!
 	v := Version
 	c := GitCommit
 	log.Debugf("===== Docker Machine %s Driver Version %s (%s) =====\n", d.DriverName(), v, c)
@@ -284,15 +315,6 @@ func (d *Driver) PreCreateCheck() error {
 			"if xhyve tries to run. You are running version: " +
 			ver +
 			"\n\t Please upgrade to version 5 at https://www.virtualbox.org/wiki/Downloads")
-	}
-
-	// Check binary owner
-	bin, err := os.Stat(os.Args[0])
-	if err != nil {
-		return err
-	}
-	if int(bin.Sys().(*syscall.Stat_t).Uid) == 501 {
-		return fmt.Errorf("%s need root owner. See https://github.com/zchee/docker-machine-driver-xhyve#install", os.Args[0])
 	}
 
 	return nil
@@ -358,6 +380,10 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
+	if err := d.PreCommandCheck(); err != nil {
+		return err
+	}
+
 	pid := d.ResolveStorePath(d.MachineName + ".pid")
 	if _, err := os.Stat(pid); err == nil {
 		os.Remove(pid)
@@ -390,6 +416,10 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
+	if err := d.PreCommandCheck(); err != nil {
+		return err
+	}
+
 	log.Infof("Stopping %s ...", d.MachineName)
 	if err := d.SendSignal(syscall.SIGTERM); err != nil {
 		return err
@@ -446,6 +476,10 @@ func (d *Driver) Remove() error {
 }
 
 func (d *Driver) Restart() error {
+	if err := d.PreCommandCheck(); err != nil {
+		return err
+	}
+
 	s, err := d.GetState()
 	if err != nil {
 		return err
