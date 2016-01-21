@@ -285,6 +285,16 @@ func (d *Driver) PreCreateCheck() error {
 			ver +
 			"\n\t Please upgrade to version 5 at https://www.virtualbox.org/wiki/Downloads")
 	}
+
+	// Check binary owner
+	bin, err := os.Stat(os.Args[0])
+	if err != nil {
+		return err
+	}
+	if int(bin.Sys().(*syscall.Stat_t).Uid) == 501 {
+		return fmt.Errorf("%s need root owner. See https://github.com/zchee/docker-machine-driver-xhyve#install", os.Args[0])
+	}
+
 	return nil
 }
 
