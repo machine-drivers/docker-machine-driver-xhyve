@@ -1,4 +1,4 @@
-## [v0.2.2](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.2.2) (2016-01-22)
+# [v0.2.2](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.2.2) (2016-01-22)
 [Full Changelog](https://github.com/zchee/docker-machine-driver-xhyve/compare/v0.2.1...v0.2.2)
 
 ## Features
