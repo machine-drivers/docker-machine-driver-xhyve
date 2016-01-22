@@ -13,8 +13,8 @@
 		},
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.8.7-53-g446d1c1",
-			"Rev": "446d1c146faa8ed3f4218f056fcd165f6bcfda81"
+			"Comment": "v0.8.7-55-gf7f79f7",
+			"Rev": "f7f79f729e0fbe2fcc061db48a9ba0263f588252"
 		},
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
@@ -22,13 +22,13 @@
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/system",
-			"Comment": "v1.4.1-9120-g3f1b16e",
-			"Rev": "3f1b16e236ad4626e02f3da4643023454d7dbb3f"
+			"Comment": "v1.4.1-9437-g3233f45",
+			"Rev": "3233f4560912fee87857f653a8bb32050dc04927"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/term",
-			"Comment": "v1.4.1-9120-g3f1b16e",
-			"Rev": "3f1b16e236ad4626e02f3da4643023454d7dbb3f"
+			"Comment": "v1.4.1-9437-g3233f45",
+			"Rev": "3233f4560912fee87857f653a8bb32050dc04927"
 		},
 		{
 			"ImportPath": "github.com/docker/go-units",
@@ -37,38 +37,38 @@
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/drivers",
-			"Comment": "v0.5.5-124-g248596d",
-			"Rev": "248596da8abf15799bc8638a224c292bf1b01c7a"
+			"Comment": "v0.5.6-90-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/log",
-			"Comment": "v0.5.5-124-g248596d",
-			"Rev": "248596da8abf15799bc8638a224c292bf1b01c7a"
+			"Comment": "v0.5.6-90-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/mcnflag",
-			"Comment": "v0.5.5-124-g248596d",
-			"Rev": "248596da8abf15799bc8638a224c292bf1b01c7a"
+			"Comment": "v0.5.6-90-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/mcnutils",
-			"Comment": "v0.5.5-124-g248596d",
-			"Rev": "248596da8abf15799bc8638a224c292bf1b01c7a"
+			"Comment": "v0.5.6-90-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/ssh",
-			"Comment": "v0.5.5-124-g248596d",
-			"Rev": "248596da8abf15799bc8638a224c292bf1b01c7a"
+			"Comment": "v0.5.6-90-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/state",
-			"Comment": "v0.5.5-124-g248596d",
-			"Rev": "248596da8abf15799bc8638a224c292bf1b01c7a"
+			"Comment": "v0.5.6-90-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/version",
-			"Comment": "v0.5.5-124-g248596d",
-			"Rev": "248596da8abf15799bc8638a224c292bf1b01c7a"
+			"Comment": "v0.5.6-90-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/hooklift/xhyve",
