@@ -1,3 +1,44 @@
+## [v0.2.2](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.2.2) (2016-01-22)
+[Full Changelog](https://github.com/zchee/docker-machine-driver-xhyve/compare/v0.2.1...v0.2.2)
+
+## Features
+
+### Check own binary owner and execute user
+Added PreCommandCheck method for required of docker-machine-driver-xhyve.
+
+### Misc
+- Fixed GetUrl does not handle GetState
+
+## Auto generated Change Log
+
+**Fixed bugs:**
+
+- Check owner before every command [\#77](https://github.com/zchee/docker-machine-driver-xhyve/issues/77)
+- Does not handle sudo before docker-machine commands [\#76](https://github.com/zchee/docker-machine-driver-xhyve/issues/76)
+- GetUrl\(\) does not handle GetState\(\) [\#68](https://github.com/zchee/docker-machine-driver-xhyve/issues/68)
+
+**Closed issues:**
+
+- Using docker-machine-driver-xhyve without sudo privledges [\#74](https://github.com/zchee/docker-machine-driver-xhyve/issues/74)
+- Show a nice warning when running without root [\#64](https://github.com/zchee/docker-machine-driver-xhyve/issues/64)
+- about IP address [\#62](https://github.com/zchee/docker-machine-driver-xhyve/issues/62)
+- ip not found in dhcp leases [\#60](https://github.com/zchee/docker-machine-driver-xhyve/issues/60)
+- invalid flag argument in current master [\#59](https://github.com/zchee/docker-machine-driver-xhyve/issues/59)
+- Any plan about HomeBrew formulae support? [\#24](https://github.com/zchee/docker-machine-driver-xhyve/issues/24)
+
+**Merged pull requests:**
+
+- Bump version to 0.2.2 [\#81](https://github.com/zchee/docker-machine-driver-xhyve/pull/81) ([zchee](https://github.com/zchee))
+- Update and cleanup vendor [\#80](https://github.com/zchee/docker-machine-driver-xhyve/pull/80) ([zchee](https://github.com/zchee))
+- Add PreCommandCheck [\#78](https://github.com/zchee/docker-machine-driver-xhyve/pull/78) ([zchee](https://github.com/zchee))
+- Add check binary owner on PreCreateCheck\(\) [\#75](https://github.com/zchee/docker-machine-driver-xhyve/pull/75) ([zchee](https://github.com/zchee))
+- Rename test vm name, Remove kill job, Change brackets [\#73](https://github.com/zchee/docker-machine-driver-xhyve/pull/73) ([zchee](https://github.com/zchee))
+- Fix handling vm status before GetURL\(\) [\#72](https://github.com/zchee/docker-machine-driver-xhyve/pull/72) ([zchee](https://github.com/zchee))
+- Change go version to 1.5.3 and 1.6beta2 [\#66](https://github.com/zchee/docker-machine-driver-xhyve/pull/66) ([zchee](https://github.com/zchee))
+- Add circleci badge and markdown table [\#65](https://github.com/zchee/docker-machine-driver-xhyve/pull/65) ([zchee](https://github.com/zchee))
+- \[WIP\] Add CircleCI use osxcc [\#63](https://github.com/zchee/docker-machine-driver-xhyve/pull/63) ([zchee](https://github.com/zchee))
+- ci: Fix multiple Go version release [\#61](https://github.com/zchee/docker-machine-driver-xhyve/pull/61) ([zchee](https://github.com/zchee))
+
 # [v0.2.1](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.2.1) (2016-01-12)
 [Full Changelog](https://github.com/zchee/docker-machine-driver-xhyve/compare/v0.2.0...v0.2.1)
 
