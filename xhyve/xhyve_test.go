@@ -21,10 +21,10 @@ func TestDefaultSSHUsername(t *testing.T) {
 	assert.Equal(t, "docker", username)
 }
 
-func TestPreCreateCheck(t *testing.T) {
-	err := newTestDriver("default").PreCreateCheck()
-	assert.NoError(t, err)
-}
+// func TestPreCreateCheck(t *testing.T) {
+// 	err := newTestDriver("default").PreCreateCheck()
+// 	assert.NoError(t, err)
+// }
 
 func TestTrimMacAddress(t *testing.T) {
 	// test MAC address 02:f0:0d:60:0f:30 and reverse
