@@ -1,12 +1,13 @@
 FROM osxcc/golang:devel
 MAINTAINER zchee <k@zchee.io>
 
+COPY . ${GOPATH}/src/github.com/zchee/docker-machine-driver-xhyve
+
 RUN set -ex \
 	&& uname -a \
 	&& go version \
 	&& go env \
 	\
-	&& go get -u -v -d github.com/zchee/docker-machine-driver-xhyve \
 	&& cd $GOPATH/src/github.com/zchee/docker-machine-driver-xhyve \
 	&& make
 
