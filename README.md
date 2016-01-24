@@ -16,6 +16,24 @@ If you have issues or pull-requests, Desired to be posted to this repository.
 
 ## Required
 
+### Mac OS X 10.11.3 or earlier
+Mac OS X 10.11.4 (15E27e) has a **Hypervisor.framework bug**.  
+This is Apple's bug.  
+If you launch the `docker-machine-driver-xhyve` on this version, will displayed
+
+```bash
+open : no such file or directory
+```
+
+on "Convert UUID to MAC address...". and, In original `xhyve`,
+
+```bash
+hv_vm_create failed
+```
+
+We do not know the solution to this problem.  
+If you want to use `docker-machine-driver-xhyve`, There is only downgrade the OS X way to use.
+
 ### docker-machine
 https://github.com/docker/machine
 
