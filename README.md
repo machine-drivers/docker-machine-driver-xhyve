@@ -16,7 +16,7 @@ If you have issues or pull-requests, Desired to be posted to this repository.
 
 ## Required
 
-### Oher than Mac OS X 10.11.4 build (15E27e)
+### Other than Mac OS X 10.11.4 build (15E27e)
 Mac OS X 10.11.4 (15E27e) has a **Hypervisor.framework bug**.  
 This is Apple's bug.  
 but, Apple has been fixed build 15E33e. Please upgrade latest beta.  
