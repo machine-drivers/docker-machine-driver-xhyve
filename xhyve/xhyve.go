@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -23,6 +24,7 @@ import (
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/johanneswuerbach/nfsexports"
+	"github.com/zchee/docker-machine-driver-xhyve/b2d"
 	"github.com/zchee/docker-machine-driver-xhyve/vmnet"
 )
 
@@ -36,6 +38,7 @@ const (
 	defaultDiskSize       = 20000
 	defaultMacAddr        = ""
 	defaultMemory         = 1024
+	defaultISOFilename    = "boot2docker.iso"
 	defaultPrivateKeyPath = ""
 	defaultUUID           = ""
 	defaultNFSShare       = false
@@ -45,6 +48,7 @@ const (
 
 type Driver struct {
 	*drivers.BaseDriver
+	*b2d.B2dUtils
 	Boot2DockerURL string
 	BootCmd        string
 	CPU            int
@@ -321,8 +325,7 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
-	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
-	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
+	if err := d.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
 	}
 
@@ -796,4 +799,78 @@ func (d *Driver) getMACAdress() (string, error) {
 		return "", err
 	}
 	return hw.String(), nil
+}
+
+func (d *Driver) UpdateISOCache(isoURL string) error {
+	b2d := b2d.NewB2dUtils(d.StorePath)
+	mcnutils := mcnutils.NewB2dUtils(d.StorePath)
+
+	// recreate the cache dir if it has been manually deleted
+	if _, err := os.Stat(b2d.ImgCachePath); os.IsNotExist(err) {
+		log.Infof("Image cache directory does not exist, creating it at %s...", b2d.ImgCachePath)
+		if err := os.Mkdir(b2d.ImgCachePath, 0700); err != nil {
+			return err
+		}
+	}
+
+	// Check owner of storage cache directory
+	cacheStat, _ := os.Stat(b2d.ImgCachePath)
+	if int(cacheStat.Sys().(*syscall.Stat_t).Uid) == 0 {
+		log.Debugf("Fix %s directory permission...", cacheStat.Name())
+		os.Chown(b2d.ImgCachePath, syscall.Getuid(), syscall.Getegid())
+	}
+
+	if isoURL != "" {
+		// Non-default B2D are not cached
+		return nil
+	}
+
+	exists := b2d.Exists()
+	if !exists {
+		log.Info("No default Boot2Docker ISO found locally, downloading the latest release...")
+		return mcnutils.DownloadLatestBoot2Docker("")
+	}
+
+	latest := b2d.IsLatest()
+	if !latest {
+		log.Info("Default Boot2Docker ISO is out-of-date, downloading the latest release...")
+		return mcnutils.DownloadLatestBoot2Docker("")
+	}
+
+	return nil
+}
+
+func (d *Driver) CopyIsoToMachineDir(isoURL, machineName string) error {
+	b2d := b2d.NewB2dUtils(d.StorePath)
+	mcnutils := mcnutils.NewB2dUtils(d.StorePath)
+
+	if err := d.UpdateISOCache(isoURL); err != nil {
+		return err
+	}
+
+	isoPath := filepath.Join(b2d.ImgCachePath, isoFilename)
+	isoStat, _ := os.Stat(isoPath)
+	if int(isoStat.Sys().(*syscall.Stat_t).Uid) == 0 {
+		log.Debugf("Fix %s file permission...", isoStat.Name())
+		os.Chown(isoPath, syscall.Getuid(), syscall.Getegid())
+	}
+
+	// TODO: This is a bit off-color.
+	machineDir := filepath.Join(d.StorePath, "machines", machineName)
+	machineIsoPath := filepath.Join(machineDir, isoFilename)
+
+	// By default just copy the existing "cached" iso to the machine's directory...
+	defaultISO := filepath.Join(b2d.ImgCachePath, defaultISOFilename)
+	if isoURL == "" {
+		log.Infof("Copying %s to %s...", defaultISO, machineIsoPath)
+		return CopyFile(defaultISO, machineIsoPath)
+	}
+
+	// if ISO is specified, check if it matches a github releases url or fallback to a direct download
+	downloadURL, err := b2d.GetReleaseURL(isoURL)
+	if err != nil {
+		return err
+	}
+
+	return mcnutils.DownloadISO(machineDir, b2d.Filename(), downloadURL)
 }
