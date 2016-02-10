@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -44,6 +45,7 @@ const (
 	defaultNFSShare       = false
 	rootVolumeName        = "root-volume"
 	defaultDiskNumber     = -1
+	defaultVirtio9p       = false
 )
 
 type Driver struct {
@@ -60,6 +62,8 @@ type Driver struct {
 	UUID           string
 	NFSShare       bool
 	DiskNumber     int
+	Virtio9p       bool
+	Virtio9pFolder string
 }
 
 var (
@@ -86,6 +90,7 @@ func NewDriver(hostName, storePath string) *Driver {
 		UUID:           defaultUUID,
 		NFSShare:       defaultNFSShare,
 		DiskNumber:     defaultDiskNumber,
+		Virtio9p:       defaultVirtio9p,
 	}
 }
 
@@ -122,6 +127,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "xhyve-boot-cmd",
 			Usage:  "Command of booting kexec protocol",
 			Value:  defaultBootCmd,
+		},
+		mcnflag.BoolFlag{
+			EnvVar: "XHYVE_VIRTIO_9P",
+			Name:   "xhyve-virtio-9p",
+			Usage:  "Share folder path for virtio-9p folder sharing",
 		},
 		mcnflag.BoolFlag{
 			EnvVar: "XHYVE_EXPERIMENTAL_NFS_SHARE",
@@ -174,6 +184,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = "docker"
 	d.SSHPort = 22
+	d.Virtio9p = flags.Bool("xhyve-virtio-9p")
+	d.Virtio9pFolder = "/Users"
 	d.NFSShare = flags.Bool("xhyve-experimental-nfs-share")
 
 	return nil
@@ -370,6 +382,13 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	if d.Virtio9p {
+		err = d.setupVirt9pShare()
+		if err != nil {
+			log.Errorf("virtio-9p setup failed: %s", err.Error())
+		}
+	}
+
 	// Setup NFS sharing
 	if d.NFSShare {
 		log.Infof("NFS share folder must be root. Please insert root password.")
@@ -396,6 +415,9 @@ func (d *Driver) Start() error {
 
 	args := d.xhyveArgs()
 	args = append(args, "-F", fmt.Sprintf("%s", pid))
+	if d.Virtio9p {
+		args = append(args, "-s", fmt.Sprintf("5,virtio-9p,host=%s", d.Virtio9pFolder))
+	}
 
 	log.Debug(args)
 
@@ -673,6 +695,26 @@ func (d *Driver) generateKeyBundle() (*bytes.Buffer, error) {
 		return nil, err
 	}
 	return buf, nil
+}
+
+func (d *Driver) setupVirt9pShare() error {
+	user, err := user.Current()
+	if err != nil {
+		return err
+	}
+	bootScriptName := "/var/lib/boot2docker/bootlocal.sh"
+	bootScript := fmt.Sprintf("#/bin/bash\\n"+
+		"sudo mkdir -p %s\\n"+
+		"sudo mount -t 9p -o version=9p2000 -o trans=virtio -o uname=%s -o dfltuid=1000 -o dfltgid=50 -o access=any host %s", d.Virtio9pFolder, user.Username, d.Virtio9pFolder)
+
+	writeScriptCmd := fmt.Sprintf("echo -e \"%s\" | sudo tee %s && sudo chmod +x %s && %s",
+		bootScript, bootScriptName, bootScriptName, bootScriptName)
+
+	if _, err := drivers.RunSSHCommandFromDriver(d, writeScriptCmd); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Setup NFS share
