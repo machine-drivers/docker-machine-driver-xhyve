@@ -4,12 +4,7 @@ DOCKER_MACHINE_CMD := docker-machine
 
 DOCKER_MACHINE_STORAGEPATH := $(HOME)/.docker/machine
 DOCKER_MACHINE_VM_NAME := test-xhyve
-# Set boot2docker-url to already exists iso path
-ifeq (,$(wildcard $($(HOME)/.docker/machine/cache/boot2docker.iso)))
-	DOCKER_MACHINE_VM_BOOT2DOCKER_URL :=
-else
-	DOCKER_MACHINE_VM_BOOT2DOCKER_URL := --xhyve-boot2docker-url $(HOME)/.docker/machine/cache/boot2docker.iso
-endif
+
 # Set CPU size to hw.ncpu/2
 DOCKER_MACHINE_VM_CPU_COUNT := $(shell /usr/bin/python -c "print($(shell sysctl -n hw.ncpu)/2)")
 # Set memory size to hw.memsize/2 MB
@@ -21,7 +16,7 @@ export MACHINE_DEBUG=1
 
 default: install
 
-build: clean bin/docker-machine-driver-xhyve
+build: bin/docker-machine-driver-xhyve
 
 test-env:
 	$(DOCKER_MACHINE_CMD) --storage-path $(DOCKER_MACHINE_STORAGEPATH) env $(DOCKER_MACHINE_VM_NAME)
@@ -67,11 +62,10 @@ test-url:
 
 driver-run: clean build install driver-remove
 	$(DOCKER_MACHINE_CMD) --storage-path $(DOCKER_MACHINE_STORAGEPATH) create --driver xhyve \
-		$(DOCKER_MACHINE_VM_BOOT2DOCKER_URL) \
 		--xhyve-cpu-count $(DOCKER_MACHINE_VM_CPU_COUNT) \
 		--xhyve-memory-size $(DOCKER_MACHINE_VM_MEMORY_SIZE) \
 		--xhyve-disk-size $(DOCKER_MACHINE_VM_DISKSIZE) \
-		--xhyve-experimental-nfs-share \
+		--xhyve-virtio-9p \
 		$(DOCKER_MACHINE_VM_NAME)
 
 driver-remove:

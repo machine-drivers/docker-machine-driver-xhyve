@@ -53,6 +53,8 @@ VERBOSE_GO := -v
 # Parse git current branch commit-hash
 GO_LDFLAGS := ${GO_LDFLAGS} -X `go list ./xhyve`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
 
+CGO_CFLAGS := '-I${PWD}/vendor/lib9p'
+CGO_LDFLAGS := '${PWD}/vendor/lib9p/build/lib9p.a -L${PWD}/vendor/lib9p'
 
 # Environment variables
 
@@ -85,6 +87,9 @@ ifeq ($(MACHINE_DRIVER_DEBUG),1)
 	include mk/driver.mk
 endif
 
+include mk/lib9p.mk
+
+MAKEFLAGS := -j 1
 
 # Colorable output
 CRESET := \x1b[0m
@@ -102,14 +107,14 @@ CWHITE := \x1b[37;01m
 #
 default: build
 
-clean:
+clean: clean-lib9p
 	@${RM} -r ./bin
 
-bin/docker-machine-driver-xhyve:
+bin/docker-machine-driver-xhyve: lib9p
 	@test -d bin || mkdir -p bin;
 	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET}..."
-	@echo "${CBLACK} ${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${CGO_CFLAGS} ${CGO_LDFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE} ${CRESET}"; \
-	${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${CGO_CFLAGS} ${CGO_LDFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE} || exit 1
+	@echo "${CBLACK} CGO_CFLAGS=${CGO_CFLAGS} CGO_LDFLAGS=${CGO_LDFLAGS} ${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE} ${CRESET}"; \
+	CGO_CFLAGS=${CGO_CFLAGS} CGO_LDFLAGS=${CGO_LDFLAGS} ${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE} || exit 1
 	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel. Please root password${CRESET}"; \
 	sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT}
 
