@@ -2,8 +2,15 @@
 #  Makefile for Go
 #
 
-# Global go command environment variables
+# Global environment variables
+MAKEFLAGS := -j 1
+
+# Define to commands
+CC := $(shell xcrun -f clang)
+LIBTOOL := $(shell xcrun -f libtool)
 GO_CMD := go
+GIT_CMD := git
+
 GO_BUILD=${GO_CMD} build ${VERBOSE_GO} -o ${OUTPUT}
 GO_BUILD_RACE=${GO_CMD} build ${VERBOSE_GO} -race -o ${OUTPUT}
 GO_TEST=${GO_CMD} test ${VERBOSE_GO}
@@ -53,6 +60,8 @@ VERBOSE_GO := -v
 # Parse git current branch commit-hash
 GO_LDFLAGS := ${GO_LDFLAGS} -X `go list ./xhyve`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
 
+CGO_CFLAGS := '-I${PWD}/vendor/lib9p'
+CGO_LDFLAGS := '${PWD}/vendor/build/lib9p/lib9p.a -L${PWD}/vendor/lib9p'
 
 # Environment variables
 
@@ -68,9 +77,19 @@ export GO15VENDOREXPERIMENT=1
 # TODO: uuid.go need cgo
 export CGO_ENABLED=1
 
+#
+# Include makefiles
+#
+include mk/lib9p.mk
+# Include driver debug makefile if $MACHINE_DRIVER_DEBUG=1
+ifeq ($(MACHINE_DRIVER_DEBUG),1)
+	include mk/driver.mk
+endif
 
+
+#
 # Package side settings
-
+#
 # Build package infomation
 GITHUB_USER := zchee
 TOP_PACKAGE_DIR := github.com/${GITHUB_USER}
@@ -79,11 +98,6 @@ OUTPUT := bin/docker-machine-driver-xhyve
 # Parse "func main()" only '.go' file on current dir
 # FIXME: Not support main.go
 MAIN_FILE := `grep "func main\(\)" *.go -l`
-
-# Include driver debug makefile if $MACHINE_DRIVER_DEBUG=1
-ifeq ($(MACHINE_DRIVER_DEBUG),1)
-	include mk/driver.mk
-endif
 
 
 # Colorable output
@@ -102,18 +116,15 @@ CWHITE := \x1b[37;01m
 #
 default: build
 
-clean:
-	@${RM} -r ./bin
+build: bin/docker-machine-driver-xhyve
 
-bin/docker-machine-driver-xhyve:
+bin/docker-machine-driver-xhyve: lib9p
 	@test -d bin || mkdir -p bin;
 	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET}..."
-	@echo "${CBLACK} ${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${CGO_CFLAGS} ${CGO_LDFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE} ${CRESET}"; \
-	${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${CGO_CFLAGS} ${CGO_LDFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE} || exit 1
+	@echo "${CBLACK} CGO_CFLAGS=${CGO_CFLAGS} CGO_LDFLAGS=${CGO_LDFLAGS} ${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE} ${CRESET}"; \
+	CGO_CFLAGS=${CGO_CFLAGS} CGO_LDFLAGS=${CGO_LDFLAGS} ${GO_BUILD} -ldflags "$(GO_LDFLAGS)" ${GO_GCFLAGS} ${TOP_PACKAGE_DIR}/${PACKAGE} || exit 1
 	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel. Please root password${CRESET}"; \
 	sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT}
-
-build: bin/docker-machine-driver-xhyve
 
 install: bin/docker-machine-driver-xhyve
 	@echo "${CBLUE}==>${CRESET} Install ${CGREEN}${PACKAGE}${CRESET}..."
@@ -141,6 +152,9 @@ docker-build:
 
 docker-build-nocache:
 	${DOCKER_CMD} build --rm --no-cache -t ${GITHUB_USER}/${PACKAGE} .
+
+clean: clean-lib9p
+	@${RM} -r ./bin
 
 run: driver-run
 
