@@ -16,6 +16,8 @@ env:
     - GOMAXPROCS=8
 
 before_script:
+  - git submodule update --init
+  - mkdir -p vendor/build/lib9p vendor/build/lib9p/sbuf vendor/build/lib9p/transport vendor/build/lib9p/backend
   - make
   - make install
 
