@@ -131,7 +131,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.BoolFlag{
 			EnvVar: "XHYVE_VIRTIO_9P",
 			Name:   "xhyve-virtio-9p",
-			Usage:  "Share folder path for virtio-9p folder sharing",
+			Usage:  "Setup virtio-9p folder share",
 		},
 		mcnflag.BoolFlag{
 			EnvVar: "XHYVE_EXPERIMENTAL_NFS_SHARE",
