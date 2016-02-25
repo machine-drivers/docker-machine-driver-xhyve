@@ -28,9 +28,9 @@ LIB9P_DYLIB := ${LIB9P_BUILD_DIR}/lib9p.dylib
 
 default: build
 
-lib9p: $(LIB9P_LIB)
+lib9p: fetch $(LIB9P_LIB)
 
-$(LIB9P_LIB_SRCS):
+fetch:
 	${GIT_CMD} submodule update --init
 	mkdir -p ${LIB9P_BUILD_DIR} ${LIB9P_BUILD_DIR}/sbuf ${LIB9P_BUILD_DIR}/transport ${LIB9P_BUILD_DIR}/backend
 
