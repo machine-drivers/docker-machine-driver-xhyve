@@ -200,7 +200,7 @@ func (d *Driver) PreCommandCheck() error {
 	}
 
 	// Check of own binary owner and uid
-	if int(bin.Sys().(*syscall.Stat_t).Uid) == 501 {
+	if int(bin.Sys().(*syscall.Stat_t).Uid) != 0 {
 		return fmt.Errorf("%s binary needs root owner and uid. See https://github.com/zchee/docker-machine-driver-xhyve#install", bin.Name())
 	}
 
