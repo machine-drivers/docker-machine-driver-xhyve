@@ -66,6 +66,7 @@ driver-run: clean build install driver-remove
 		--xhyve-memory-size $(DOCKER_MACHINE_VM_MEMORY_SIZE) \
 		--xhyve-disk-size $(DOCKER_MACHINE_VM_DISKSIZE) \
 		--xhyve-virtio-9p \
+		--xhyve-experimental-nfs-share \
 		$(DOCKER_MACHINE_VM_NAME)
 
 driver-remove:
