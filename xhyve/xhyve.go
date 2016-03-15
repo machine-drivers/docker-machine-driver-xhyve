@@ -719,7 +719,12 @@ func (d *Driver) setupVirt9pShare() error {
 
 // Setup NFS share
 func (d *Driver) setupNFSShare() error {
-	nfsConfig := fmt.Sprintf("/Users %s -alldirs -maproot=root", d.IPAddress)
+	user, err := user.Current()
+	if err != nil {
+		return err
+	}
+
+	nfsConfig := fmt.Sprintf("/Users %s -alldirs -mapall=%s", d.IPAddress, user.Username)
 
 	if _, err := nfsexports.Add("", d.nfsExportIdentifier(), nfsConfig); err != nil {
 		return err
