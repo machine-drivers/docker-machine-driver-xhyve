@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -44,26 +45,31 @@ const (
 	defaultUUID           = ""
 	defaultNFSShare       = false
 	rootVolumeName        = "root-volume"
-	defaultDiskNumber     = -1
 	defaultVirtio9p       = false
 )
+
+type DiskImage struct {
+	Path       string
+	diskNumber int
+}
 
 type Driver struct {
 	*drivers.BaseDriver
 	*b2d.B2dUtils
-	Boot2DockerURL string
-	BootCmd        string
-	CPU            int
-	CaCertPath     string
-	DiskSize       int64
-	MacAddr        string
-	Memory         int
-	PrivateKeyPath string
-	UUID           string
-	NFSShare       bool
-	DiskNumber     int
-	Virtio9p       bool
-	Virtio9pFolder string
+	Boot2DockerURL      string
+	BootCmd             string
+	CPU                 int
+	CaCertPath          string
+	DiskSize            int64
+	MacAddr             string
+	Memory              int
+	PrivateKeyPath      string
+	UUID                string
+	NFSShare            bool
+	Virtio9p            bool
+	Virtio9pFolder      string
+	RootVolumeDiskImage *DiskImage
+	DiskImages          []*DiskImage
 }
 
 var (
@@ -89,8 +95,10 @@ func NewDriver(hostName, storePath string) *Driver {
 		PrivateKeyPath: defaultPrivateKeyPath,
 		UUID:           defaultUUID,
 		NFSShare:       defaultNFSShare,
-		DiskNumber:     defaultDiskNumber,
 		Virtio9p:       defaultVirtio9p,
+		RootVolumeDiskImage: &DiskImage{
+			Path: rootVolumeName + ".sparsebundle",
+		},
 	}
 }
 
@@ -411,7 +419,7 @@ func (d *Driver) Start() error {
 		os.Remove(pid)
 	}
 
-	d.attachDiskImage()
+	d.attachDiskImage(d.RootVolumeDiskImage)
 
 	args := d.xhyveArgs()
 	args = append(args, "-F", fmt.Sprintf("%s", pid))
@@ -463,7 +471,7 @@ func (d *Driver) Stop() error {
 	}
 
 	d.IPAddress = ""
-	d.detachDiskImage()
+	d.detachDiskImage(d.RootVolumeDiskImage)
 
 	return nil
 }
@@ -483,7 +491,7 @@ func (d *Driver) Remove() error {
 		}
 	}
 
-	if err := d.removeDiskImage(); err != nil {
+	if err := d.removeDiskImage(d.RootVolumeDiskImage); err != nil {
 		return err
 	}
 
@@ -582,13 +590,13 @@ func (d *Driver) extractKernelImages() error {
 }
 
 func (d *Driver) generateDiskImage(count int64) error {
-	diskPath := d.ResolveStorePath(rootVolumeName)
+	diskPath := d.ResolveStorePath(d.RootVolumeDiskImage.Path)
 
 	if err := hdiutil("create", "-megabytes", fmt.Sprintf("%d", count), "-type", "SPARSEBUNDLE", diskPath); err != nil {
 		return err
 	}
 
-	if err := d.attachDiskImage(); err != nil {
+	if err := d.attachDiskImage(d.RootVolumeDiskImage); err != nil {
 		return err
 	}
 
@@ -597,7 +605,7 @@ func (d *Driver) generateDiskImage(count int64) error {
 		return err
 	}
 
-	file, err := os.OpenFile(fmt.Sprintf("/dev/rdisk%d", d.DiskNumber), os.O_WRONLY, 0644)
+	file, err := os.OpenFile(fmt.Sprintf("/dev/rdisk%d", d.RootVolumeDiskImage.diskNumber), os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
@@ -612,8 +620,14 @@ func (d *Driver) generateDiskImage(count int64) error {
 	return nil
 }
 
-func (d *Driver) attachDiskImage() error {
-	diskPath := d.ResolveStorePath(rootVolumeName + ".sparsebundle")
+func (d *Driver) attachDiskImage(dImage *DiskImage) error {
+	var diskPath string
+	if !path.IsAbs(dImage.Path) {
+		diskPath = d.ResolveStorePath(dImage.Path)
+	} else {
+		diskPath = dImage.Path
+	}
+
 	cmd := exec.Command("hdiutil", "attach", "-nomount", "-noverify", "-noautofsck", diskPath)
 	output, err := cmd.Output()
 	if err != nil {
@@ -625,7 +639,7 @@ func (d *Driver) attachDiskImage() error {
 		return fmt.Errorf("Failed parsing disk number, hdiutil output: %s", string(output))
 	}
 
-	d.DiskNumber, err = strconv.Atoi(string(matches[1]))
+	dImage.diskNumber, err = strconv.Atoi(string(matches[1]))
 	if err != nil {
 		return err
 	}
@@ -633,18 +647,24 @@ func (d *Driver) attachDiskImage() error {
 	return nil
 }
 
-func (d *Driver) detachDiskImage() error {
-	if err := hdiutil("detach", fmt.Sprintf("/dev/disk%d", d.DiskNumber)); err != nil {
+func (d *Driver) detachDiskImage(dImage *DiskImage) error {
+	if err := hdiutil("detach", fmt.Sprintf("/dev/disk%d", dImage.diskNumber)); err != nil {
 		return err
 	}
 
-	d.DiskNumber = -1
+	dImage.diskNumber = -1
 
 	return nil
 }
 
-func (d *Driver) removeDiskImage() error {
-	diskPath := d.ResolveStorePath(rootVolumeName + ".sparsebundle")
+func (d *Driver) removeDiskImage(dImage *DiskImage) error {
+	var diskPath string
+	if !path.IsAbs(dImage.Path) {
+		diskPath = d.ResolveStorePath(dImage.Path)
+	} else {
+		diskPath = dImage.Path
+	}
+
 	return os.RemoveAll(diskPath)
 }
 
@@ -804,7 +824,7 @@ func (d *Driver) xhyveArgs() []string {
 	vmlinuz := d.ResolveStorePath("vmlinuz64")
 	initrd := d.ResolveStorePath("initrd.img")
 	iso := d.ResolveStorePath(isoFilename)
-	img := fmt.Sprintf("/dev/rdisk%d", d.DiskNumber)
+	img := fmt.Sprintf("/dev/rdisk%d", d.RootVolumeDiskImage.diskNumber)
 	bootcmd := d.BootCmd
 
 	cpus := d.CPU

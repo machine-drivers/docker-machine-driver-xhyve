@@ -67,6 +67,8 @@ func TestGeneratingAndDetachingDiskImage(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
+	driver.RootVolumeDiskImage.Path = "root-volume.sparsebundle"
+
 	if err := driver.generateDiskImage(500); err != nil {
 		assert.NoError(t, err)
 	}
@@ -75,14 +77,14 @@ func TestGeneratingAndDetachingDiskImage(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	assert.NotEqual(t, -1, driver.DiskNumber)
+	assert.NotEqual(t, -1, driver.RootVolumeDiskImage.diskNumber)
 
-	if err := driver.detachDiskImage(); err != nil {
+	if err := driver.detachDiskImage(driver.RootVolumeDiskImage); err != nil {
 		assert.NoError(t, err)
 	}
-	assert.Equal(t, -1, driver.DiskNumber)
+	assert.Equal(t, -1, driver.RootVolumeDiskImage.diskNumber)
 
-	if err := driver.removeDiskImage(); err != nil {
+	if err := driver.removeDiskImage(driver.RootVolumeDiskImage); err != nil {
 		assert.NoError(t, err)
 	}
 
