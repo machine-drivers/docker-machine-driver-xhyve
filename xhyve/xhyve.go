@@ -136,6 +136,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Command of booting kexec protocol",
 			Value:  defaultBootCmd,
 		},
+		mcnflag.StringSliceFlag{
+			EnvVar: "XHYVE_EXPERIMENTAL_ATTACH_IMAGE",
+			Name:   "xhyve-experimental-attach-image",
+			Usage:  "Attach a sparsebundle image.",
+		},
 		mcnflag.BoolFlag{
 			EnvVar: "XHYVE_VIRTIO_9P",
 			Name:   "xhyve-virtio-9p",
@@ -195,6 +200,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Virtio9p = flags.Bool("xhyve-virtio-9p")
 	d.Virtio9pFolder = "/Users"
 	d.NFSShare = flags.Bool("xhyve-experimental-nfs-share")
+	for _, v := range flags.StringSlice("xhyve-experimental-attach-image") {
+		d.DiskImages = append(d.DiskImages, &DiskImage{Path: v})
+	}
 
 	return nil
 }
@@ -421,6 +429,11 @@ func (d *Driver) Start() error {
 
 	d.attachDiskImage(d.RootVolumeDiskImage)
 
+	for _, v := range d.DiskImages {
+		log.Info("Attaching optional volume ", v.Path)
+		d.attachDiskImage(v)
+	}
+
 	args := d.xhyveArgs()
 	args = append(args, "-F", fmt.Sprintf("%s", pid))
 	if d.Virtio9p {
@@ -472,6 +485,10 @@ func (d *Driver) Stop() error {
 
 	d.IPAddress = ""
 	d.detachDiskImage(d.RootVolumeDiskImage)
+
+	for _, v := range d.DiskImages {
+		d.detachDiskImage(v)
+	}
 
 	return nil
 }
@@ -832,7 +849,7 @@ func (d *Driver) xhyveArgs() []string {
 		cpus = int(runtime.NumCPU())
 	}
 
-	return []string{
+	args := []string{
 		"xhyve",
 		"-A",
 		"-U", fmt.Sprintf("%s", uuid),
@@ -845,6 +862,14 @@ func (d *Driver) xhyveArgs() []string {
 		"-s", fmt.Sprintf("3,ahci-cd,%s", iso),
 		"-s", fmt.Sprintf("4:0,ahci-hd,%s", img),
 		"-f", fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd)}
+
+	pcislot := 5
+	for _, v := range d.DiskImages {
+		img := fmt.Sprintf("/dev/rdisk%d", v.diskNumber)
+		args = append(args, "-s", fmt.Sprintf("%d:0,ahci-hd,%s", pcislot, img))
+	}
+
+	return args
 }
 
 func (d *Driver) getMACAdress() (string, error) {
