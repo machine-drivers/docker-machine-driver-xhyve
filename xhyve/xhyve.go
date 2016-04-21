@@ -52,7 +52,7 @@ const (
 	defaultISOFilename    = "boot2docker.iso"
 	defaultPrivateKeyPath = ""
 	defaultUUID           = ""
-	defaultNFSShare       = false
+	defaultNFSShareEnable = false
 	rootVolumeName        = "root-volume"
 	defaultDiskNumber     = -1
 	defaultVirtio9p       = false
@@ -76,6 +76,7 @@ type Driver struct {
 	UUID           string
 	Qcow2          bool
 	RawDisk        bool
+	NFSShareEnable bool
 	Virtio9p       bool
 	Virtio9pFolder string
 	NFSShare       bool
@@ -113,7 +114,7 @@ func NewDriver(hostName, storePath string) *Driver {
 		Memory:         defaultMemory,
 		PrivateKeyPath: defaultPrivateKeyPath,
 		UUID:           defaultUUID,
-		NFSShare:       defaultNFSShare,
+		NFSShareEnable: defaultNFSShareEnable,
 		DiskNumber:     defaultDiskNumber,
 		Virtio9p:       defaultVirtio9p,
 		Qcow2:          defaultQcow2,
@@ -193,6 +194,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "xhyve-virtio-9p",
 			Usage:  "Setup virtio-9p folder share",
 		},
+		mcnflag.BoolFlag{
+			EnvVar: "XHYVE_EXPERIMENTAL_NFS_SHARE_ENABLE",
+			Name:   "xhyve-experimental-nfs-share-enable",
+			Usage:  "Setup NFS shared folder (requires root)",
+		},
 	}
 }
 
@@ -250,6 +256,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UUID = flags.String("xhyve-uuid")
 	d.Virtio9p = flags.Bool("xhyve-virtio-9p")
 	d.Virtio9pFolder = "/Users"
+	d.NFSShareEnable = flags.Bool("xhyve-experimental-nfs-share-enable")
 
 	return nil
 }
@@ -567,7 +574,7 @@ func (d *Driver) Remove() error {
 		return err
 	}
 
-	if d.NFSShare {
+	if d.NFSShareEnable {
 		log.Infof("Remove NFS share folder must be root. Please insert root password.")
 		if _, err := nfsexports.Remove("", d.nfsExportIdentifier()); err != nil {
 			log.Errorf("failed removing nfs share: %s", err.Error())
@@ -811,12 +818,11 @@ func (d *Driver) setupMounts() error {
 	}
 
 	// Setup NFS sharing
-	if d.NFSShare {
+	if d.NFSShareEnable {
 		log.Infof("NFS share folder must be root. Please insert root password.")
 		err := d.setupNFSShare()
 		if err != nil {
 			log.Errorf("NFS setup failed: %s", err.Error())
-			return err
 		}
 	}
 	return nil
