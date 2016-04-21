@@ -42,7 +42,7 @@ const (
 	defaultISOFilename    = "boot2docker.iso"
 	defaultPrivateKeyPath = ""
 	defaultUUID           = ""
-	defaultNFSShare       = false
+	defaultNFSShareEnable = false
 	rootVolumeName        = "root-volume"
 	defaultDiskNumber     = -1
 	defaultVirtio9p       = false
@@ -60,7 +60,7 @@ type Driver struct {
 	Memory         int
 	PrivateKeyPath string
 	UUID           string
-	NFSShare       bool
+	NFSShareEnable bool
 	DiskNumber     int
 	Virtio9p       bool
 	Virtio9pFolder string
@@ -88,7 +88,7 @@ func NewDriver(hostName, storePath string) *Driver {
 		Memory:         defaultMemory,
 		PrivateKeyPath: defaultPrivateKeyPath,
 		UUID:           defaultUUID,
-		NFSShare:       defaultNFSShare,
+		NFSShareEnable: defaultNFSShareEnable,
 		DiskNumber:     defaultDiskNumber,
 		Virtio9p:       defaultVirtio9p,
 	}
@@ -134,8 +134,8 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Setup virtio-9p folder share",
 		},
 		mcnflag.BoolFlag{
-			EnvVar: "XHYVE_EXPERIMENTAL_NFS_SHARE",
-			Name:   "xhyve-experimental-nfs-share",
+			EnvVar: "XHYVE_EXPERIMENTAL_NFS_SHARE_ENABLE",
+			Name:   "xhyve-experimental-nfs-share-enable",
 			Usage:  "Setup NFS shared folder (requires root)",
 		},
 	}
@@ -186,7 +186,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHPort = 22
 	d.Virtio9p = flags.Bool("xhyve-virtio-9p")
 	d.Virtio9pFolder = "/Users"
-	d.NFSShare = flags.Bool("xhyve-experimental-nfs-share")
+	d.NFSShareEnable = flags.Bool("xhyve-experimental-nfs-share-enable")
 
 	return nil
 }
@@ -390,7 +390,7 @@ func (d *Driver) Create() error {
 	}
 
 	// Setup NFS sharing
-	if d.NFSShare {
+	if d.NFSShareEnable {
 		log.Infof("NFS share folder must be root. Please insert root password.")
 		err = d.setupNFSShare()
 		if err != nil {
@@ -487,7 +487,7 @@ func (d *Driver) Remove() error {
 		return err
 	}
 
-	if d.NFSShare {
+	if d.NFSShareEnable {
 		log.Infof("Remove NFS share folder must be root. Please insert root password.")
 		if _, err := nfsexports.Remove("", d.nfsExportIdentifier()); err != nil {
 			log.Errorf("failed removing nfs share: %s", err.Error())
