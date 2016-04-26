@@ -118,7 +118,9 @@ Usage
 | `--xhyve-boot-initrd`            | `XHYVE_BOOT_INITRD`            | string | `''`                                                                                                                                 |
 | `--xhyve-qcow2`                  | `XHYVE_QCOW2`                  | bool   | `false`                                                                                                                              |
 | `--xhyve-virtio-9p`              | `XHYVE_VIRTIO_9P`              | bool   | `false`                                                                                                                              |
-| `--xhyve-experimental-nfs-share` | `XHYVE_EXPERIMENTAL_NFS_SHARE` | bool   | `false`                                                                                                                              |
+| `--xhyve-experimental-nfs-share-enable` | `XHYVE_EXPERIMENTAL_NFS_SHARE_ENABLE` | bool   | Enable `NFS` folder share (experimental) | `false`                                                  |
+| `--xhyve-experimental-nfs-share` | `XHYVE_EXPERIMENTAL_NFS_SHARE` | string   | Path to a host folder to be shared inside the guest |                                                   |
+| `--xhyve-experimental-nfs-share-root` | `XHYVE_EXPERIMENTAL_NFS_SHARE_ROOT` | string   | root path at which the NFS shares will be mounted| `/xhyve-nfsshares`                                                  |
 
 #### `--xhyve-boot2docker-url`
 
