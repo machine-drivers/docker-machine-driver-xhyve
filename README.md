@@ -92,7 +92,9 @@ $ sudo chmod u+s $GOPATH/bin/docker-machine-driver-xhyve
 | `--xhyve-disk-size`              | `XHYVE_DISK_SIZE`              | int    | Size of disk for the guest (MB)          | `20000`                                                  |
 | `--xhyve-boot-cmd`               | `XHYVE_BOOT_CMD`               | string | Booting xhyve iPXE commands              | See [boot2docker/boot2docker/doc/AUTOMATED_SCRIPT.md][1] |
 | `--xhyve-virtio-9p`              | `XHYVE_VIRTIO_9P`              | bool   | Enable `virtio-9p` folder share          | `false`                                                  |
-| `--xhyve-experimental-nfs-share` | `XHYVE_EXPERIMENTAL_NFS_SHARE` | bool   | Enable `NFS` folder share (experimental) | `false`                                                  |
+| `--xhyve-experimental-nfs-share-enable` | `XHYVE_EXPERIMENTAL_NFS_SHARE_ENABLE` | bool   | Enable `NFS` folder share (experimental) | `false`                                                  |
+| `--xhyve-experimental-nfs-share` | `XHYVE_EXPERIMENTAL_NFS_SHARE` | string   | Path to a host folder to be shared inside the guest |                                                   |
+| `--xhyve-experimental-nfs-share-root` | `XHYVE_EXPERIMENTAL_NFS_SHARE_ROOT` | string   | root path at which the NFS shares will be mounted| `/xhyve-nfsshares`                                                  |
 
 If you want use `virtio-9p` folder sharing, need custom `boot2docker.iso`.  
 See https://github.com/zchee/boot2docker-legacy/releases.

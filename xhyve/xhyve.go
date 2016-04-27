@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -42,7 +43,8 @@ const (
 	defaultISOFilename    = "boot2docker.iso"
 	defaultPrivateKeyPath = ""
 	defaultUUID           = ""
-	defaultNFSShare       = false
+	defaultNFSShareEnable = false
+	defaultNFSSharesRoot  = "/xhyve-nfsshares"
 	rootVolumeName        = "root-volume"
 	defaultDiskNumber     = -1
 	defaultVirtio9p       = false
@@ -60,7 +62,9 @@ type Driver struct {
 	Memory         int
 	PrivateKeyPath string
 	UUID           string
-	NFSShare       bool
+	NFSShareEnable bool
+	NFSShares      []string
+	NFSSharesRoot  string
 	DiskNumber     int
 	Virtio9p       bool
 	Virtio9pFolder string
@@ -88,7 +92,8 @@ func NewDriver(hostName, storePath string) *Driver {
 		Memory:         defaultMemory,
 		PrivateKeyPath: defaultPrivateKeyPath,
 		UUID:           defaultUUID,
-		NFSShare:       defaultNFSShare,
+		NFSShareEnable: defaultNFSShareEnable,
+		NFSSharesRoot:  defaultNFSSharesRoot,
 		DiskNumber:     defaultDiskNumber,
 		Virtio9p:       defaultVirtio9p,
 	}
@@ -134,9 +139,19 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Setup virtio-9p folder share",
 		},
 		mcnflag.BoolFlag{
+			EnvVar: "XHYVE_EXPERIMENTAL_NFS_SHARE_ENABLE",
+			Name:   "xhyve-experimental-nfs-share-enable",
+			Usage:  "Setup NFS shared folder (requires root)",
+		},
+		mcnflag.StringSliceFlag{
 			EnvVar: "XHYVE_EXPERIMENTAL_NFS_SHARE",
 			Name:   "xhyve-experimental-nfs-share",
 			Usage:  "Setup NFS shared folder (requires root)",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "XHYVE_EXPERIMENTAL_NFS_SHARE_ROOT",
+			Name:   "xhyve-experimental-nfs-share-root",
+			Usage:  "root directory where the NFS shares will be mounted inside the machine",
 		},
 	}
 }
@@ -186,7 +201,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHPort = 22
 	d.Virtio9p = flags.Bool("xhyve-virtio-9p")
 	d.Virtio9pFolder = "/Users"
-	d.NFSShare = flags.Bool("xhyve-experimental-nfs-share")
+	d.NFSShareEnable = flags.Bool("xhyve-experimental-nfs-share-enable")
+	d.NFSShares = flags.StringSlice("xhyve-experimental-nfs-share")
+	d.NFSSharesRoot = flags.String("xhyve-experimental-nfs-share-root")
 
 	return nil
 }
@@ -390,7 +407,7 @@ func (d *Driver) Create() error {
 	}
 
 	// Setup NFS sharing
-	if d.NFSShare {
+	if d.NFSShareEnable {
 		log.Infof("NFS share folder must be root. Please insert root password.")
 		err = d.setupNFSShare()
 		if err != nil {
@@ -487,10 +504,12 @@ func (d *Driver) Remove() error {
 		return err
 	}
 
-	if d.NFSShare {
+	if d.NFSShareEnable {
 		log.Infof("Remove NFS share folder must be root. Please insert root password.")
-		if _, err := nfsexports.Remove("", d.nfsExportIdentifier()); err != nil {
-			log.Errorf("failed removing nfs share: %s", err.Error())
+		for _, share := range d.NFSShares {
+			if _, err := nfsexports.Remove("", d.nfsExportIdentifier(share)); err != nil {
+				log.Errorf("failed removing nfs share (%s): %s", share, err.Error())
+			}
 		}
 
 		if err := nfsexports.ReloadDaemon(); err != nil {
@@ -724,26 +743,38 @@ func (d *Driver) setupNFSShare() error {
 		return err
 	}
 
-	nfsConfig := fmt.Sprintf("/Users %s -alldirs -mapall=%s", d.IPAddress, user.Username)
-
-	if _, err := nfsexports.Add("", d.nfsExportIdentifier(), nfsConfig); err != nil {
-		return err
-	}
-
-	if err := nfsexports.ReloadDaemon(); err != nil {
-		return err
-	}
-
 	hostIP, err := vmnet.GetNetAddr()
 	if err != nil {
 		return err
 	}
 
 	bootScriptName := "/var/lib/boot2docker/bootlocal.sh"
-	bootScript := fmt.Sprintf("#/bin/bash\\n"+
-		"sudo mkdir -p /Users\\n"+
-		"sudo /usr/local/etc/init.d/nfs-client start\\n"+
-		"sudo mount -t nfs -o noacl,async %s:/Users /Users\\n", hostIP)
+	bootScript := fmt.Sprintf("#/bin/bash\\n")
+
+	bootScript += "sudo /usr/local/etc/init.d/nfs-client start\\n"
+
+	for _, share := range d.NFSShares {
+		if !path.IsAbs(share) {
+			share = d.ResolveStorePath(share)
+		}
+		nfsConfig := fmt.Sprintf("%s %s -alldirs -mapall=%s", share, d.IPAddress, user.Username)
+
+		if _, err := nfsexports.Add("", d.nfsExportIdentifier(share), nfsConfig); err != nil {
+			if strings.Contains(err.Error(), "conflicts with existing export") {
+				log.Info("Conflicting NFS Share not setup and ignored:", err)
+				continue
+			}
+			return err
+		}
+
+		root := path.Clean(d.NFSSharesRoot)
+		bootScript += fmt.Sprintf("sudo mkdir -p %s/%s\\n", root, share)
+		bootScript += fmt.Sprintf("sudo mount -t nfs -o noacl,async %s:%s %s/%s\\n", hostIP, share, root, share)
+	}
+
+	if err := nfsexports.ReloadDaemon(); err != nil {
+		return err
+	}
 
 	writeScriptCmd := fmt.Sprintf("echo -e \"%s\" | sudo tee %s && sudo chmod +x %s && %s",
 		bootScript, bootScriptName, bootScriptName, bootScriptName)
@@ -755,8 +786,8 @@ func (d *Driver) setupNFSShare() error {
 	return nil
 }
 
-func (d *Driver) nfsExportIdentifier() string {
-	return fmt.Sprintf("docker-machine-driver-xhyve %s", d.MachineName)
+func (d *Driver) nfsExportIdentifier(path string) string {
+	return fmt.Sprintf("docker-machine-driver-xhyve %s-%s", d.MachineName, path)
 }
 
 func (d *Driver) GetPid() (int, error) {
