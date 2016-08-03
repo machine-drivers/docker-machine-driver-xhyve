@@ -94,7 +94,7 @@ $ sudo chmod u+s $GOPATH/bin/docker-machine-driver-xhyve
 | `--xhyve-virtio-9p`              | `XHYVE_VIRTIO_9P`              | bool   | Enable `virtio-9p` folder share          | `false`                                                  |
 | `--xhyve-experimental-nfs-share` | `XHYVE_EXPERIMENTAL_NFS_SHARE` | bool   | Enable `NFS` folder share (experimental) | `false`                                                  |
 
-If you want use `virtio-9p` folder sharing, need custom `boot2docker.iso`.  
+`virtio-9p` support is included in boot2docker as of version 1.10.2.  For earlier releases you need a custom `boot2docker.iso`
 See https://github.com/zchee/boot2docker-legacy/releases.
 
 ## Would you do me a favor?
