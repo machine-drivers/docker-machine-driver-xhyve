@@ -862,6 +862,7 @@ func (d *Driver) UpdateISOCache(isoURL string) error {
 
 	// Check owner of storage cache directory
 	cacheStat, _ := os.Stat(b2d.ImgCachePath)
+
 	if int(cacheStat.Sys().(*syscall.Stat_t).Uid) == 0 {
 		log.Debugf("Fix %s directory permission...", cacheStat.Name())
 		os.Chown(b2d.ImgCachePath, syscall.Getuid(), syscall.Getegid())
@@ -896,10 +897,11 @@ func (d *Driver) CopyIsoToMachineDir(isoURL, machineName string) error {
 	}
 
 	isoPath := filepath.Join(b2d.ImgCachePath, isoFilename)
-	isoStat, _ := os.Stat(isoPath)
-	if int(isoStat.Sys().(*syscall.Stat_t).Uid) == 0 {
-		log.Debugf("Fix %s file permission...", isoStat.Name())
-		os.Chown(isoPath, syscall.Getuid(), syscall.Getegid())
+	if isoStat, err := os.Stat(isoPath); err == nil {
+		if int(isoStat.Sys().(*syscall.Stat_t).Uid) == 0 {
+			log.Debugf("Fix %s file permission...", isoStat.Name())
+			os.Chown(isoPath, syscall.Getuid(), syscall.Getegid())
+		}
 	}
 
 	// TODO: This is a bit off-color.
