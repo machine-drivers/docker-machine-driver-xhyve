@@ -6,8 +6,8 @@ osx_image: xcode7.3
 language: go
 
 go:
-  - 1.5.3
-  - 1.6beta2
+  - 1.6.3
+  - 1.7rc5
   - tip
 
 env:
