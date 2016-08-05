@@ -1,3 +1,29 @@
+# Change Log
+
+## [v0.2.3](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.2.3) (2016-08-05)
+[Full Changelog](https://github.com/zchee/docker-machine-driver-xhyve/compare/v0.2.2...v0.2.3)
+
+**Closed issues:**
+
+- Please declare a license [\#108](https://github.com/zchee/docker-machine-driver-xhyve/issues/108)
+- nfs share permissions problem [\#99](https://github.com/zchee/docker-machine-driver-xhyve/issues/99)
+- Build issue with docker v1.10 [\#92](https://github.com/zchee/docker-machine-driver-xhyve/issues/92)
+- Could not create vmnet interface, permission denied or no entitlement? [\#85](https://github.com/zchee/docker-machine-driver-xhyve/issues/85)
+- B2D iso and directory created by root owner [\#82](https://github.com/zchee/docker-machine-driver-xhyve/issues/82)
+
+**Merged pull requests:**
+
+- Bump version to 0.2.3 [\#130](https://github.com/zchee/docker-machine-driver-xhyve/pull/130) ([zchee](https://github.com/zchee))
+- Changed doc to reflect that virtio-9p support is included in the newer releases of boot2docker [\#129](https://github.com/zchee/docker-machine-driver-xhyve/pull/129) ([r2d4](https://github.com/r2d4))
+- Add error checking to CopyIsoToMachineDir. [\#127](https://github.com/zchee/docker-machine-driver-xhyve/pull/127) ([dlorenc](https://github.com/dlorenc))
+- Fix lib9p build [\#106](https://github.com/zchee/docker-machine-driver-xhyve/pull/106) ([zchee](https://github.com/zchee))
+- Set the NFS export to map all the users on the remote to the current user [\#105](https://github.com/zchee/docker-machine-driver-xhyve/pull/105) ([jamesRaybould](https://github.com/jamesRaybould))
+- fix check for binary root ownership [\#104](https://github.com/zchee/docker-machine-driver-xhyve/pull/104) ([codekitchen](https://github.com/codekitchen))
+- Support virtio-9p [\#95](https://github.com/zchee/docker-machine-driver-xhyve/pull/95) ([zchee](https://github.com/zchee))
+- Update travis to xcode 7.3 beta [\#89](https://github.com/zchee/docker-machine-driver-xhyve/pull/89) ([zchee](https://github.com/zchee))
+- Update vendor for docker/machine [\#88](https://github.com/zchee/docker-machine-driver-xhyve/pull/88) ([zchee](https://github.com/zchee))
+- Self implement b2dutils.CopyIsoToMachineDir [\#87](https://github.com/zchee/docker-machine-driver-xhyve/pull/87) ([zchee](https://github.com/zchee))
+
 # [v0.2.2](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.2.2) (2016-01-22)
 [Full Changelog](https://github.com/zchee/docker-machine-driver-xhyve/compare/v0.2.1...v0.2.2)
 
