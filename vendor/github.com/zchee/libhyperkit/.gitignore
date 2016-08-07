@@ -1,0 +1,4 @@
+cmd/xhyve/images
+blob
+hyperkit/
+!cmd/hyperkit
