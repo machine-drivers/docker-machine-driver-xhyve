@@ -52,7 +52,7 @@ GO_BUILD_TAG ?= -tags lib9p
 
 GO_RUN=${GO_CMD} run
 
-GO_TEST=${GO_CMD} test ${VERBOSE}
+GO_TEST=${GO_CMD} test ${GO_VERBOSE}
 GO_TEST_RUN=${GO_TEST} -run ${RUN}
 GO_TEST_ALL=test -race -cover -bench=.
 GO_VET=${GO_CMD} vet
