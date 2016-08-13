@@ -1,3 +1,10 @@
+#
+#  Makefile for Go
+#
+
+
+# ----------------------------------------------------------------------------
+# debug flag
 ifeq ($V, 1)
 	VERBOSE =
 	GO_VERBOSE = -v -x
@@ -6,19 +13,15 @@ else
 	GO_VERBOSE =
 endif
 
-#
-#  Makefile for Go
-#
-
 
 # ----------------------------------------------------------------------------
 # Include makefiles
 
-include mk/color.mk
-include mk/lib9p.mk
+-include mk/color.mk
+-include mk/lib9p.mk
 # Include driver debug makefile if $MACHINE_DRIVER_DEBUG=1
 ifeq ($(MACHINE_DRIVER_DEBUG),1)
-	include mk/driver.mk
+-include mk/driver.mk
 endif
 
 
@@ -36,7 +39,7 @@ MAIN_FILE := `grep "func main\(\)" *.go -l`
 
 
 # ----------------------------------------------------------------------------
-# Define to commands
+# Define main commands
 
 CC := $(shell xcrun -f clang)
 LIBTOOL := $(shell xcrun -f libtool)
@@ -45,60 +48,109 @@ GIT_CMD := $(shell which git)
 DOCKER_CMD := $(shell which docker)
 
 
-GO_BUILD=${GO_CMD} build $(GO_VERBOSE) $(GO_BUILD_TAG) -o ${OUTPUT}
-GO_BUILD_RACE=${GO_CMD} build $(GO_VERBOSE) $(GO_BUILD_TAG) -race -o ${OUTPUT}
-GO_INSTALL=${GO_CMD} install $(GO_BUILD_TAG)
-GO_BUILD_TAG ?= -tags lib9p
+# ----------------------------------------------------------------------------
+# Define sub commmands
 
-GO_RUN=${GO_CMD} run
+GO_BUILD = ${GO_CMD} build $(GO_VERBOSE) $(GO_BUILD_FLAG) -o ${OUTPUT}
+GO_BUILD_RACE = ${GO_CMD} build $(GO_VERBOSE) $(GO_BUILD_FLAG) -o ${OUTPUT}
 
-GO_TEST=${GO_CMD} test ${GO_VERBOSE}
-GO_TEST_RUN=${GO_TEST} -run ${RUN}
-GO_TEST_ALL=test -race -cover -bench=.
-GO_VET=${GO_CMD} vet
-GO_LINT=golint
+GO_INSTALL = ${GO_CMD} install $(GO_BUILD_TAG)
+
+GO_RUN = ${GO_CMD} run
+
+GO_TEST = ${GO_CMD} test ${GO_VERBOSE}
+GO_TEST_RUN = ${GO_TEST} -run ${RUN}
+GO_TEST_ALL = test -race -cover -bench=.
+GO_VET = ${GO_CMD} vet
+GO_LINT = golint
 
 GO_DEPS=${GO_CMD} get -d
 GO_DEPS_UPDATE=${GO_CMD} get -d -u
 # Check godep binary
-GODEP := ${GOPATH}/bin/godep
-GODEP_CMD := $(if ${GODEP}, , $(error Please install godep: go get github.com/tools/godep)) ${GODEP}
-
-
-# Define conifg
-# GO_LDFLAGS :=
+GODEP = ${GOPATH}/bin/godep
+GODEP_CMD = $(if ${GODEP}, , $(error Please install godep: go get github.com/tools/godep)) ${GODEP}
 
 
 # ----------------------------------------------------------------------------
-# Set debug gcflag, or optimize ldflags
-#   Usage: GDBDEBUG=1 make
-ifeq ($(DEBUG),true)
-	GO_GCFLAGS ?= -gcflags "-N -l"
-	# Disable function inlining and variable registerization. For lldb, gdb, dlv and the involved debugger tools
-	# See also Dave cheney's blog post: http://goo.gl/6QCJMj
-	# And, My cgo blog post: http://libraryofalexandria.io/cgo/
-	#
-	# -gcflags '-N': Will be disable the optimisation pass in the compiler
-	# -gcflags '-l': Will be disable inlining (but still retain other compiler optimisations)
-	#                This is very useful if you are investigating small methods, but can’t find them in `objdump`
-else
-	GO_LDFLAGS ?= -w -s
-	# Turn of DWARF debugging information and strip the binary otherwise
-	# It will reduce the as much as possible size of the binary
-	# See also Russ Cox's answered in StackOverflow: http://goo.gl/vOaigc
-	#
-	# -ldflags '-w': Turns off DWARF debugging infomation
-	# 	- Will not be able to use lldb, gdb, objdump or related to debugger tools
-	# -ldflags '-s': Turns off generation of the Go symbol table
-	# 	- Will not be able to use `go tool nm` to list symbols in the binary
-	# 	- `strip -s` is like passing '-s' flag to -ldflags, but it doesn't strip quite as much
-endif
+# Define build flags
+
+GO_BUILD_FLAG := -tags='$(GO_BUILD_TAG)'
+
+# Initialize
+CGO_CFLAGS :=
+CGO_LDFLAGS :=
 
 # Parse git current branch commit-hash
 GO_LDFLAGS += -X `go list ./xhyve`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
 
+
+# Set debug gcflag, or optimize ldflags
+#  Usage: DEBUG=true make
+ifeq ($(DEBUG),true)
+GO_GCFLAGS += -N -l
+# Disable function inlining and variable registerization. For lldb, gdb, dlv and the involved debugger tools
+# See also Dave cheney's blog post: http://goo.gl/6QCJMj
+# And, My cgo blog post: http://libraryofalexandria.io/cgo/
+#
+# -gcflags '-N': Will be disable the optimisation pass in the compiler
+# -gcflags '-l': Will be disable inlining (but still retain other compiler optimisations)
+#                This is very useful if you are investigating small methods, but can’t find them in `objdump`
+else
+GO_LDFLAGS += -w -s
+# Turn of DWARF debugging information and strip the binary otherwise
+# It will reduce the as much as possible size of the binary
+# See also Russ Cox's answered in StackOverflow: http://goo.gl/vOaigc
+#
+# -ldflags '-w': Turns off DWARF debugging infomation
+# 	- Will not be able to use lldb, gdb, objdump or related to debugger tools
+# -ldflags '-s': Turns off generation of the Go symbol table
+# 	- Will not be able to use `go tool nm` to list symbols in the binary
+# 	- `strip -s` is like passing '-s' flag to -ldflags, but it doesn't strip quite as much
+endif
+
+
+# build with race
+ifeq ($(RACE),true)
+GO_BUILD_FLAG += -race
+endif
+
+
+# Use virtio-9p shared folder with static build lib9p library
+# Default is enable
+GO_BUILD_TAG ?= lib9p
+# included 'lib9p' in the $GO_BUILD_TAG, and exists 'lib9p.a' file
+HAVE_LIB9P := ./vendor/build/lib9p/lib9p.a
+ifneq (,$(findstring lib9p,$(GO_BUILD_TAG)))
+ifneq ("$(wildcard $(HAVE_LIB9P))","")
 CGO_CFLAGS += -I${PWD}/vendor/lib9p
 CGO_LDFLAGS += ${PWD}/vendor/build/lib9p/lib9p.a -L${PWD}/vendor/lib9p
+endif
+endif
+
+
+# Use mirage-block for pwritev|preadv
+HAVE_OCAML_QCOW := $(shell if ocamlfind query qcow uri >/dev/null 2>/dev/null ; then echo YES ; else echo NO; fi)
+# included 'qcow2' in the $GO_BUILD_TAG, and $HAVE_OCAML_QCOW is YES
+ifneq (,$(findstring qcow2,$(GO_BUILD_TAG)))
+ifeq ($(HAVE_OCAML_QCOW),YES)
+OCAML_WHERE := $(shell ocamlc -where)
+OCAML_LDLIBS := -L $(OCAML_WHERE) \
+	$(shell ocamlfind query cstruct)/cstruct.a \
+	$(shell ocamlfind query cstruct)/libcstruct_stubs.a \
+	$(shell ocamlfind query io-page)/io_page.a \
+	$(shell ocamlfind query io-page)/io_page_unix.a \
+	$(shell ocamlfind query io-page)/libio_page_unix_stubs.a \
+	$(shell ocamlfind query lwt.unix)/liblwt-unix_stubs.a \
+	$(shell ocamlfind query lwt.unix)/lwt-unix.a \
+	$(shell ocamlfind query lwt.unix)/lwt.a \
+	$(shell ocamlfind query threads)/libthreadsnat.a \
+	$(shell ocamlfind query mirage-block-unix)/libmirage_block_unix_stubs.a \
+	-lasmrun -lbigarray -lunix
+CGO_CFLAGS += -DHAVE_OCAML=1 -DHAVE_OCAML_QCOW=1 -DHAVE_OCAML=1 -I$(OCAML_WHERE)
+CGO_LDFLAGS += $(OCAML_LDLIBS)
+bin/docker-machine-driver-xhyve: generate
+endif
+endif
 
 
 # ----------------------------------------------------------------------------
@@ -124,10 +176,14 @@ default: build
 
 build: bin/docker-machine-driver-xhyve
 
+generate:
+	$(GO_CMD) generate $(GO_BUILD_FLAG) ./vendor/github.com/zchee/libhyperkit
+
 bin/docker-machine-driver-xhyve: lib9p
+	@echo $(GO_BUILD_TAG)
 	@test -d bin || mkdir -p bin;
 	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET}..."
-	$(VERBOSE) $(ENV) CGO_CFLAGS="${CGO_CFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" ${GO_BUILD} -gcflags "${GO_GCFLAGS}" -ldflags "$(GO_LDFLAGS)" ${TOP_PACKAGE_DIR}/${PACKAGE}
+	$(VERBOSE) $(ENV) CGO_CFLAGS="$(CGO_CFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS)" $(GO_BUILD) -gcflags "$(GO_GCFLAGS)" -ldflags "$(GO_LDFLAGS)" ${TOP_PACKAGE_DIR}/${PACKAGE}
 	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel. Please root password${CRESET}"
 	$(VERBOSE) $(ENV) sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT}
 
@@ -146,6 +202,10 @@ test-run:
 	@echo "${CBLACK} ${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE}/xhyve ${CRESET}"; \
 	${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE}/xhyve || exit 1
 
+test/bindings:
+	@if nm bin/docker-machine-driver-xhyve | grep _l9p_versions >/dev/null 2>&1; then echo 'lib9p'; fi
+	@if nm bin/docker-machine-driver-xhyve | grep _camlMirage_block__code_begin >/dev/null 2>&1; then echo 'qcow2'; fi
+
 dep-save:
 	${GODEP_CMD} save $(shell go list ./... | grep -v vendor/)
 
@@ -159,7 +219,7 @@ docker-build-nocache:
 	${DOCKER_CMD} build --rm --no-cache -t ${GITHUB_USER}/${PACKAGE} .
 
 clean: clean-lib9p
-	@${RM} -r ./bin
+	@${RM} -r ./bin ./vendor/github.com/zchee/libhyperkit/*.cmi ./vendor/github.com/zchee/libhyperkit/*.cmx ./vendor/github.com/zchee/libhyperkit/*.syso
 
 run: driver-run
 
