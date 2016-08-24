@@ -138,6 +138,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "xhyve-experimental-nfs-share",
 			Usage:  "Setup NFS shared folder (requires root)",
 		},
+		mcnflag.StringFlag{
+			EnvVar: "XHYVE_UUID",
+			Name:   "xhyve-uuid",
+			Usage:  "The UUID for the machine",
+			Value:  defaultUUID,
+		},
 	}
 }
 
@@ -187,6 +193,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Virtio9p = flags.Bool("xhyve-virtio-9p")
 	d.Virtio9pFolder = "/Users"
 	d.NFSShare = flags.Bool("xhyve-experimental-nfs-share")
+	d.UUID = flags.String("xhyve-uuid")
 
 	return nil
 }
@@ -365,9 +372,13 @@ func (d *Driver) Create() error {
 		os.Chown(d.ResolveStorePath(f.Name()), syscall.Getuid(), syscall.Getegid())
 	}
 
-	log.Infof("Generate UUID...")
-	d.UUID = uuidgen()
-	log.Debugf("Generated UUID: %s", d.UUID)
+	if d.UUID == "" {
+		log.Infof("Generate UUID...")
+		d.UUID = uuidgen()
+		log.Debugf("Generated UUID: %s", d.UUID)
+	} else {
+		log.Infof("Using Supplied UUID: %s", d.UUID)
+	}
 
 	log.Infof("Convert UUID to MAC address...")
 	rawUUID, err := d.getMACAdress()
