@@ -365,9 +365,13 @@ func (d *Driver) Create() error {
 		os.Chown(d.ResolveStorePath(f.Name()), syscall.Getuid(), syscall.Getegid())
 	}
 
-	log.Infof("Generate UUID...")
-	d.UUID = uuidgen()
-	log.Debugf("Generated UUID: %s", d.UUID)
+	if d.UUID == "" {
+		log.Infof("Generate UUID...")
+		d.UUID = uuidgen()
+		log.Debugf("Generated UUID: %s", d.UUID)
+	} else {
+		log.Infof("Using Supplied UUID: %s", d.UUID)
+	}
 
 	log.Infof("Convert UUID to MAC address...")
 	rawUUID, err := d.getMACAdress()
