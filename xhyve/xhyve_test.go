@@ -67,7 +67,7 @@ func TestGeneratingAndDetachingDiskImage(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	if err := driver.generateDiskImage(500); err != nil {
+	if err := driver.generateSparseBundleDiskImage(500); err != nil {
 		assert.NoError(t, err)
 	}
 

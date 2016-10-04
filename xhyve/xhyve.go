@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
@@ -27,6 +28,7 @@ import (
 	"github.com/johanneswuerbach/nfsexports"
 	"github.com/zchee/docker-machine-driver-xhyve/b2d"
 	"github.com/zchee/docker-machine-driver-xhyve/vmnet"
+	qcow2 "github.com/zchee/go-qcow2"
 )
 
 const (
@@ -46,6 +48,7 @@ const (
 	rootVolumeName        = "root-volume"
 	defaultDiskNumber     = -1
 	defaultVirtio9p       = false
+	defaultQcow2          = false
 )
 
 type Driver struct {
@@ -64,6 +67,7 @@ type Driver struct {
 	DiskNumber     int
 	Virtio9p       bool
 	Virtio9pFolder string
+	Qcow2          bool
 }
 
 var (
@@ -91,6 +95,7 @@ func NewDriver(hostName, storePath string) *Driver {
 		NFSShare:       defaultNFSShare,
 		DiskNumber:     defaultDiskNumber,
 		Virtio9p:       defaultVirtio9p,
+		Qcow2:          defaultQcow2,
 	}
 }
 
@@ -98,6 +103,12 @@ func NewDriver(hostName, storePath string) *Driver {
 // "docker hosts create"
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
+		mcnflag.StringFlag{
+			EnvVar: "XHYVE_BOOT_CMD",
+			Name:   "xhyve-boot-cmd",
+			Usage:  "Command of booting kexec protocol",
+			Value:  defaultBootCmd,
+		},
 		mcnflag.StringFlag{
 			EnvVar: "XHYVE_BOOT2DOCKER_URL",
 			Name:   "xhyve-boot2docker-url",
@@ -111,38 +122,37 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultCPU,
 		},
 		mcnflag.IntFlag{
-			EnvVar: "XHYVE_MEMORY_SIZE",
-			Name:   "xhyve-memory-size",
-			Usage:  "Size of memory for host in MB",
-			Value:  defaultMemory,
-		},
-		mcnflag.IntFlag{
 			EnvVar: "XHYVE_DISK_SIZE",
 			Name:   "xhyve-disk-size",
 			Usage:  "Size of disk for host in MB",
 			Value:  defaultDiskSize,
-		},
-		mcnflag.StringFlag{
-			EnvVar: "XHYVE_BOOT_CMD",
-			Name:   "xhyve-boot-cmd",
-			Usage:  "Command of booting kexec protocol",
-			Value:  defaultBootCmd,
-		},
-		mcnflag.BoolFlag{
-			EnvVar: "XHYVE_VIRTIO_9P",
-			Name:   "xhyve-virtio-9p",
-			Usage:  "Setup virtio-9p folder share",
 		},
 		mcnflag.BoolFlag{
 			EnvVar: "XHYVE_EXPERIMENTAL_NFS_SHARE",
 			Name:   "xhyve-experimental-nfs-share",
 			Usage:  "Setup NFS shared folder (requires root)",
 		},
+		mcnflag.IntFlag{
+			EnvVar: "XHYVE_MEMORY_SIZE",
+			Name:   "xhyve-memory-size",
+			Usage:  "Size of memory for host in MB",
+			Value:  defaultMemory,
+		},
+		mcnflag.BoolFlag{
+			EnvVar: "XHYVE_QCOW2",
+			Name:   "xhyve-qcow2",
+			Usage:  "Use qcow2 disk format",
+		},
 		mcnflag.StringFlag{
 			EnvVar: "XHYVE_UUID",
 			Name:   "xhyve-uuid",
 			Usage:  "The UUID for the machine",
 			Value:  defaultUUID,
+		},
+		mcnflag.BoolFlag{
+			EnvVar: "XHYVE_VIRTIO_9P",
+			Name:   "xhyve-virtio-9p",
+			Usage:  "Setup virtio-9p folder share",
 		},
 	}
 }
@@ -181,19 +191,23 @@ func (d *Driver) DriverName() string {
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Boot2DockerURL = flags.String("xhyve-boot2docker-url")
-	d.CPU = flags.Int("xhyve-cpu-count")
-	d.Memory = flags.Int("xhyve-memory-size")
-	d.DiskSize = int64(flags.Int("xhyve-disk-size"))
 	d.BootCmd = flags.String("xhyve-boot-cmd")
-	d.SwarmMaster = flags.Bool("swarm-master")
-	d.SwarmHost = flags.String("swarm-host")
-	d.SwarmDiscovery = flags.String("swarm-discovery")
-	d.SSHUser = "docker"
+	d.CPU = flags.Int("xhyve-cpu-count")
+	if d.CPU < 1 {
+		d.CPU = int(runtime.NumCPU())
+	}
+	d.DiskSize = int64(flags.Int("xhyve-disk-size"))
+	d.Memory = flags.Int("xhyve-memory-size")
+	d.NFSShare = flags.Bool("xhyve-experimental-nfs-share")
+	d.Qcow2 = flags.Bool("xhyve-qcow2")
 	d.SSHPort = 22
+	d.SSHUser = "docker"
+	d.SwarmDiscovery = flags.String("swarm-discovery")
+	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmMaster = flags.Bool("swarm-master")
+	d.UUID = flags.String("xhyve-uuid")
 	d.Virtio9p = flags.Bool("xhyve-virtio-9p")
 	d.Virtio9pFolder = "/Users"
-	d.NFSShare = flags.Bool("xhyve-experimental-nfs-share")
-	d.UUID = flags.String("xhyve-uuid")
 
 	return nil
 }
@@ -359,8 +373,15 @@ func (d *Driver) Create() error {
 	}
 
 	log.Infof("Generating %dMB disk image...", d.DiskSize)
-	if err := d.generateDiskImage(d.DiskSize); err != nil {
-		return err
+
+	if d.Qcow2 {
+		if err := d.generateQcow2Image(d.DiskSize); err != nil {
+			return err
+		}
+	} else {
+		if err := d.generateSparseBundleDiskImage(d.DiskSize); err != nil {
+			return err
+		}
 	}
 
 	// Fix file permission root to current user for vmnet.framework
@@ -592,7 +613,70 @@ func (d *Driver) extractKernelImages() error {
 	return nil
 }
 
-func (d *Driver) generateDiskImage(count int64) error {
+func (d *Driver) generateQcow2Image(size int64) error {
+	diskPath := filepath.Join(d.ResolveStorePath("."), d.MachineName+".qcow2")
+	opts := &qcow2.Opts{
+		Filename:      diskPath,
+		Size:          d.DiskSize * 107374,
+		Fmt:           qcow2.DriverQCow2,
+		ClusterSize:   65536,
+		Preallocation: qcow2.PREALLOC_MODE_OFF,
+		Encryption:    false,
+		LazyRefcounts: true,
+	}
+
+	img, err := qcow2.Create(opts)
+	if err != nil {
+		log.Error(err)
+	}
+
+	tarBuf, err := d.generateKeyBundle()
+	if err != nil {
+		return err
+	}
+
+	// TODO(zchee): hardcoded
+	zeroFill(tarBuf, 109569)
+	tarBuf.Write(diskimageFooter)
+
+	// TODO(zchee): hardcoded
+	zeroFill(tarBuf, 16309)
+	tarBuf.Write(efipartFooter)
+
+	img.Write(tarBuf.Bytes())
+
+	return nil
+}
+
+// zeroFill writes n zero bytes into w.
+func zeroFill(w io.Writer, n int64) error {
+	const blocksize = 32 << 10
+	zeros := make([]byte, blocksize)
+	var k int
+	var err error
+	for n > 0 {
+		if n > blocksize {
+			k, err = w.Write(zeros)
+			if err != nil {
+				return err
+			}
+
+		} else {
+			k, err = w.Write(zeros[:n])
+			if err != nil {
+				return err
+			}
+
+		}
+		if err != nil {
+			return err
+		}
+		n -= int64(k)
+	}
+	return nil
+}
+
+func (d *Driver) generateSparseBundleDiskImage(count int64) error {
 	diskPath := d.ResolveStorePath(rootVolumeName)
 
 	if err := hdiutil("create", "-megabytes", fmt.Sprintf("%d", count), "-type", "SPARSEBUNDLE", diskPath); err != nil {
@@ -802,7 +886,7 @@ func (d *Driver) SendSignal(sig os.Signal) error {
 	return nil
 }
 
-//Trimming "0" of the ten's digit
+// trimMacAddress trimming "0" of the ten's digit
 func trimMacAddress(rawUUID string) string {
 	re := regexp.MustCompile(`[0]([A-Fa-f0-9][:])`)
 	mac := re.ReplaceAllString(rawUUID, "$1")
@@ -811,31 +895,33 @@ func trimMacAddress(rawUUID string) string {
 }
 
 func (d *Driver) xhyveArgs() []string {
-	uuid := d.UUID
+	iso := d.ResolveStorePath(isoFilename)
+	var diskImage string
+	if d.Qcow2 {
+		imgPath := fmt.Sprintf("file://%s", filepath.Join(d.ResolveStorePath("."), d.MachineName+".qcow2"))
+		diskImage = fmt.Sprintf("4:0,virtio-blk,%s,format=qcow", imgPath)
+	} else {
+		imgPath := fmt.Sprintf("/dev/rdisk%d", d.DiskNumber)
+		diskImage = fmt.Sprintf("4:0,ahci-hd,%s", imgPath)
+	}
+
 	vmlinuz := d.ResolveStorePath("vmlinuz64")
 	initrd := d.ResolveStorePath("initrd.img")
-	iso := d.ResolveStorePath(isoFilename)
-	img := fmt.Sprintf("/dev/rdisk%d", d.DiskNumber)
-	bootcmd := d.BootCmd
-
-	cpus := d.CPU
-	if cpus < 1 {
-		cpus = int(runtime.NumCPU())
-	}
 
 	return []string{
 		"xhyve",
 		"-A",
-		"-U", fmt.Sprintf("%s", uuid),
-		"-c", fmt.Sprintf("%d", cpus),
+		"-U", fmt.Sprintf("%s", d.UUID),
+		"-c", fmt.Sprintf("%d", d.CPU),
 		"-m", fmt.Sprintf("%dM", d.Memory),
 		"-l", "com1,autopty",
 		"-s", "0:0,hostbridge",
 		"-s", "31,lpc",
 		"-s", "2:0,virtio-net",
-		"-s", fmt.Sprintf("3,ahci-cd,%s", iso),
-		"-s", fmt.Sprintf("4:0,ahci-hd,%s", img),
-		"-f", fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, bootcmd)}
+		"-s", fmt.Sprintf("3:0,ahci-cd,%s", iso),
+		"-s", diskImage,
+		"-f", fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, d.BootCmd),
+	}
 }
 
 func (d *Driver) getMACAdress() (string, error) {
