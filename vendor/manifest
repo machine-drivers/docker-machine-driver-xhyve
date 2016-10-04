@@ -1,0 +1,111 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/docker/machine/libmachine/drivers",
+			"repository": "https://github.com/docker/machine",
+			"vcs": "git",
+			"revision": "36aed62f39f28b90694f163f3c227a390b5b989c",
+			"branch": "HEAD",
+			"path": "/libmachine/drivers",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/machine/libmachine/log",
+			"repository": "https://github.com/docker/machine",
+			"vcs": "git",
+			"revision": "36aed62f39f28b90694f163f3c227a390b5b989c",
+			"branch": "HEAD",
+			"path": "libmachine/log",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/machine/libmachine/mcnflag",
+			"repository": "https://github.com/docker/machine",
+			"vcs": "git",
+			"revision": "36aed62f39f28b90694f163f3c227a390b5b989c",
+			"branch": "HEAD",
+			"path": "libmachine/mcnflag",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/machine/libmachine/mcnutils",
+			"repository": "https://github.com/docker/machine",
+			"vcs": "git",
+			"revision": "36aed62f39f28b90694f163f3c227a390b5b989c",
+			"branch": "HEAD",
+			"path": "libmachine/mcnutils",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/machine/libmachine/ssh",
+			"repository": "https://github.com/docker/machine",
+			"vcs": "git",
+			"revision": "36aed62f39f28b90694f163f3c227a390b5b989c",
+			"branch": "HEAD",
+			"path": "libmachine/ssh",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/machine/libmachine/state",
+			"repository": "https://github.com/docker/machine",
+			"vcs": "git",
+			"revision": "36aed62f39f28b90694f163f3c227a390b5b989c",
+			"branch": "HEAD",
+			"path": "libmachine/state",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/machine/libmachine/version",
+			"repository": "https://github.com/docker/machine",
+			"vcs": "git",
+			"revision": "36aed62f39f28b90694f163f3c227a390b5b989c",
+			"branch": "HEAD",
+			"path": "libmachine/version",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/machine/vendor/github.com/docker/docker/pkg/term",
+			"repository": "https://github.com/docker/machine",
+			"vcs": "git",
+			"revision": "36aed62f39f28b90694f163f3c227a390b5b989c",
+			"branch": "HEAD",
+			"path": "vendor/github.com/docker/docker/pkg/term",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/machine/vendor/golang.org/x/crypto/curve25519",
+			"repository": "https://github.com/docker/machine",
+			"vcs": "git",
+			"revision": "36aed62f39f28b90694f163f3c227a390b5b989c",
+			"branch": "HEAD",
+			"path": "vendor/golang.org/x/crypto/curve25519",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/machine/vendor/golang.org/x/crypto/ssh",
+			"repository": "https://github.com/docker/machine",
+			"vcs": "git",
+			"revision": "36aed62f39f28b90694f163f3c227a390b5b989c",
+			"branch": "HEAD",
+			"path": "vendor/golang.org/x/crypto/ssh",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/johanneswuerbach/nfsexports",
+			"repository": "https://github.com/johanneswuerbach/nfsexports",
+			"vcs": "git",
+			"revision": "a9068f3f0daa39616953aec11c3eb1209ebc4086",
+			"branch": "HEAD",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/zchee/libhyperkit",
+			"repository": "https://github.com/zchee/libhyperkit",
+			"vcs": "git",
+			"revision": "2b621824d34d571e44b479817a1c8cd46860062e",
+			"branch": "HEAD",
+			"notests": true
+		}
+	]
+}
