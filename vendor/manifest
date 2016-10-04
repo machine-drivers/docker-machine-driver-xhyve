@@ -109,6 +109,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/zchee/go-qcow2",
+			"repository": "https://github.com/zchee/go-qcow2",
+			"vcs": "git",
+			"revision": "83fbd1a2d64a2c035d8a3b73836454d41821fe45",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/zchee/libhyperkit",
 			"repository": "https://github.com/zchee/libhyperkit",
 			"vcs": "git",
