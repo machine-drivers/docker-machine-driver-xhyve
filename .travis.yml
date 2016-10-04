@@ -4,31 +4,26 @@ os: osx
 osx_image: xcode8
 
 language: go
-
 go:
-  - 1.6.3
-  - 1.7rc5
+  - 1.7.1
   - tip
+
 
 env:
   global:
-    - GO15VENDOREXPERIMENT=1
-    - GOMAXPROCS=8
+    - MAKEFLAGS='V=1 -j$(sysctl -n hw.ncpu)'
+
+
+install:
+  - go get -v -x github.com/stretchr/testify/assert
+
 
 before_script:
-  - git submodule update --init
-  - mkdir -p vendor/build/lib9p vendor/build/lib9p/sbuf vendor/build/lib9p/transport vendor/build/lib9p/backend
-  - make
   - make install
 
 script:
   - make test
 
-notifications:
-  email: false
-  slack:
-    rooms:
-      secure: W37wQbWT+IR389zOGorMgWp7lG8xdVp9qb4aGES9yi6ohkIaQ/NHmzY9fT+3YeRy2MzMs+alX5SFIQTYqBVMVNtYCuygxz0zwtuZvIksjM/FwkVtMC6CTGQuPOsnSprOhB23DMKiIgGnB0ggsJDaQoGzUOG8EoBmuiKniWDqc0DCrS/vwk/iI6g68FQVCkWA2oQw3GgStKKrLwcUjEA5Y6aTrIYscPjmCFtJh5UOxCgQ+8Y/oqcxvqkb/mnuhYABySbVKhGSdtVnaQwNziLqfwHbCiRVzlwdJFfp3OlRKhHHStBe+Bu83pZYWMXAKZ/CFSXCADadX4x0P5eO6dbbJd2h1gS2BO/JppSJNlbk2WBhUAs5YniKHOxde7h9JilOgJceRF5CLzLb/5N+5/5w8CKBs8tzEcU13ilzyJ2BiRgvOsJ6eLmblQDLS29arL393W0IVTccuxqeKIL0asrXLOwFhK13UeQqPwPGRCKIMbLkEPARer+wteMMLNglGjPx9GbsTb9JyLqqoe7e4Wc7cm0OcPcMKxGnpyrxVk/57q32r6hcko4tL2PTySYHaqFx5CIPFk3TtsM/d6g4MSvmoh5Oys4vib2vZ5sJbHWIk1Fn/+ukRMRLuie7GYCyDwz/J0gPKsc+wG/4OZJIx16Oi89flA59mNPQdAGKb7+I5O0=
 
 before_deploy:
   - sudo chown travis:staff bin/docker-machine-driver-xhyve
@@ -43,3 +38,10 @@ deploy:
     tags: true
   api_key:
     secure: ooncVJ4sSfcLiQ/0mNivrShRbUBcywocGd7mOhWp1MsyKdnAv7/In2qiyw4GD1x/AWyXOGWKGouDATeiP3kQ7jnIw7YoaNcbu/QeKD2xIODf4tYGXDf7AQUEwKnof5XBTIbU7oRgBe+NH1bN6iDh8XBgLqZPXFjaIQSq3gudM2/zJlzcrCdXAA8oKOJdsS4TR4/cCVMou3gV54mbkxmsr+F1BN3zKO7k1ZBv4BDYbkrN1RvBiEOXq7c+ab3ubd4L/AGxU1oou+0qRJMXF7jCyIq4zHrwl4iAQUd5AVKlZRFVWRF2RdGc7ExCA+ZGZZhhvpCmMsldiqjPWRPdcF4rCkaWk1RKhOL4VwSZUaXwVgEM4k9GRuKD0LVqkzPhvPG9DVpEA2rtnmkVtQ6/AttqkV6vDH5emL4zt6Mw4/Uphb0rdKrSYKbpE4NUpMikQXbzmXeEyXjhoNE9I7k8Dkh5CFnlS2VxVl/ECEOA4b2nKClGN+UhM7Z5Hkk/Sx/22mUFAnzwa/1x0gVyG8ONy8JdrbeEUnA03eeXIcvmAvfeyk6QkZMyHL1UGRm7VoN3y5uX30RHS6fDmhsE5CS2VE+TjbM6XppWwxaBueEzKwA5qtdfCiE+Wilttx4GS9bpa7FS8Efw1p/x69yZjzGNQhPC1mjCX3e3XFP35qF4+ZfP8aw=
+
+
+notifications:
+  email: false
+  slack:
+    rooms:
+      secure: W37wQbWT+IR389zOGorMgWp7lG8xdVp9qb4aGES9yi6ohkIaQ/NHmzY9fT+3YeRy2MzMs+alX5SFIQTYqBVMVNtYCuygxz0zwtuZvIksjM/FwkVtMC6CTGQuPOsnSprOhB23DMKiIgGnB0ggsJDaQoGzUOG8EoBmuiKniWDqc0DCrS/vwk/iI6g68FQVCkWA2oQw3GgStKKrLwcUjEA5Y6aTrIYscPjmCFtJh5UOxCgQ+8Y/oqcxvqkb/mnuhYABySbVKhGSdtVnaQwNziLqfwHbCiRVzlwdJFfp3OlRKhHHStBe+Bu83pZYWMXAKZ/CFSXCADadX4x0P5eO6dbbJd2h1gS2BO/JppSJNlbk2WBhUAs5YniKHOxde7h9JilOgJceRF5CLzLb/5N+5/5w8CKBs8tzEcU13ilzyJ2BiRgvOsJ6eLmblQDLS29arL393W0IVTccuxqeKIL0asrXLOwFhK13UeQqPwPGRCKIMbLkEPARer+wteMMLNglGjPx9GbsTb9JyLqqoe7e4Wc7cm0OcPcMKxGnpyrxVk/57q32r6hcko4tL2PTySYHaqFx5CIPFk3TtsM/d6g4MSvmoh5Oys4vib2vZ5sJbHWIk1Fn/+ukRMRLuie7GYCyDwz/J0gPKsc+wG/4OZJIx16Oi89flA59mNPQdAGKb7+I5O0=
