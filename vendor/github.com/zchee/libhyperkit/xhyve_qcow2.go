@@ -1,4 +1,4 @@
-// +build qcow
+// +build qcow2
 
 package hyperkit
 

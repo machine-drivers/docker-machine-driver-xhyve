@@ -1,3 +1,5 @@
+// +build qcow2
+
 /*
  * C interface to the mirage-block subsystem
  *
