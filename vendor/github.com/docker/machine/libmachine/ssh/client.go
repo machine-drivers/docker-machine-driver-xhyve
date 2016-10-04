@@ -2,9 +2,13 @@ package ssh
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/exec"
+	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/docker/docker/pkg/term"
@@ -17,17 +21,31 @@ import (
 type Client interface {
 	Output(command string) (string, error)
 	Shell(args ...string) error
+
+	// Start starts the specified command without waiting for it to finish. You
+	// have to call the Wait function for that.
+	//
+	// The first two io.ReadCloser are the standard output and the standard
+	// error of the executing command respectively. The returned error follows
+	// the same logic as in the exec.Cmd.Start function.
+	Start(command string) (io.ReadCloser, io.ReadCloser, error)
+
+	// Wait waits for the command started by the Start function to exit. The
+	// returned error follows the same logic as in the exec.Cmd.Wait function.
+	Wait() error
 }
 
 type ExternalClient struct {
 	BaseArgs   []string
 	BinaryPath string
+	cmd        *exec.Cmd
 }
 
 type NativeClient struct {
-	Config   ssh.ClientConfig
-	Hostname string
-	Port     int
+	Config      ssh.ClientConfig
+	Hostname    string
+	Port        int
+	openSession *ssh.Session
 }
 
 type Auth struct {
@@ -48,7 +66,7 @@ const (
 
 var (
 	baseSSHArgs = []string{
-		"-o", "BatchMode=yes",
+		"-F", "/dev/null",
 		"-o", "PasswordAuthentication=no",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
@@ -101,7 +119,7 @@ func NewNativeClient(user, host string, port int, auth *Auth) (Client, error) {
 		return nil, fmt.Errorf("Error getting config for native Go SSH: %s", err)
 	}
 
-	return NativeClient{
+	return &NativeClient{
 		Config:   config,
 		Hostname: host,
 		Port:     port,
@@ -137,20 +155,20 @@ func NewNativeConfig(user string, auth *Auth) (ssh.ClientConfig, error) {
 	}, nil
 }
 
-func (client NativeClient) dialSuccess() bool {
-	if _, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Hostname, client.Port), &client.Config); err != nil {
+func (client *NativeClient) dialSuccess() bool {
+	if _, err := ssh.Dial("tcp", net.JoinHostPort(client.Hostname, strconv.Itoa(client.Port)), &client.Config); err != nil {
 		log.Debugf("Error dialing TCP: %s", err)
 		return false
 	}
 	return true
 }
 
-func (client NativeClient) session(command string) (*ssh.Session, error) {
+func (client *NativeClient) session(command string) (*ssh.Session, error) {
 	if err := mcnutils.WaitFor(client.dialSuccess); err != nil {
 		return nil, fmt.Errorf("Error attempting SSH client dial: %s", err)
 	}
 
-	conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Hostname, client.Port), &client.Config)
+	conn, err := ssh.Dial("tcp", net.JoinHostPort(client.Hostname, strconv.Itoa(client.Port)), &client.Config)
 	if err != nil {
 		return nil, fmt.Errorf("Mysterious error dialing TCP for SSH (we already succeeded at least once) : %s", err)
 	}
@@ -158,7 +176,7 @@ func (client NativeClient) session(command string) (*ssh.Session, error) {
 	return conn.NewSession()
 }
 
-func (client NativeClient) Output(command string) (string, error) {
+func (client *NativeClient) Output(command string) (string, error) {
 	session, err := client.session(command)
 	if err != nil {
 		return "", nil
@@ -170,7 +188,7 @@ func (client NativeClient) Output(command string) (string, error) {
 	return string(output), err
 }
 
-func (client NativeClient) OutputWithPty(command string) (string, error) {
+func (client *NativeClient) OutputWithPty(command string) (string, error) {
 	session, err := client.session(command)
 	if err != nil {
 		return "", nil
@@ -201,11 +219,40 @@ func (client NativeClient) OutputWithPty(command string) (string, error) {
 	return string(output), err
 }
 
-func (client NativeClient) Shell(args ...string) error {
+func (client *NativeClient) Start(command string) (io.ReadCloser, io.ReadCloser, error) {
+	session, err := client.session(command)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	stdout, err := session.StdoutPipe()
+	if err != nil {
+		return nil, nil, err
+	}
+	stderr, err := session.StderrPipe()
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := session.Start(command); err != nil {
+		return nil, nil, err
+	}
+
+	client.openSession = session
+	return ioutil.NopCloser(stdout), ioutil.NopCloser(stderr), nil
+}
+
+func (client *NativeClient) Wait() error {
+	err := client.openSession.Wait()
+	_ = client.openSession.Close()
+	client.openSession = nil
+	return err
+}
+
+func (client *NativeClient) Shell(args ...string) error {
 	var (
 		termWidth, termHeight int
 	)
-	conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Hostname, client.Port), &client.Config)
+	conn, err := ssh.Dial("tcp", net.JoinHostPort(client.Hostname, strconv.Itoa(client.Port)), &client.Config)
 	if err != nil {
 		return err
 	}
@@ -261,8 +308,8 @@ func (client NativeClient) Shell(args ...string) error {
 	return nil
 }
 
-func NewExternalClient(sshBinaryPath, user, host string, port int, auth *Auth) (ExternalClient, error) {
-	client := ExternalClient{
+func NewExternalClient(sshBinaryPath, user, host string, port int, auth *Auth) (*ExternalClient, error) {
+	client := &ExternalClient{
 		BinaryPath: sshBinaryPath,
 	}
 
@@ -277,6 +324,24 @@ func NewExternalClient(sshBinaryPath, user, host string, port int, auth *Auth) (
 	// Specify which private keys to use to authorize the SSH request.
 	for _, privateKeyPath := range auth.Keys {
 		if privateKeyPath != "" {
+			// Check each private key before use it
+			fi, err := os.Stat(privateKeyPath)
+			if err != nil {
+				// Abort if key not accessible
+				return nil, err
+			}
+			if runtime.GOOS != "windows" {
+				mode := fi.Mode()
+				log.Debugf("Using SSH private key: %s (%s)", privateKeyPath, mode)
+				// Private key file should have strict permissions
+				perm := mode.Perm()
+				if perm&0400 == 0 {
+					return nil, fmt.Errorf("'%s' is not readable", privateKeyPath)
+				}
+				if perm&0077 != 0 {
+					return nil, fmt.Errorf("permissions %#o for '%s' are too open", perm, privateKeyPath)
+				}
+			}
 			args = append(args, "-i", privateKeyPath)
 		}
 	}
@@ -293,14 +358,14 @@ func getSSHCmd(binaryPath string, args ...string) *exec.Cmd {
 	return exec.Command(binaryPath, args...)
 }
 
-func (client ExternalClient) Output(command string) (string, error) {
+func (client *ExternalClient) Output(command string) (string, error) {
 	args := append(client.BaseArgs, command)
 	cmd := getSSHCmd(client.BinaryPath, args...)
 	output, err := cmd.CombinedOutput()
 	return string(output), err
 }
 
-func (client ExternalClient) Shell(args ...string) error {
+func (client *ExternalClient) Shell(args ...string) error {
 	args = append(client.BaseArgs, args...)
 	cmd := getSSHCmd(client.BinaryPath, args...)
 
@@ -311,4 +376,41 @@ func (client ExternalClient) Shell(args ...string) error {
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
+}
+
+func (client *ExternalClient) Start(command string) (io.ReadCloser, io.ReadCloser, error) {
+	args := append(client.BaseArgs, command)
+	cmd := getSSHCmd(client.BinaryPath, args...)
+
+	log.Debug(cmd)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, nil, err
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		if closeErr := stdout.Close(); closeErr != nil {
+			return nil, nil, fmt.Errorf("%s, %s", err, closeErr)
+		}
+		return nil, nil, err
+	}
+	if err := cmd.Start(); err != nil {
+		stdOutCloseErr := stdout.Close()
+		stdErrCloseErr := stderr.Close()
+		if stdOutCloseErr != nil || stdErrCloseErr != nil {
+			return nil, nil, fmt.Errorf("%s, %s, %s",
+				err, stdOutCloseErr, stdErrCloseErr)
+		}
+		return nil, nil, err
+	}
+
+	client.cmd = cmd
+	return stdout, stderr, nil
+}
+
+func (client *ExternalClient) Wait() error {
+	err := client.cmd.Wait()
+	client.cmd = nil
+	return err
 }
