@@ -31,11 +31,11 @@ endif
 # Build package infomation
 GITHUB_USER := zchee
 TOP_PACKAGE_DIR := github.com/${GITHUB_USER}
-PACKAGE := `basename $(PWD)`
+PACKAGE := $(shell basename $(PWD))
 OUTPUT := bin/docker-machine-driver-xhyve
 # Parse "func main()" only '.go' file on current dir
 # FIXME: Not support main.go
-MAIN_FILE := `grep "func main\(\)" *.go -l`
+MAIN_FILE := $(shell grep "func main\(\)" *.go -l)
 
 
 # ----------------------------------------------------------------------------
@@ -52,7 +52,6 @@ DOCKER_CMD := $(shell which docker)
 # Define sub commmands
 
 GO_BUILD = ${GO_CMD} build $(GO_VERBOSE) $(GO_BUILD_FLAG) -o ${OUTPUT}
-GO_BUILD_RACE = ${GO_CMD} build $(GO_VERBOSE) $(GO_BUILD_FLAG) -o ${OUTPUT}
 
 GO_INSTALL = ${GO_CMD} install $(GO_BUILD_TAG)
 
@@ -73,8 +72,6 @@ GODEP_CMD = $(if ${GODEP}, , $(error Please install godep: go get github.com/too
 
 # ----------------------------------------------------------------------------
 # Define build flags
-
-GO_BUILD_FLAG := -tags='$(GO_BUILD_TAG)'
 
 # Initialize
 CGO_CFLAGS :=
@@ -119,12 +116,10 @@ endif
 # Default is enable
 GO_BUILD_TAG ?= lib9p
 # included 'lib9p' in the $GO_BUILD_TAG, and exists 'lib9p.a' file
-HAVE_LIB9P := ./vendor/build/lib9p/lib9p.a
 ifneq (,$(findstring lib9p,$(GO_BUILD_TAG)))
-ifneq ("$(wildcard $(HAVE_LIB9P))","")
 CGO_CFLAGS += -I${PWD}/vendor/lib9p
-CGO_LDFLAGS += ${PWD}/vendor/build/lib9p/lib9p.a -L${PWD}/vendor/lib9p
-endif
+CGO_LDFLAGS += ${PWD}/vendor/build/lib9p/lib9p.a
+bin/docker-machine-driver-xhyve: lib9p
 endif
 
 
@@ -148,9 +143,12 @@ OCAML_LDLIBS := -L $(OCAML_WHERE) \
 	-lasmrun -lbigarray -lunix
 CGO_CFLAGS += -DHAVE_OCAML=1 -DHAVE_OCAML_QCOW=1 -DHAVE_OCAML=1 -I$(OCAML_WHERE)
 CGO_LDFLAGS += $(OCAML_LDLIBS)
-bin/docker-machine-driver-xhyve: generate
+bin/docker-machine-driver-xhyve: vendor/github.com/zchee/libhyperkit/mirage_block_ocaml.syso
 endif
 endif
+
+
+GO_BUILD_FLAG += -tags='$(GO_BUILD_TAG)'
 
 
 # ----------------------------------------------------------------------------
@@ -176,41 +174,40 @@ default: build
 
 build: bin/docker-machine-driver-xhyve
 
-generate:
-	$(GO_CMD) generate $(GO_BUILD_FLAG) ./vendor/github.com/zchee/libhyperkit
+vendor/github.com/zchee/libhyperkit/mirage_block_ocaml.syso:
+	$(VERBOSE) $(GO_CMD) generate $(GO_BUILD_FLAG) $(GO_VERBOSE) ./vendor/github.com/zchee/libhyperkit
 
-bin/docker-machine-driver-xhyve: lib9p
-	@echo $(GO_BUILD_TAG)
-	@test -d bin || mkdir -p bin;
+bin/docker-machine-driver-xhyve:
+	$(VERBOSE) test -d bin || mkdir -p bin;
 	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}${PACKAGE}${CRESET}..."
 	$(VERBOSE) $(ENV) CGO_CFLAGS="$(CGO_CFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS)" $(GO_BUILD) -gcflags "$(GO_GCFLAGS)" -ldflags "$(GO_LDFLAGS)" ${TOP_PACKAGE_DIR}/${PACKAGE}
+
+build-privilege: bin/docker-machine-driver-xhyve
 	@echo "${CBLUE}==>${CRESET} Change ${CGREEN}${PACKAGE}${CRESET} binary owner and group to root:wheel. Please root password${CRESET}"
 	$(VERBOSE) $(ENV) sudo chown root:wheel ${OUTPUT} && sudo chmod u+s ${OUTPUT}
 
-install: bin/docker-machine-driver-xhyve
+install: build-privilege
 	@echo "${CBLUE}==>${CRESET} Install ${CGREEN}${PACKAGE}${CRESET}..."
-	@test -d /usr/local/bin || mkdir -p /usr/local/bin
+	$(VERBOSE) test -d /usr/local/bin || mkdir -p /usr/local/bin
 	sudo cp -p ./bin/docker-machine-driver-xhyve /usr/local/bin/
+
 
 test:
 	@echo "${CBLUE}==>${CRESET} Test ${CGREEN}${PACKAGE}${CRESET}..."
 	@echo "${CBLACK} ${GO_TEST} ${TOP_PACKAGE_DIR}/${PACKAGE}/xhyve ${CRESET}"; \
 	${GO_TEST} ${TOP_PACKAGE_DIR}/${PACKAGE}/xhyve || exit 1
 
-test-run:
-	@echo "${CBLUE}==>${CRESET} Test ${CGREEN}${PACKAGE} ${FUNC} only${CRESET}..."
-	@echo "${CBLACK} ${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE}/xhyve ${CRESET}"; \
-	${GO_TEST_RUN} ${TOP_PACKAGE_DIR}/${PACKAGE}/xhyve || exit 1
+test-bindings:
+	$(VERBOSE) if nm bin/docker-machine-driver-xhyve | grep _l9p_server_init >/dev/null 2>&1; then echo 'lib9p'; fi
+	$(VERBOSE) if nm bin/docker-machine-driver-xhyve | grep _camlMirage_block__code_begin >/dev/null 2>&1; then echo 'qcow2'; fi
 
-test/bindings:
-	@if nm bin/docker-machine-driver-xhyve | grep _l9p_versions >/dev/null 2>&1; then echo 'lib9p'; fi
-	@if nm bin/docker-machine-driver-xhyve | grep _camlMirage_block__code_begin >/dev/null 2>&1; then echo 'qcow2'; fi
 
-dep-save:
-	${GODEP_CMD} save $(shell go list ./... | grep -v vendor/)
+vendor-update:
+	$(VERBOSE) gvt update -all
 
-dep-restore:
-	${GODEP_CMD} restore -v
+vendor-restore:
+	$(VERBOSE) gvt restore
+
 
 docker-build:
 	${DOCKER_CMD} build --rm -t ${GITHUB_USER}/${PACKAGE} .
@@ -218,8 +215,10 @@ docker-build:
 docker-build-nocache:
 	${DOCKER_CMD} build --rm --no-cache -t ${GITHUB_USER}/${PACKAGE} .
 
+
 clean: clean-lib9p
 	@${RM} -r ./bin ./vendor/github.com/zchee/libhyperkit/*.cmi ./vendor/github.com/zchee/libhyperkit/*.cmx ./vendor/github.com/zchee/libhyperkit/*.syso
+
 
 run: driver-run
 
