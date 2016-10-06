@@ -1,4 +1,3 @@
-MAKEFLAGS := -j1
 LIB9P_DIR := vendor/lib9p
 
 LIB9P_CFLAGS := \
@@ -30,22 +29,21 @@ LIB9P_DYLIB := ${LIB9P_BUILD_DIR}/lib9p.dylib
 
 default: build
 
-lib9p: vendor/build/lib9p $(LIB9P_LIB)
+lib9p: ${LIB9P_BUILD_DIR} $(LIB9P_LIB)
+	@echo "${CBLUE}==>${CRESET} Build ${CGREEN}$(LIB9P_LIB)${CRESET}..."
+	$(VERBOSE) ${GIT_CMD} submodule update --init
 
-vendor/lib9p/%.c:
-	${GIT_CMD} submodule update --init
-
-vendor/build/lib9p: vendor/lib9p/%.c
-	mkdir -p ${LIB9P_BUILD_DIR} ${LIB9P_BUILD_DIR}/sbuf ${LIB9P_BUILD_DIR}/transport ${LIB9P_BUILD_DIR}/backend
+vendor/build/lib9p:
+	$(VERBOSE) mkdir -p ${LIB9P_BUILD_DIR} ${LIB9P_BUILD_DIR}/sbuf ${LIB9P_BUILD_DIR}/transport ${LIB9P_BUILD_DIR}/backend
 
 vendor/build/lib9p/%.o: vendor/lib9p/%.c
-	$(CC) $(LIB9P_CFLAGS) -c $< -o $@
+	$(VERBOSE) $(CC) $(LIB9P_CFLAGS) -c $< -o $@
 
 $(LIB9P_LIB): $(LIB9P_LIB_OBJS)
-	$(LIBTOOL) -static $^ -o $@
+	$(VERBOSE) $(LIBTOOL) -static $^ -o $@
 
 $(LIB9P_DYLIB): $(LIB9P_LIB_OBJS)
-	$(CC) -dynamiclib $^ -o ${LIB9P_BUILD_DIR}/$@
+	$(VERBOSE) $(CC) -dynamiclib $^ -o ${LIB9P_BUILD_DIR}/$@
 
 clean-lib9p:
 	@${RM} -r ${VENDOR_BUILD_DIR}

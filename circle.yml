@@ -14,6 +14,7 @@ dependencies:
     - docker version
     - docker info
     - if [[ -e ~/docker/osxcc-golang_devel.tar ]]; then docker load -i ~/docker/osxcc-golang_devel.tar; fi
+    - git submodule update --init
     - docker build -t "zchee/docker-machine-driver-xhyve:latest" .
     - mkdir -p ~/docker; docker save osxcc/golang:devel > ~/docker/osxcc-golang_devel.tar
 
