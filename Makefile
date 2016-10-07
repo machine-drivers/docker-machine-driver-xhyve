@@ -53,7 +53,7 @@ DOCKER_CMD := $(shell which docker)
 
 GO_BUILD = ${GO_CMD} build $(GO_VERBOSE) $(GO_BUILD_FLAG) -o ${OUTPUT}
 
-GO_INSTALL = ${GO_CMD} install $(GO_BUILD_TAG)
+GO_INSTALL = ${GO_CMD} install $(GO_BUILD_TAGS)
 
 GO_RUN = ${GO_CMD} run
 
@@ -114,9 +114,9 @@ endif
 
 # Use virtio-9p shared folder with static build lib9p library
 # Default is enable
-GO_BUILD_TAG ?= lib9p
-# included 'lib9p' in the $GO_BUILD_TAG, and exists 'lib9p.a' file
-ifneq (,$(findstring lib9p,$(GO_BUILD_TAG)))
+GO_BUILD_TAGS ?= lib9p
+# included 'lib9p' in the $GO_BUILD_TAGS, and exists 'lib9p.a' file
+ifneq (,$(findstring lib9p,$(GO_BUILD_TAGS)))
 CGO_CFLAGS += -I${PWD}/vendor/lib9p
 CGO_LDFLAGS += ${PWD}/vendor/build/lib9p/lib9p.a
 bin/docker-machine-driver-xhyve: lib9p
@@ -125,8 +125,8 @@ endif
 
 # Use mirage-block for pwritev|preadv
 HAVE_OCAML_QCOW := $(shell if ocamlfind query qcow uri >/dev/null 2>/dev/null ; then echo YES ; else echo NO; fi)
-# included 'qcow2' in the $GO_BUILD_TAG, and $HAVE_OCAML_QCOW is YES
-ifneq (,$(findstring qcow2,$(GO_BUILD_TAG)))
+# included 'qcow2' in the $GO_BUILD_TAGS, and $HAVE_OCAML_QCOW is YES
+ifneq (,$(findstring qcow2,$(GO_BUILD_TAGS)))
 ifeq ($(HAVE_OCAML_QCOW),YES)
 OCAML_WHERE := $(shell ocamlc -where)
 OCAML_LDLIBS := -L $(OCAML_WHERE) \
@@ -148,7 +148,7 @@ endif
 endif
 
 
-GO_BUILD_FLAG += -tags='$(GO_BUILD_TAG)'
+GO_BUILD_FLAG += -tags='$(GO_BUILD_TAGS)'
 
 
 # ----------------------------------------------------------------------------
