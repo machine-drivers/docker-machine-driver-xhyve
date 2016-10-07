@@ -14,7 +14,11 @@ env:
     - MAKEFLAGS='V=1 -j$(sysctl -n hw.ncpu)'
 
 
+before_install:
+  - env
+
 install:
+  # for go test(make test)
   - go get -v -x github.com/stretchr/testify/assert
 
 
@@ -26,8 +30,10 @@ script:
 
 
 before_deploy:
+  # make install will change owner to root, root owned binary was can't deploy
   - sudo chown travis:staff bin/docker-machine-driver-xhyve
-  - if [[ ! "$TRAVIS_GO_VERSION" == "1.6.3" ]]; then export RELEASE_GO_VERSION=_$TRAVIS_GO_VERSION && mv bin/docker-machine-driver-xhyve{,$RELEASE_GO_VERSION}; else export RELEASE_GO_VERSION=; fi
+  # add version suffix to binary if not stable Go version
+  - if [[ "$TRAVIS_GO_VERSION" == "tip" ]]; then export RELEASE_GO_VERSION=_$TRAVIS_GO_VERSION && mv bin/docker-machine-driver-xhyve{,$RELEASE_GO_VERSION}; else export RELEASE_GO_VERSION=; fi
 
 deploy:
   provider: releases
