@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
-	"log"
 	"os"
 	"syscall"
 	"unsafe"
@@ -832,12 +831,10 @@ func (q *QCow2) Write(data []byte) error {
 	// ------------------------------------------------------------------------
 	// static int convert_do_copy(ImgConvertState *s)
 
-	buf := posixMemalign(4096, uint64(bufsectors*BDRV_SECTOR_SIZE))
-	log.Printf("posixMemalign buf: %+v\n", buf)
+	// buf := posixMemalign(4096, uint64(bufsectors*BDRV_SECTOR_SIZE))
 
 	// Calculate allocated sectors for progress
 	q.allocatedSectors = 0
-	log.Printf("q.totalSectors: %+v\n", q.totalSectors)
 	// var sectorNum int64
 	// for int64(sectorNum) < q.totalSectors {
 	// 	n, err := q.iterationSectors(sectorNum)
