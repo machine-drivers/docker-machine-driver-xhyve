@@ -120,7 +120,7 @@
 			"importpath": "github.com/zchee/libhyperkit",
 			"repository": "https://github.com/zchee/libhyperkit",
 			"vcs": "git",
-			"revision": "6e3f2962326d2f2b095f1ad988bdaf5b6cfe3665",
+			"revision": "e41061b1166fde4a17c134e22d15a744d18b0a90",
 			"branch": "master",
 			"notests": true
 		}
