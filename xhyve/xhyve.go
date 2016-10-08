@@ -54,20 +54,25 @@ const (
 type Driver struct {
 	*drivers.BaseDriver
 	*b2d.B2dUtils
+
 	Boot2DockerURL string
-	BootCmd        string
-	CPU            int
 	CaCertPath     string
-	DiskSize       int64
-	MacAddr        string
-	Memory         int
 	PrivateKeyPath string
-	UUID           string
-	NFSShare       bool
+
+	CPU            int
+	Memory         int
+	DiskSize       int64
 	DiskNumber     int
+	MacAddr        string
+	UUID           string
+	Qcow2          bool
 	Virtio9p       bool
 	Virtio9pFolder string
-	Qcow2          bool
+	NFSShare       bool
+
+	BootCmd string
+	Initrd  string
+	Vmlinuz string
 }
 
 var (
@@ -208,6 +213,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UUID = flags.String("xhyve-uuid")
 	d.Virtio9p = flags.Bool("xhyve-virtio-9p")
 	d.Virtio9pFolder = "/Users"
+
+	// docker-machine used boot2docker.iso by default
+	d.Vmlinuz = "vmlinuz64"
+	d.Initrd = "initrd.img"
 
 	return nil
 }
@@ -367,7 +376,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Extracting vmlinuz64 and initrd.img from %s...", isoFilename)
+	log.Infof("Extracting kernel and initrd from %s...", isoFilename)
 	if err := d.extractKernelImages(); err != nil {
 		return err
 	}
@@ -588,21 +597,21 @@ func (d *Driver) publicSSHKeyPath() string {
 func (d *Driver) extractKernelImages() error {
 	log.Debugf("Mounting %s", isoFilename)
 
-	err := hdiutil("attach", d.ResolveStorePath(isoFilename), "-mountpoint", d.ResolveStorePath("b2d-image"))
+	err := hdiutil("attach", d.ResolveStorePath(isoFilename), "-mountpoint", d.ResolveStorePath(isoMountPath))
 	if err != nil {
 		return err
 	}
 
 	volumeRootDir := d.ResolveStorePath(isoMountPath)
-	vmlinuz64 := volumeRootDir + "/boot/vmlinuz64"
-	initrd := volumeRootDir + "/boot/initrd.img"
+	vmlinuz := filepath.Join(volumeRootDir, "boot", d.Vmlinuz)
+	initrd := filepath.Join(volumeRootDir, "boot", d.Initrd)
 
-	log.Debugf("Extracting vmlinuz64 into %s", d.ResolveStorePath("."))
-	if err := mcnutils.CopyFile(vmlinuz64, d.ResolveStorePath("vmlinuz64")); err != nil {
+	log.Debugf("Extracting kernel into %s", d.ResolveStorePath("."))
+	if err := mcnutils.CopyFile(vmlinuz, d.ResolveStorePath(d.Vmlinuz)); err != nil {
 		return err
 	}
-	log.Debugf("Extracting initrd.img into %s", d.ResolveStorePath("."))
-	if err := mcnutils.CopyFile(initrd, d.ResolveStorePath("initrd.img")); err != nil {
+	log.Debugf("Extracting initrd into %s", d.ResolveStorePath("."))
+	if err := mcnutils.CopyFile(initrd, d.ResolveStorePath(d.Initrd)); err != nil {
 		return err
 	}
 	log.Debugf("Unmounting %s", isoFilename)
@@ -896,6 +905,7 @@ func trimMacAddress(rawUUID string) string {
 
 func (d *Driver) xhyveArgs() []string {
 	iso := d.ResolveStorePath(isoFilename)
+
 	var diskImage string
 	if d.Qcow2 {
 		imgPath := fmt.Sprintf("file://%s", filepath.Join(d.ResolveStorePath("."), d.MachineName+".qcow2"))
@@ -905,8 +915,15 @@ func (d *Driver) xhyveArgs() []string {
 		diskImage = fmt.Sprintf("4:0,ahci-hd,%s", imgPath)
 	}
 
-	vmlinuz := d.ResolveStorePath("vmlinuz64")
-	initrd := d.ResolveStorePath("initrd.img")
+	// assume the boot2docker.iso if empty
+	if d.Vmlinuz == "" {
+		d.Vmlinuz = "vmlinuz64"
+	}
+	if d.Initrd == "" {
+		d.Initrd = "initrd.img"
+	}
+	vmlinuz := d.ResolveStorePath(d.Vmlinuz)
+	initrd := d.ResolveStorePath(d.Initrd)
 
 	return []string{
 		"xhyve",
