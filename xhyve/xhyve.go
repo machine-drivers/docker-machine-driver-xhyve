@@ -930,8 +930,13 @@ func (d *Driver) getMACAdress() (string, error) {
 	stdout := bytes.Buffer{}
 
 	cmd := exec.Command(os.Args[0], args...) // TODO: Should be possible without exec
+	log.Debugf("Running command: %s %s", os.Args[0], args)
+
 	cmd.Stdout = &stdout
 	if err := cmd.Run(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			log.Debugf("Stderr: %s", exitErr.Stderr)
+		}
 		return "", err
 	}
 
