@@ -376,7 +376,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Extracting kernel and initrd from %s...", isoFilename)
+	log.Infof("Extracting %s and %s from %s...", d.Vmlinuz, d.Initrd, isoFilename)
 	if err := d.extractKernelImages(); err != nil {
 		return err
 	}
@@ -413,7 +413,7 @@ func (d *Driver) Create() error {
 	log.Infof("Convert UUID to MAC address...")
 	rawUUID, err := d.getMACAdress()
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not convert the UUID to MAC address: %s", err.Error())
 	}
 	d.MacAddr = trimMacAddress(rawUUID)
 	log.Debugf("Converted MAC address: %s", d.MacAddr)
@@ -606,14 +606,16 @@ func (d *Driver) extractKernelImages() error {
 	vmlinuz := filepath.Join(volumeRootDir, "boot", d.Vmlinuz)
 	initrd := filepath.Join(volumeRootDir, "boot", d.Initrd)
 
-	log.Debugf("Extracting kernel into %s", d.ResolveStorePath("."))
+	log.Debugf("Extracting %s into %s", d.Vmlinuz, d.ResolveStorePath(d.Vmlinuz))
 	if err := mcnutils.CopyFile(vmlinuz, d.ResolveStorePath(d.Vmlinuz)); err != nil {
 		return err
 	}
-	log.Debugf("Extracting initrd into %s", d.ResolveStorePath("."))
+
+	log.Debugf("Extracting %s into %s", d.Initrd, d.ResolveStorePath(d.Initrd))
 	if err := mcnutils.CopyFile(initrd, d.ResolveStorePath(d.Initrd)); err != nil {
 		return err
 	}
+
 	log.Debugf("Unmounting %s", isoFilename)
 	if err := hdiutil("detach", volumeRootDir); err != nil {
 		return err

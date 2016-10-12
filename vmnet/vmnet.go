@@ -5,6 +5,7 @@ package vmnet
 import (
 	"fmt"
 	"net"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -15,7 +16,17 @@ const (
 	NET_MASK_KEY = "Shared_Net_Mask"
 )
 
+// isExist returns whether the filename is exists.
+func isExist(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil
+}
+
 func GetNetAddr() (net.IP, error) {
+	if !isExist(CONFIG_PLIST + ".plist") {
+		return nil, fmt.Errorf("Does not exist %s", CONFIG_PLIST+".plist")
+	}
+
 	out, err := exec.Command("defaults", "read", CONFIG_PLIST, NET_ADDR_KEY).Output()
 	if err != nil {
 		return nil, err
@@ -28,6 +39,10 @@ func GetNetAddr() (net.IP, error) {
 }
 
 func getNetMask() (net.IPMask, error) {
+	if !isExist(CONFIG_PLIST + ".plist") {
+		return nil, fmt.Errorf("Does not exist %s", CONFIG_PLIST+".plist")
+	}
+
 	out, err := exec.Command("defaults", "read", CONFIG_PLIST, NET_MASK_KEY).Output()
 	if err != nil {
 		return nil, err
