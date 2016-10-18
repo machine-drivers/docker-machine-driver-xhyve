@@ -542,12 +542,12 @@ vmx_init(void)
 	// cap_invpcid = 1;
 
 	/* FIXME */
-  	cr0_ones_mask = cr4_ones_mask = 0;
-  	cr0_zeros_mask = cr4_zeros_mask = 0;
+	cr0_ones_mask = cr4_ones_mask = 0;
+	cr0_zeros_mask = cr4_zeros_mask = 0;
 
-  	cr0_ones_mask |= (CR0_NE | CR0_ET);
-  	cr0_zeros_mask |= (CR0_NW | CR0_CD);
-  	cr4_ones_mask = 0x2000;
+	cr0_ones_mask |= (CR0_NE | CR0_ET);
+	cr0_zeros_mask |= (CR0_NW | CR0_CD);
+	cr4_ones_mask = 0x2000;
 
 	vmx_msr_init();
 
@@ -2177,8 +2177,8 @@ vmx_run(void *arg, int vcpu, register_t rip, struct vm_eventinfo *evinfo)
 		}
 
 		if (vcpu_reqidle(evinfo)) {
- 			vm_exit_reqidle(vmx->vm, vcpu,  ((uint64_t) rip));
- 			break;
+			vm_exit_reqidle(vmx->vm, vcpu,  ((uint64_t) rip));
+			break;
 		}
 
 		vmx_run_trace(vmx, vcpu);

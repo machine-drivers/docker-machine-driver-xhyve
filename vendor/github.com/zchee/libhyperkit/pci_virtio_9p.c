@@ -276,4 +276,3 @@ static struct pci_devemu pci_dev_9p = {
 	.pe_barread =	vi_pci_read
 };
 PCI_EMUL_SET(pci_dev_9p);
-

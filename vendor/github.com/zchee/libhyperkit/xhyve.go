@@ -2,7 +2,7 @@
 
 package hyperkit
 
-// #cgo CFLAGS: -I${SRCDIR}/include -x c -std=c11 -fno-common -arch x86_64 -DXHYVE_CONFIG_ASSERT -Os -fstrict-aliasing -Wno-unknown-warning-option -Wno-reserved-id-macro -pedantic -fmessage-length=152 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit=0 -DDTRACE_PROBES_DISABLED -DVERSION='3e9fdd8' -DVERSION_SHA1='3e9fdd83bc36dd1e950b4349d6a2688d161aef68'
+// #cgo CFLAGS: -I${SRCDIR}/include -x c -std=c11 -fno-common -arch x86_64 -DXHYVE_CONFIG_ASSERT -Os -fstrict-aliasing -Wno-unknown-warning-option -Wno-reserved-id-macro -pedantic -fmessage-length=152 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit=0 -DDTRACE_PROBES_DISABLED -DVERSION='2db2b2c' -DVERSION_SHA1='2db2b2c60799918dafb3d95368e935c3f620911d'
 // #cgo LDFLAGS: -L${SRCDIR} -arch x86_64 -framework Hypervisor -framework vmnet
 // #include <xhyve/xhyve.h>
 // #include <xhyve/mevent.h>

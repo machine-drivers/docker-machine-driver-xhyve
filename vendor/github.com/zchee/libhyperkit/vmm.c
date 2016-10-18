@@ -744,8 +744,6 @@ vcpu_set_state_locked(struct vm *vm, int vcpuid, enum vcpu_state newstate,
 	 */
 	if (from_idle) {
 		while (vcpu->state != VCPU_IDLE) {
-
-
 			pthread_mutex_lock(&vcpu->state_sleep_mtx);
 			vcpu_unlock(vcpu);
 			pthread_cond_timedwait_relative_np(&vcpu->state_sleep_cnd,
@@ -1141,6 +1139,18 @@ vm_suspend(struct vm *vm, enum vm_suspend_how how)
 }
 
 void
+vm_exit_reqidle(struct vm *vm, int vcpuid, uint64_t rip)
+{
+	struct vm_exit *vmexit;
+
+	vmexit = vm_exitinfo(vm, vcpuid);
+	vmexit->rip = rip;
+	vmexit->inst_length = 0;
+	vmexit->exitcode = VM_EXITCODE_REQIDLE;
+	vmm_stat_incr(vm, vcpuid, VMEXIT_REQIDLE, 1);
+}
+
+void
 vm_exit_suspended(struct vm *vm, int vcpuid, uint64_t rip)
 {
 	struct vm_exit *vmexit;
@@ -1154,20 +1164,6 @@ vm_exit_suspended(struct vm *vm, int vcpuid, uint64_t rip)
 	vmexit->exitcode = VM_EXITCODE_SUSPENDED;
 	vmexit->u.suspended.how = (enum vm_suspend_how) vm->suspend;
 }
-
-
-void
-vm_exit_reqidle(struct vm *vm, int vcpuid, uint64_t rip)
-{
-	struct vm_exit *vmexit;
-
-	vmexit = vm_exitinfo(vm, vcpuid);
-	vmexit->rip = rip;
-	vmexit->inst_length = 0;
-	vmexit->exitcode = VM_EXITCODE_REQIDLE;
-	vmm_stat_incr(vm, vcpuid, VMEXIT_REQIDLE, 1);
-}
-
 
 void
 vm_exit_rendezvous(struct vm *vm, int vcpuid, uint64_t rip)
@@ -1188,7 +1184,7 @@ void pittest(struct vm *thevm);
 int
 vm_run(struct vm *vm, int vcpuid, struct vm_exit *vm_exit)
 {
-	struct vm_eventinfo evinfo;
+  struct vm_eventinfo evinfo;
 	int error;
 	struct vcpu *vcpu;
 	// uint64_t tscval;
@@ -1206,10 +1202,10 @@ vm_run(struct vm *vm, int vcpuid, struct vm_exit *vm_exit)
 
 	vcpu = &vm->vcpu[vcpuid];
 	vme = &vcpu->exitinfo;
+	retu = false;
 	evinfo.rptr = &vm->rendezvous_func;
 	evinfo.sptr = &vm->suspend;
 	evinfo.iptr = &vcpu->reqidle;
-	retu = false;
 
 restart:
 	// tscval = rdtsc();
