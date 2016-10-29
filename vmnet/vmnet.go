@@ -16,14 +16,8 @@ const (
 	NET_MASK_KEY = "Shared_Net_Mask"
 )
 
-// isExist returns whether the filename is exists.
-func isExist(filename string) bool {
-	_, err := os.Stat(filename)
-	return err == nil
-}
-
 func GetNetAddr() (net.IP, error) {
-	if !isExist(CONFIG_PLIST + ".plist") {
+	if !IsExist(CONFIG_PLIST + ".plist") {
 		return nil, fmt.Errorf("Does not exist %s", CONFIG_PLIST+".plist")
 	}
 
@@ -39,7 +33,7 @@ func GetNetAddr() (net.IP, error) {
 }
 
 func getNetMask() (net.IPMask, error) {
-	if !isExist(CONFIG_PLIST + ".plist") {
+	if !IsExist(CONFIG_PLIST + ".plist") {
 		return nil, fmt.Errorf("Does not exist %s", CONFIG_PLIST+".plist")
 	}
 
@@ -69,4 +63,10 @@ func GetIPNet() (*net.IPNet, error) {
 		IP:   ip.Mask(mask),
 		Mask: mask,
 	}, nil
+}
+
+// IsExist returns whether the filename is exists.
+func IsExist(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil
 }
