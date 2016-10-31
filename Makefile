@@ -128,6 +128,8 @@ HAVE_OCAML_QCOW := $(shell if ocamlfind query qcow uri >/dev/null 2>/dev/null ; 
 # included 'qcow2' in the $GO_BUILD_TAGS, and $HAVE_OCAML_QCOW is YES
 ifneq (,$(findstring qcow2,$(GO_BUILD_TAGS)))
 ifeq ($(HAVE_OCAML_QCOW),YES)
+LIBEV_FILE=/usr/local/lib/libev.a
+LIBEV=$(shell if test -e $(LIBEV_FILE) ; then echo $(LIBEV_FILE) ; fi )
 OCAML_WHERE := $(shell ocamlc -where)
 OCAML_LDLIBS := -L $(OCAML_WHERE) \
 	$(shell ocamlfind query cstruct)/cstruct.a \
@@ -140,6 +142,7 @@ OCAML_LDLIBS := -L $(OCAML_WHERE) \
 	$(shell ocamlfind query lwt.unix)/lwt.a \
 	$(shell ocamlfind query threads)/libthreadsnat.a \
 	$(shell ocamlfind query mirage-block-unix)/libmirage_block_unix_stubs.a \
+	$(LIBEV) \
 	-lasmrun -lbigarray -lunix
 CGO_CFLAGS += -DHAVE_OCAML=1 -DHAVE_OCAML_QCOW=1 -DHAVE_OCAML=1 -I$(OCAML_WHERE)
 CGO_LDFLAGS += $(OCAML_LDLIBS)
