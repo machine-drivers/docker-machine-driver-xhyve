@@ -608,17 +608,15 @@ func (d *Driver) extractKernelImages() (err error) {
 		err = hdiutil("detach", volumeRootDir)
 	}()
 
-	vmlinuz := filepath.Join(volumeRootDir, "boot", d.Vmlinuz)
-	initrd := filepath.Join(volumeRootDir, "boot", d.Initrd)
-
-	log.Debugf("Extracting %s into %s", d.Vmlinuz, d.ResolveStorePath(d.Vmlinuz))
-	if err := mcnutils.CopyFile(vmlinuz, d.ResolveStorePath(d.Vmlinuz)); err != nil {
-		return err
-	}
-
-	log.Debugf("Extracting %s into %s", d.Initrd, d.ResolveStorePath(d.Initrd))
-	if err := mcnutils.CopyFile(initrd, d.ResolveStorePath(d.Initrd)); err != nil {
-		return err
+	for _, f := range []string{"vmlinux", "vmlinuz64", "vmlinuz", "bzImage", "initrd", "initrd.gz", "initrd.img"} {
+		p := filepath.Join(volumeRootDir, "boot", f)
+		dest := d.ResolveStorePath(f)
+		if vmnet.IsExist(p) {
+			log.Debugf("Extracting %s into %s", p, dest)
+			if err := mcnutils.CopyFile(p, dest); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -917,13 +915,20 @@ func (d *Driver) xhyveArgs() []string {
 		diskImage = fmt.Sprintf("4:0,ahci-hd,%s", imgPath)
 	}
 
-	// assume the boot2docker.iso if empty
-	if d.Vmlinuz == "" {
+	switch {
+	case vmnet.IsExist(d.ResolveStorePath("vmlinuz64")):
 		d.Vmlinuz = "vmlinuz64"
+	case vmnet.IsExist(d.ResolveStorePath("bzImage")):
+		d.Vmlinuz = "bzImage"
 	}
-	if d.Initrd == "" {
+
+	switch {
+	case vmnet.IsExist(d.ResolveStorePath("initrd.img")):
 		d.Initrd = "initrd.img"
+	case vmnet.IsExist(d.ResolveStorePath("initrd")):
+		d.Initrd = "initrd"
 	}
+
 	vmlinuz := d.ResolveStorePath(d.Vmlinuz)
 	initrd := d.ResolveStorePath(d.Initrd)
 
