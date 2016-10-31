@@ -143,7 +143,7 @@ OCAML_LDLIBS := -L $(OCAML_WHERE) \
 	-lasmrun -lbigarray -lunix
 CGO_CFLAGS += -DHAVE_OCAML=1 -DHAVE_OCAML_QCOW=1 -DHAVE_OCAML=1 -I$(OCAML_WHERE)
 CGO_LDFLAGS += $(OCAML_LDLIBS)
-bin/docker-machine-driver-xhyve: vendor/github.com/zchee/libhyperkit/mirage_block_ocaml.syso
+bin/docker-machine-driver-xhyve: vendor/github.com/zchee/libhyperkit/mirage_block_ocaml.o
 endif
 endif
 
@@ -174,7 +174,7 @@ default: build
 
 build: bin/docker-machine-driver-xhyve
 
-vendor/github.com/zchee/libhyperkit/mirage_block_ocaml.syso:
+vendor/github.com/zchee/libhyperkit/mirage_block_ocaml.o:
 	$(VERBOSE) $(GO_CMD) generate $(GO_BUILD_FLAG) $(GO_VERBOSE) ./vendor/github.com/zchee/libhyperkit
 
 bin/docker-machine-driver-xhyve:

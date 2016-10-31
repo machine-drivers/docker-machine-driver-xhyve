@@ -27,7 +27,7 @@
  */
 
 /*
- * Micro event library for FreeBSD, designed for a single i/o thread 
+ * Micro event library for FreeBSD, designed for a single i/o thread
  * using kqueue, and having events be persistent by default.
  */
 
@@ -121,8 +121,8 @@ mevent_notify(void)
 
 void mevent_exit(void)
 {
-       char c;
-       write(mevent_pipefd[1], &c, 1);
+	char c;
+	write(mevent_pipefd[1], &c, 1);
 }
 
 static int
@@ -418,8 +418,8 @@ int mevent_dispatch(void)
 	ret = pipe(mevent_pipefd);
 	if (ret < 0) {
 		perror("pipe");
-               return EPIPE;
-        // exit(0);
+		return EPIPE;
+		// exit(0);
 	}
 
 	/*
@@ -429,9 +429,9 @@ int mevent_dispatch(void)
 	assert(pipev != NULL);
 
 	for (;;) {
-        if (exit_mevent_dispatch_loop) {
-                       break;
-               }
+		if (exit_mevent_dispatch_loop) {
+			break;
+		}
 		/*
 		 * Build changelist if required.
 		 * XXX the changelist can be put into the blocking call
@@ -458,6 +458,6 @@ int mevent_dispatch(void)
 		 * Handle reported events
 		 */
 		mevent_handle(eventlist, ret);
-      }
-    return 0;
+	}
+	return 0;
 }

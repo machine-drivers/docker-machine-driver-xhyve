@@ -54,20 +54,25 @@ const (
 type Driver struct {
 	*drivers.BaseDriver
 	*b2d.B2dUtils
+
 	Boot2DockerURL string
-	BootCmd        string
-	CPU            int
 	CaCertPath     string
-	DiskSize       int64
-	MacAddr        string
-	Memory         int
 	PrivateKeyPath string
-	UUID           string
-	NFSShare       bool
+
+	CPU            int
+	Memory         int
+	DiskSize       int64
 	DiskNumber     int
+	MacAddr        string
+	UUID           string
+	Qcow2          bool
 	Virtio9p       bool
 	Virtio9pFolder string
-	Qcow2          bool
+	NFSShare       bool
+
+	BootCmd string
+	Initrd  string
+	Vmlinuz string
 }
 
 var (
@@ -208,6 +213,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UUID = flags.String("xhyve-uuid")
 	d.Virtio9p = flags.Bool("xhyve-virtio-9p")
 	d.Virtio9pFolder = "/Users"
+
+	// docker-machine used boot2docker.iso by default
+	d.Vmlinuz = "vmlinuz64"
+	d.Initrd = "initrd.img"
 
 	return nil
 }
@@ -367,7 +376,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Extracting vmlinuz64 and initrd.img from %s...", isoFilename)
+	log.Infof("Extracting %s and %s from %s...", d.Vmlinuz, d.Initrd, isoFilename)
 	if err := d.extractKernelImages(); err != nil {
 		return err
 	}
@@ -404,7 +413,7 @@ func (d *Driver) Create() error {
 	log.Infof("Convert UUID to MAC address...")
 	rawUUID, err := d.getMACAdress()
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not convert the UUID to MAC address: %s", err.Error())
 	}
 	d.MacAddr = trimMacAddress(rawUUID)
 	log.Debugf("Converted MAC address: %s", d.MacAddr)
@@ -585,29 +594,29 @@ func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
 }
 
-func (d *Driver) extractKernelImages() error {
+func (d *Driver) extractKernelImages() (err error) {
 	log.Debugf("Mounting %s", isoFilename)
 
-	err := hdiutil("attach", d.ResolveStorePath(isoFilename), "-mountpoint", d.ResolveStorePath("b2d-image"))
+	volumeRootDir := d.ResolveStorePath(isoMountPath)
+	err = hdiutil("attach", d.ResolveStorePath(isoFilename), "-mountpoint", volumeRootDir)
 	if err != nil {
 		return err
 	}
 
-	volumeRootDir := d.ResolveStorePath(isoMountPath)
-	vmlinuz64 := volumeRootDir + "/boot/vmlinuz64"
-	initrd := volumeRootDir + "/boot/initrd.img"
+	defer func() {
+		log.Debugf("Unmounting %s", isoFilename)
+		err = hdiutil("detach", volumeRootDir)
+	}()
 
-	log.Debugf("Extracting vmlinuz64 into %s", d.ResolveStorePath("."))
-	if err := mcnutils.CopyFile(vmlinuz64, d.ResolveStorePath("vmlinuz64")); err != nil {
-		return err
-	}
-	log.Debugf("Extracting initrd.img into %s", d.ResolveStorePath("."))
-	if err := mcnutils.CopyFile(initrd, d.ResolveStorePath("initrd.img")); err != nil {
-		return err
-	}
-	log.Debugf("Unmounting %s", isoFilename)
-	if err := hdiutil("detach", volumeRootDir); err != nil {
-		return err
+	for _, f := range []string{"vmlinux", "vmlinuz64", "vmlinuz", "bzImage", "initrd", "initrd.gz", "initrd.img"} {
+		p := filepath.Join(volumeRootDir, "boot", f)
+		dest := d.ResolveStorePath(f)
+		if vmnet.IsExist(p) {
+			log.Debugf("Extracting %s into %s", p, dest)
+			if err := mcnutils.CopyFile(p, dest); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -896,6 +905,7 @@ func trimMacAddress(rawUUID string) string {
 
 func (d *Driver) xhyveArgs() []string {
 	iso := d.ResolveStorePath(isoFilename)
+
 	var diskImage string
 	if d.Qcow2 {
 		imgPath := fmt.Sprintf("file://%s", filepath.Join(d.ResolveStorePath("."), d.MachineName+".qcow2"))
@@ -905,8 +915,22 @@ func (d *Driver) xhyveArgs() []string {
 		diskImage = fmt.Sprintf("4:0,ahci-hd,%s", imgPath)
 	}
 
-	vmlinuz := d.ResolveStorePath("vmlinuz64")
-	initrd := d.ResolveStorePath("initrd.img")
+	switch {
+	case vmnet.IsExist(d.ResolveStorePath("vmlinuz64")):
+		d.Vmlinuz = "vmlinuz64"
+	case vmnet.IsExist(d.ResolveStorePath("bzImage")):
+		d.Vmlinuz = "bzImage"
+	}
+
+	switch {
+	case vmnet.IsExist(d.ResolveStorePath("initrd.img")):
+		d.Initrd = "initrd.img"
+	case vmnet.IsExist(d.ResolveStorePath("initrd")):
+		d.Initrd = "initrd"
+	}
+
+	vmlinuz := d.ResolveStorePath(d.Vmlinuz)
+	initrd := d.ResolveStorePath(d.Initrd)
 
 	return []string{
 		"xhyve",
