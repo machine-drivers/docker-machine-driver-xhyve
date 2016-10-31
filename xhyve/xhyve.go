@@ -594,15 +594,20 @@ func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
 }
 
-func (d *Driver) extractKernelImages() error {
+func (d *Driver) extractKernelImages() (err error) {
 	log.Debugf("Mounting %s", isoFilename)
 
-	err := hdiutil("attach", d.ResolveStorePath(isoFilename), "-mountpoint", d.ResolveStorePath(isoMountPath))
+	volumeRootDir := d.ResolveStorePath(isoMountPath)
+	err = hdiutil("attach", d.ResolveStorePath(isoFilename), "-mountpoint", volumeRootDir)
 	if err != nil {
 		return err
 	}
 
-	volumeRootDir := d.ResolveStorePath(isoMountPath)
+	defer func() {
+		log.Debugf("Unmounting %s", isoFilename)
+		err = hdiutil("detach", volumeRootDir)
+	}()
+
 	vmlinuz := filepath.Join(volumeRootDir, "boot", d.Vmlinuz)
 	initrd := filepath.Join(volumeRootDir, "boot", d.Initrd)
 
@@ -613,11 +618,6 @@ func (d *Driver) extractKernelImages() error {
 
 	log.Debugf("Extracting %s into %s", d.Initrd, d.ResolveStorePath(d.Initrd))
 	if err := mcnutils.CopyFile(initrd, d.ResolveStorePath(d.Initrd)); err != nil {
-		return err
-	}
-
-	log.Debugf("Unmounting %s", isoFilename)
-	if err := hdiutil("detach", volumeRootDir); err != nil {
 		return err
 	}
 
