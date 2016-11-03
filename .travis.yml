@@ -11,11 +11,20 @@ go:
 
 env:
   global:
-    - MAKEFLAGS='V=1 -j$(sysctl -n hw.ncpu)'
+    - GO_BUILD_TAGS='lib9p qcow2'
+    - HOMEBREW_NO_AUTO_UPDATE=1
+    - MAKEFLAGS="V=1 -j$(sysctl -n hw.ncpu)"
+    - RELEASE_GO_VERSION=''
 
 
 before_install:
-  - env
+  - uname -a
+  - env | sort
+  # for ocaml-qcow
+  - brew install https://github.com/Homebrew/homebrew-core/raw/master/Formula/opam.rb
+  - brew install https://github.com/Homebrew/homebrew-core/raw/master/Formula/libev.rb
+  - opam --version && opam init --yes && opam install --yes uri qcow-format ocamlfind conf-libev
+  - eval `opam config env`
 
 install:
   # for go test(make test)
@@ -24,6 +33,7 @@ install:
 
 before_script:
   - make install
+  - make test-bindings
 
 script:
   - make test
@@ -33,12 +43,15 @@ before_deploy:
   # make install will change owner to root, root owned binary was can't deploy
   - sudo chown travis:staff bin/docker-machine-driver-xhyve
   # add version suffix to binary if not stable Go version
-  - if [[ "$TRAVIS_GO_VERSION" == "tip" ]]; then export RELEASE_GO_VERSION=_$TRAVIS_GO_VERSION && mv bin/docker-machine-driver-xhyve{,$RELEASE_GO_VERSION}; else export RELEASE_GO_VERSION=; fi
+  - if [[ "$TRAVIS_GO_VERSION" == "tip" ]]; then
+      export RELEASE_GO_VERSION=_$TRAVIS_GO_VERSION && mv bin/docker-machine-driver-xhyve{,$RELEASE_GO_VERSION};
+    fi
 
 deploy:
   provider: releases
-  file: bin/docker-machine-driver-xhyve$RELEASE_GO_VERSION
   skip_cleanup: true
+  file_glob: true
+  file: 'bin/docker-machine-driver-xhyve*'
   on:
     repo: zchee/docker-machine-driver-xhyve
     tags: true
