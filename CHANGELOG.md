@@ -1,5 +1,35 @@
 # Change Log
 
+## [v0.3.0](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.3.0) (2016-11-06)
+[Full Changelog](https://github.com/zchee/docker-machine-driver-xhyve/compare/v0.2.3...v0.3.0)
+
+## Features
+
+- Suuport rkt container engine for minikube. See [kubernetes/minikube#using-rkt-container-engine](https://github.com/kubernetes/minikube/#using-rkt-container-engine)
+- Change [hooklift/xhyve](https://github.com/hooklift/xhyve) to [zchee/lihyperkit](https://github.com/zchee/lihyperkit)
+- Support QCow2 disk image using [docker/hyperkit](https://github.com/docker/hyperkit)'s [ocaml-qcow](https://github.com/mirage/ocaml-qcow) bindings
+- Supprot configurable kernel and initrd filename
+
+## Auto generated Change Log
+
+**Closed issues:**
+
+- Make /boot configurable to allow different live iso to work with driver  [\#146](https://github.com/zchee/docker-machine-driver-xhyve/issues/146)
+
+**Merged pull requests:**
+
+- Bump version to 0.3.0 [\#149](https://github.com/zchee/docker-machine-driver-xhyve/pull/149) ([zchee](https://github.com/zchee))
+- Fix \#146 Make /boot configurable to allow different live iso to work with driver [\#147](https://github.com/zchee/docker-machine-driver-xhyve/pull/147) ([praveenkumar](https://github.com/praveenkumar))
+- ci/travis: add setup opam and libev for ocaml-qcow [\#145](https://github.com/zchee/docker-machine-driver-xhyve/pull/145) ([zchee](https://github.com/zchee))
+- Auto-detect whether the kernel is bzImage or vmlinuz. [\#144](https://github.com/zchee/docker-machine-driver-xhyve/pull/144) ([dlorenc](https://github.com/dlorenc))
+- Defer the unmount. [\#143](https://github.com/zchee/docker-machine-driver-xhyve/pull/143) ([dlorenc](https://github.com/dlorenc))
+- Add some debug logging during mac address retrieval. [\#142](https://github.com/zchee/docker-machine-driver-xhyve/pull/142) ([dlorenc](https://github.com/dlorenc))
+- Support the rkt/minikube-iso [\#140](https://github.com/zchee/docker-machine-driver-xhyve/pull/140) ([zchee](https://github.com/zchee))
+- ci/travis: upgdate go version to 1.7.1 and remove 1.6.3 & fix install [\#139](https://github.com/zchee/docker-machine-driver-xhyve/pull/139) ([zchee](https://github.com/zchee))
+- xhyve/qcow2: support qcow2 disk image format [\#138](https://github.com/zchee/docker-machine-driver-xhyve/pull/138) ([zchee](https://github.com/zchee))
+- Support using the configured UUID instead of always generating a UUID… [\#133](https://github.com/zchee/docker-machine-driver-xhyve/pull/133) ([chirino](https://github.com/chirino))
+- CI: upgrade TravisCI go version to 1.6.3 and 1.7rc5 [\#131](https://github.com/zchee/docker-machine-driver-xhyve/pull/131) ([zchee](https://github.com/zchee))
+
 ## [v0.2.3](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.2.3) (2016-08-05)
 [Full Changelog](https://github.com/zchee/docker-machine-driver-xhyve/compare/v0.2.2...v0.2.3)
 
