@@ -34,6 +34,8 @@ import (
 const (
 	isoFilename           = "boot2docker.iso"
 	isoMountPath          = "b2d-image"
+	defaultBootKernel     = ""
+	defaultBootInitrd     = ""
 	defaultBoot2DockerURL = ""
 	defaultBootCmd        = "loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10 base host=boot2docker"
 	defaultCPU            = 1
@@ -70,15 +72,18 @@ type Driver struct {
 	Virtio9pFolder string
 	NFSShare       bool
 
-	BootCmd string
-	Initrd  string
-	Vmlinuz string
+	BootCmd    string
+	BootKernel string
+	BootInitrd string
+	Initrd     string
+	Vmlinuz    string
 }
 
 var (
 	ErrMachineExist    = errors.New("machine already exists")
 	ErrMachineNotExist = errors.New("machine does not exist")
 	diskRegexp         = regexp.MustCompile("^/dev/disk([0-9]+)")
+	kernelRegexp       = regexp.MustCompile(`(vmlinu[xz]|bzImage)[\d]*`)
 )
 
 // NewDriver creates a new VirtualBox driver with default settings.
@@ -90,6 +95,8 @@ func NewDriver(hostName, storePath string) *Driver {
 		},
 		Boot2DockerURL: defaultBoot2DockerURL,
 		BootCmd:        defaultBootCmd,
+		BootKernel:     defaultBootKernel,
+		BootInitrd:     defaultBootInitrd,
 		CPU:            defaultCPU,
 		CaCertPath:     defaultCaCertPath,
 		DiskSize:       defaultDiskSize,
@@ -113,6 +120,18 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "xhyve-boot-cmd",
 			Usage:  "Command of booting kexec protocol",
 			Value:  defaultBootCmd,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "XHYVE_BOOT_KERNEL",
+			Name:   "xhyve-boot-kernel",
+			Usage:  "Absolute path to kernel file (like /boot/vmlinuz64)",
+			Value:  defaultBootKernel,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "XHYVE_BOOT_INITRD",
+			Name:   "xhyve-boot-initrd",
+			Usage:  "Absolute path to ramdisk file (like /boot/initrd.img)",
+			Value:  defaultBootInitrd,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "XHYVE_BOOT2DOCKER_URL",
@@ -197,6 +216,8 @@ func (d *Driver) DriverName() string {
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Boot2DockerURL = flags.String("xhyve-boot2docker-url")
 	d.BootCmd = flags.String("xhyve-boot-cmd")
+	d.BootKernel = flags.String("xhyve-boot-kernel")
+	d.BootInitrd = flags.String("xhyve-boot-initrd")
 	d.CPU = flags.Int("xhyve-cpu-count")
 	if d.CPU < 1 {
 		d.CPU = int(runtime.NumCPU())
@@ -213,10 +234,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UUID = flags.String("xhyve-uuid")
 	d.Virtio9p = flags.Bool("xhyve-virtio-9p")
 	d.Virtio9pFolder = "/Users"
-
-	// docker-machine used boot2docker.iso by default
-	d.Vmlinuz = "vmlinuz64"
-	d.Initrd = "initrd.img"
 
 	return nil
 }
@@ -376,7 +393,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Extracting %s and %s from %s...", d.Vmlinuz, d.Initrd, isoFilename)
 	if err := d.extractKernelImages(); err != nil {
 		return err
 	}
@@ -594,29 +610,51 @@ func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
 }
 
-func (d *Driver) extractKernelImages() (err error) {
+func (d *Driver) extractKernelImages() error {
 	log.Debugf("Mounting %s", isoFilename)
 
 	volumeRootDir := d.ResolveStorePath(isoMountPath)
-	err = hdiutil("attach", d.ResolveStorePath(isoFilename), "-mountpoint", volumeRootDir)
+	err := hdiutil("attach", d.ResolveStorePath(isoFilename), "-mountpoint", volumeRootDir)
 	if err != nil {
 		return err
 	}
 
-	defer func() {
+	defer func() error {
 		log.Debugf("Unmounting %s", isoFilename)
-		err = hdiutil("detach", volumeRootDir)
+		return hdiutil("detach", volumeRootDir)
 	}()
 
-	for _, f := range []string{"vmlinux", "vmlinuz64", "vmlinuz", "bzImage", "initrd", "initrd.gz", "initrd.img"} {
-		p := filepath.Join(volumeRootDir, "boot", f)
-		dest := d.ResolveStorePath(f)
-		if vmnet.IsExist(p) {
-			log.Debugf("Extracting %s into %s", p, dest)
-			if err := mcnutils.CopyFile(p, dest); err != nil {
-				return err
+	if d.BootKernel == "" && d.BootInitrd == "" {
+		err = filepath.Walk(volumeRootDir, func(path string, f os.FileInfo, err error) error {
+			if kernelRegexp.MatchString(path) {
+				d.BootKernel = path
+				_, d.Vmlinuz = filepath.Split(path)
 			}
+			if strings.Contains(path, "initrd") {
+				d.BootInitrd = path
+				_, d.Initrd = filepath.Split(path)
+			}
+			return nil
+		})
+	}
+
+	if err != nil {
+		if err != nil || d.BootKernel == "" || d.BootInitrd == "" {
+			err = fmt.Errorf("==== Can't extract Kernel and Ramdisk file ====")
+			return err
 		}
+	}
+
+	dest := d.ResolveStorePath(d.Vmlinuz)
+	log.Debugf("Extracting %s into %s", d.BootKernel, dest)
+	if err := mcnutils.CopyFile(d.BootKernel, dest); err != nil {
+		return err
+	}
+
+	dest = d.ResolveStorePath(d.Initrd)
+	log.Debugf("Extracting %s into %s", d.BootInitrd, dest)
+	if err := mcnutils.CopyFile(d.BootInitrd, dest); err != nil {
+		return err
 	}
 
 	return nil
@@ -913,20 +951,6 @@ func (d *Driver) xhyveArgs() []string {
 	} else {
 		imgPath := fmt.Sprintf("/dev/rdisk%d", d.DiskNumber)
 		diskImage = fmt.Sprintf("4:0,ahci-hd,%s", imgPath)
-	}
-
-	switch {
-	case vmnet.IsExist(d.ResolveStorePath("vmlinuz64")):
-		d.Vmlinuz = "vmlinuz64"
-	case vmnet.IsExist(d.ResolveStorePath("bzImage")):
-		d.Vmlinuz = "bzImage"
-	}
-
-	switch {
-	case vmnet.IsExist(d.ResolveStorePath("initrd.img")):
-		d.Initrd = "initrd.img"
-	case vmnet.IsExist(d.ResolveStorePath("initrd")):
-		d.Initrd = "initrd"
 	}
 
 	vmlinuz := d.ResolveStorePath(d.Vmlinuz)
