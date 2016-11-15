@@ -3,6 +3,7 @@ package xhyve
 import (
 	"archive/tar"
 	"bytes"
+	"bufio"
 	"errors"
 	"fmt"
 	"io"
@@ -37,7 +38,7 @@ const (
 	defaultBootKernel     = ""
 	defaultBootInitrd     = ""
 	defaultBoot2DockerURL = ""
-	defaultBootCmd        = "loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10 base host=boot2docker"
+	defaultBootCmd        = ""
 	defaultCPU            = 1
 	defaultCaCertPath     = ""
 	defaultDiskSize       = 20000
@@ -84,6 +85,7 @@ var (
 	ErrMachineNotExist = errors.New("machine does not exist")
 	diskRegexp         = regexp.MustCompile("^/dev/disk([0-9]+)")
 	kernelRegexp       = regexp.MustCompile(`(vmlinu[xz]|bzImage)[\d]*`)
+	kernelOptionRegexp = regexp.MustCompile(`(\t|\s{2})append`)
 )
 
 // NewDriver creates a new VirtualBox driver with default settings.
@@ -610,12 +612,56 @@ func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
 }
 
+func readLine(path string) string {
+	line := ""
+	inFile, err := os.Open(path)
+	if err != nil {
+		log.Debugf("Not able to open %s", path)
+	}
+	defer inFile.Close()
+	scanner := bufio.NewScanner(inFile)
+	scanner.Split(bufio.ScanLines)
+	for scanner.Scan() {
+		line = scanner.Text()
+		if kernelOptionRegexp.MatchString(line) {
+			break
+		}
+	}
+	return line
+}
+
+func (d *Driver) extractKernelOptions() error {
+	log.Debugf("Extracting Kernel Options...")
+	volumeRootDir := d.ResolveStorePath(isoMountPath)
+	if d.BootCmd == "" {
+		err := filepath.Walk(volumeRootDir, func(path string, f os.FileInfo, err error) error {
+			if strings.Contains(path, "isolinux.cfg") {
+				d.BootCmd = readLine(path)
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+		if d.BootCmd == "" {
+			err = errors.New("Not able to parse isolinux.cfg, Please use --xhyve-boot-cmd option")
+			return err
+		}
+	}
+	log.Debugf("Extracted Options %s", d.BootCmd)
+	return nil
+}
+
 func (d *Driver) extractKernelImages() error {
 	log.Debugf("Mounting %s", isoFilename)
 
 	volumeRootDir := d.ResolveStorePath(isoMountPath)
 	err := hdiutil("attach", d.ResolveStorePath(isoFilename), "-mountpoint", volumeRootDir)
 	if err != nil {
+		return err
+	}
+
+	if err := d.extractKernelOptions(); err != nil {
 		return err
 	}
 
