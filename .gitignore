@@ -91,3 +91,6 @@ _build/
 # oasis generated files
 setup.data
 setup.log
+
+# Intellij geneatered directory
+.idea
