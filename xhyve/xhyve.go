@@ -2,8 +2,8 @@ package xhyve
 
 import (
 	"archive/tar"
-	"bytes"
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -85,7 +85,7 @@ var (
 	ErrMachineNotExist = errors.New("machine does not exist")
 	diskRegexp         = regexp.MustCompile("^/dev/disk([0-9]+)")
 	kernelRegexp       = regexp.MustCompile(`(vmlinu[xz]|bzImage)[\d]*`)
-	kernelOptionRegexp = regexp.MustCompile(`(\t|\s{2})append`)
+	kernelOptionRegexp = regexp.MustCompile(`(?:\t|\s{2})append\s+([[:print:]]+)`)
 )
 
 // NewDriver creates a new VirtualBox driver with default settings.
@@ -612,43 +612,45 @@ func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
 }
 
-func readLine(path string) string {
-	line := ""
+func readLine(path string) (string, error) {
 	inFile, err := os.Open(path)
 	if err != nil {
-		log.Debugf("Not able to open %s", path)
+		return "", err
 	}
 	defer inFile.Close()
+
 	scanner := bufio.NewScanner(inFile)
-	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
-		line = scanner.Text()
-		if kernelOptionRegexp.MatchString(line) {
-			break
+		if kernelOptionRegexp.Match(scanner.Bytes()) {
+			m := kernelOptionRegexp.FindSubmatch(scanner.Bytes())
+			return string(m[1]), nil
 		}
 	}
-	return line
+	return "", fmt.Errorf("couldn't find kernel option from %s image", path)
 }
 
 func (d *Driver) extractKernelOptions() error {
-	log.Debugf("Extracting Kernel Options...")
 	volumeRootDir := d.ResolveStorePath(isoMountPath)
 	if d.BootCmd == "" {
 		err := filepath.Walk(volumeRootDir, func(path string, f os.FileInfo, err error) error {
 			if strings.Contains(path, "isolinux.cfg") {
-				d.BootCmd = readLine(path)
+				d.BootCmd, err = readLine(path)
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		})
 		if err != nil {
 			return err
 		}
+
 		if d.BootCmd == "" {
-			err = errors.New("Not able to parse isolinux.cfg, Please use --xhyve-boot-cmd option")
-			return err
+			return errors.New("Not able to parse isolinux.cfg, Please use --xhyve-boot-cmd option")
 		}
 	}
-	log.Debugf("Extracted Options %s", d.BootCmd)
+
+	log.Debugf("Extracted Options %q", d.BootCmd)
 	return nil
 }
 
@@ -661,6 +663,7 @@ func (d *Driver) extractKernelImages() error {
 		return err
 	}
 
+	log.Debugf("Extracting Kernel Options...")
 	if err := d.extractKernelOptions(); err != nil {
 		return err
 	}
