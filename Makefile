@@ -78,7 +78,7 @@ CGO_CFLAGS :=
 CGO_LDFLAGS :=
 
 # Parse git current branch commit-hash
-GO_LDFLAGS += -X `go list ./xhyve`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
+GO_LDFLAGS ?= -X `go list ./xhyve`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
 
 
 # Set debug gcflag, or optimize ldflags
@@ -126,8 +126,8 @@ endif
 # Use mirage-block for pwritev|preadv
 HAVE_OCAML_QCOW := $(shell if ocamlfind query qcow uri >/dev/null 2>/dev/null ; then echo YES ; else echo NO; fi)
 ifeq ($(HAVE_OCAML_QCOW),YES)
-LIBEV_FILE=/usr/local/lib/libev.a
-LIBEV=$(shell if test -e $(LIBEV_FILE) ; then echo $(LIBEV_FILE) ; fi )
+LIBEV_FILE ?= /usr/local/lib/libev.a
+LIBEV = $(shell if test -e $(LIBEV_FILE) ; then echo $(LIBEV_FILE) ; fi )
 OCAML_WHERE := $(shell ocamlc -where)
 OCAML_LDLIBS := -L $(OCAML_WHERE) \
 	$(shell ocamlfind query cstruct)/cstruct.a \
