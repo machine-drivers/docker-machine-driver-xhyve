@@ -1,9 +1,7 @@
 docker-machine-driver-xhyve
 ===========================
 
-| Releases                                                                                                                                                             | Travis-CI                                                                                                                                             | CircleCI                                                                                                                                                                   |
-|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-| [![Releases](https://img.shields.io/github/release/zchee/docker-machine-driver-xhyve.svg?style=flat)](https://github.com/zchee/docker-machine-driver-xhyve/releases) | [![Build Status](https://travis-ci.org/zchee/docker-machine-driver-xhyve.svg?branch=master)](https://travis-ci.org/zchee/docker-machine-driver-xhyve) | [![Circle CI](https://circleci.com/gh/zchee/docker-machine-driver-xhyve/tree/master.svg?style=svg)](https://circleci.com/gh/zchee/docker-machine-driver-xhyve/tree/master) |
+[![Releases](https://img.shields.io/github/release/zchee/docker-machine-driver-xhyve.svg?style=flat)](https://github.com/zchee/docker-machine-driver-xhyve/releases) [![Build Status](https://travis-ci.org/zchee/docker-machine-driver-xhyve.svg?branch=master)](https://travis-ci.org/zchee/docker-machine-driver-xhyve) [![Circle CI](https://circleci.com/gh/zchee/docker-machine-driver-xhyve/tree/master.svg?style=svg)](https://circleci.com/gh/zchee/docker-machine-driver-xhyve/tree/master) [![GA][ga-badge]][ga]
 
 libmachine driver plugin for [xhyve](https://github.com/mist64/xhyve) native OS X Hypervisor
 
@@ -241,3 +239,7 @@ $ ./xhyverun.sh
 vmx_init: processor not supported by Hypervisor.framework
 Unable to create VM (-85377018)
 ```
+
+
+[ga-badge]: https://ga-beacon.appspot.com/UA-89201129-1/docker-machine-driver-xhyve?flat&useReferer
+[ga]: https://github.com/zchee/docker-machine-driver-xhyve
