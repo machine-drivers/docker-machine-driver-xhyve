@@ -441,21 +441,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	if d.Virtio9p {
-		err = d.setupVirt9pShare()
-		if err != nil {
-			log.Errorf("virtio-9p setup failed: %s", err.Error())
-		}
-	}
-
-	// Setup NFS sharing
-	if d.NFSShare {
-		log.Infof("NFS share folder must be root. Please insert root password.")
-		err = d.setupNFSShare()
-		if err != nil {
-			log.Errorf("NFS setup failed: %s", err.Error())
-		}
-	}
+	d.setupMounts()
 
 	return nil
 }
@@ -495,6 +481,8 @@ func (d *Driver) Start() error {
 			log.Error(err, cmd.Stdout, cmd.Stderr)
 		}
 	}()
+
+	d.setupMounts()
 
 	return d.waitForIP()
 }
@@ -741,6 +729,27 @@ func (d *Driver) generateQcow2Image(size int64) error {
 
 	img.Write(tarBuf.Bytes())
 
+	return nil
+}
+
+func (d *Driver) setupMounts() error {
+	if d.Virtio9p {
+		err = d.setupVirt9pShare()
+		if err != nil {
+			log.Errorf("virtio-9p setup failed: %s", err.Error())
+			return err
+		}
+	}
+
+	// Setup NFS sharing
+	if d.NFSShare {
+		log.Infof("NFS share folder must be root. Please insert root password.")
+		err = d.setupNFSShare()
+		if err != nil {
+			log.Errorf("NFS setup failed: %s", err.Error())
+			return err
+		}
+	}
 	return nil
 }
 
