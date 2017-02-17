@@ -734,7 +734,7 @@ func (d *Driver) generateQcow2Image(size int64) error {
 
 func (d *Driver) setupMounts() error {
 	if d.Virtio9p {
-		err = d.setupVirt9pShare()
+		err := d.setupVirt9pShare()
 		if err != nil {
 			log.Errorf("virtio-9p setup failed: %s", err.Error())
 			return err
@@ -744,7 +744,7 @@ func (d *Driver) setupMounts() error {
 	// Setup NFS sharing
 	if d.NFSShare {
 		log.Infof("NFS share folder must be root. Please insert root password.")
-		err = d.setupNFSShare()
+		err := d.setupNFSShare()
 		if err != nil {
 			log.Errorf("NFS setup failed: %s", err.Error())
 			return err
