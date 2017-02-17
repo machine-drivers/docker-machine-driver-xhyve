@@ -1,25 +1,52 @@
+---
 machine:
-  # https://github.com/circleci/docker/blob/docker-1.9.1/circle.yml#L2-L5
-  pre:
-    - echo 'DOCKER_OPTS="-s btrfs -e lxc -D --userland-proxy=false"' | sudo tee -a /etc/default/docker
-    - sudo curl -L -o /usr/bin/docker 'https://s3-external-1.amazonaws.com/circle-downloads/docker-1.9.1-circleci'
-    - sudo chmod 0755 /usr/bin/docker
-  services:
-    - docker
+  xcode:
+    version: "8.2.1"  # build 8C1002: OS X 10.11.6 (15G1108)
+  environment:
+    XCODE_SCHEME: docker-machine-driver-xhyve
+    XCODE_WORKSPACE: docker-machine-driver-xhyve.xcworkspace
+    HOMEBREW_CACHE: "$HOME/.cache/Homebrew"  # cache for Homebrew
+    HOMEBREW_NO_AUTO_UPDATE: 1  # avoid automatically 'brew update'
+    GOPATH: "$HOME/.go_workspace"
+    IMPORT_PATH: github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME  # rsync hack for $GOPATH
+    GO_BUILD_TAGS: 'lib9p qcow2'
+    MAKEFLAGS: "-j$(sysctl -n hw.logicalcpu)"
+    OPAMYES: 1
+
+general:
+  build_dir: ../.go_workspace/src/$IMPORT_PATH
+
+checkout:
+  post:
+    - |
+      mkdir -p "$GOPATH/src/$IMPORT_PATH"
+      rsync -azC --delete $HOME/$CIRCLE_PROJECT_REPONAME/ $GOPATH/src/$IMPORT_PATH/
 
 dependencies:
-  cache_directories:
-    - "~/docker"
+  pre:
+    - uname -a
+    - sw_vers
+    - env | sort
   override:
-    - docker version
-    - docker info
-    - if [[ -e ~/docker/osxcc-golang_devel.tar ]]; then docker load -i ~/docker/osxcc-golang_devel.tar; fi
+    - mkdir -p $HOMEBREW_CACHE && brew upgrade https://github.com/Homebrew/homebrew-core/raw/master/Formula/go.rb || true
+    - |  # for ocaml-qcow cgo bindings
+      brew install https://github.com/Homebrew/homebrew-core/raw/master/Formula/libev.rb
+      brew install https://github.com/Homebrew/homebrew-core/raw/master/Formula/opam.rb
+      opam init --no-setup
+      opam install uri qcow-format ocamlfind conf-libev
+    # for go test(make test)
+    - go get -u github.com/stretchr/testify/assert
     - git submodule update --init
-    - docker build -t "zchee/docker-machine-driver-xhyve:latest" .
-    - mkdir -p ~/docker; docker save osxcc/golang:devel > ~/docker/osxcc-golang_devel.tar
+  post:
+    - go version; go env
+    - opam --version
+  cache_directories:
+    - '~/.cache/Homebrew'
+    - '~/.opam'
 
 test:
+  pre:
+    - opam config exec -- make install
+    - make test-bindings
   override:
-    - docker run --rm "zchee/docker-machine-driver-xhyve:latest" > "docker-machine-driver-xhyve"
-    - file "docker-machine-driver-xhyve"
-    - shasum -a 256 "docker-machine-driver-xhyve"
+    - make test
