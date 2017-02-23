@@ -482,9 +482,11 @@ func (d *Driver) Start() error {
 		}
 	}()
 
-	d.setupMounts()
+	if err := d.waitForIP(); err != nil {
+		return err
+	}
 
-	return d.waitForIP()
+	return d.setupMounts()
 }
 
 func (d *Driver) Stop() error {
