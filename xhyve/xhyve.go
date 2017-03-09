@@ -995,7 +995,7 @@ func (d *Driver) SendSignal(sig os.Signal) error {
 
 // trimMacAddress trimming "0" of the ten's digit
 func trimMacAddress(rawUUID string) string {
-	re := regexp.MustCompile(`[0]([A-Fa-f0-9][:])`)
+	re := regexp.MustCompile(`0([A-Fa-f0-9](:|$))`)
 	mac := re.ReplaceAllString(rawUUID, "$1")
 
 	return mac

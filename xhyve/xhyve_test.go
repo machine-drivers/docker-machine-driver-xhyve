@@ -29,7 +29,7 @@ func TestDefaultSSHUsername(t *testing.T) {
 func TestTrimMacAddress(t *testing.T) {
 	// test MAC address 02:f0:0d:60:0f:30 and reverse
 	testMacAddress := trimMacAddress("02:f0:0d:60:01:03")
-	newMacAddress := "2:f0:d:60:1:03"
+	newMacAddress := "2:f0:d:60:1:3"
 
 	if !assert.Equal(t, testMacAddress, newMacAddress) {
 		t.Fatalf("expected different MacAddress \n  source %s\nreceived %s", testMacAddress, newMacAddress)
