@@ -727,6 +727,24 @@ func (d *Driver) generateRawDiskImage(size int64) error {
 	if err := os.Truncate(diskPath, d.DiskSize * 1048576); err != nil {
 		return err
 	}
+
+	tarBuf, err := d.generateKeyBundle()
+	if err != nil {
+		return err
+	}
+
+	file, err := os.OpenFile(diskPath, os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	file.Seek(0, os.SEEK_SET)
+	_, err = file.Write(tarBuf.Bytes())
+	if err != nil {
+		return err
+	}
+	file.Close()
+
 	return nil
 }
 
