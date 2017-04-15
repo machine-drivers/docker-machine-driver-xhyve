@@ -11,12 +11,20 @@ if [[ "$VERSION" == "master" ]]; then
   DOCKER_DOWNLOAD_URL="https://master.dockerproject.org/linux/amd64/docker"
 else
   DOCKER_VERSION=${VERSION}
-  DOCKER_DOWNLOAD_URL="https://test.docker.com/builds/Linux/x86_64/docker-${DOCKER_VERSION}"
+  DOCKER_DOWNLOAD_URL="https://test.docker.com/builds/Linux/x86_64/docker-${DOCKER_VERSION}.tgz"
 fi
 
 sudo sh -c "rm -f /usr/local/bin/docker \
-  && curl -fL -o /usr/local/bin/docker ${DOCKER_DOWNLOAD_URL} \
+  && curl -fLO ${DOCKER_DOWNLOAD_URL} \
+  && if [[ -f "docker-${DOCKER_VERSION}.tgz" ]]; then
+       tar xf docker-${DOCKER_VERSION}.tgz
+       mv docker-${DOCKER_VERSION}/docker /usr/local/bin
+       rm -f docker-${DOCKER_VERSION}.tgz
+     else
+       mv docker /usr/local/bin
+     fi \
   && chmod +x /usr/local/bin/docker \
+  \
   && /etc/init.d/docker restart \
   && printf '\033[0;36mWait for restart docker server...\033[0m\n\n' \
   && sleep 3 \
