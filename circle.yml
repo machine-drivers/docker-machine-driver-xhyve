@@ -6,11 +6,11 @@ machine:
     XCODE_SCHEME: docker-machine-driver-xhyve
     XCODE_WORKSPACE: docker-machine-driver-xhyve.xcworkspace
     HOMEBREW_CACHE: "$HOME/.cache/Homebrew"  # cache for Homebrew
-    HOMEBREW_NO_AUTO_UPDATE: 1  # avoid automatically 'brew update'
+    HOMEBREW_NO_AUTO_UPDATE: 1  # avoid 'brew update' which is automatically executed by default
     GOPATH: "$HOME/.go_workspace"
     IMPORT_PATH: github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME  # rsync hack for $GOPATH
-    GO_BUILD_TAGS: 'lib9p qcow2'
-    MAKEFLAGS: "-j$(sysctl -n hw.logicalcpu)"
+    GO_BUILD_TAGS: 'lib9p qcow2'  # enable lib9p and qcow2 cgo based build
+    MAKEFLAGS: "-j$(($(sysctl -n hw.logicalcpu)+1))"  # always use hw.logicalcpu+1, because it uses all CPU power as much as possible
     OPAMYES: 1
 
 general:
@@ -36,7 +36,6 @@ dependencies:
       opam install uri qcow-format ocamlfind conf-libev
     # for go test(make test)
     - go get -u github.com/stretchr/testify/assert
-    - git submodule update --init
   post:
     - go version; go env
     - opam --version
