@@ -1,7 +1,11 @@
 docker-machine-driver-xhyve
 ===========================
 
-[![Releases](https://img.shields.io/github/release/zchee/docker-machine-driver-xhyve.svg?style=flat)](https://github.com/zchee/docker-machine-driver-xhyve/releases) [![Build Status](https://travis-ci.org/zchee/docker-machine-driver-xhyve.svg?branch=master)](https://travis-ci.org/zchee/docker-machine-driver-xhyve) [![Circle CI](https://circleci.com/gh/zchee/docker-machine-driver-xhyve/tree/master.svg?style=svg)](https://circleci.com/gh/zchee/docker-machine-driver-xhyve/tree/master) [![GA][ga-badge]][ga]
+| **Travis CI**                           | **Releases**                          |
+|:---------------------------------------:|:-------------------------------------:|
+| [![Travis CI][travis-badge]][travis-ci] | [![Releases][release-badge]][release] |
+
+[![GA][ga-badge]][ga]
 
 libmachine driver plugin for [xhyve](https://github.com/mist64/xhyve) native OS X Hypervisor
 
@@ -240,6 +244,9 @@ vmx_init: processor not supported by Hypervisor.framework
 Unable to create VM (-85377018)
 ```
 
-
-[ga-badge]: https://ga-beacon.appspot.com/UA-89201129-1/docker-machine-driver-xhyve?flat&useReferer
+[travis-badge]: https://img.shields.io/travis/zchee/docker-machine-driver-xhyve.svg?style=flat-square&label=%20Travis%20CI&logo=data%3Aimage%2Fsvg%2Bxml%3Bcharset%3Dutf-8%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iNSA0IDI0IDI0Ij48cGF0aCBmaWxsPSIjREREIiBkPSJNMTEuMzkyKzkuMzc0aDQuMDk2djEzLjEyaC0xLjUzNnYyLjI0aDYuMDgwdi0yLjQ5NmgtMS45MnYtMTMuMDU2aDQuMzUydjEuOTJoMS45ODR2LTMuOTA0aC0xNS4yOTZ2My45MDRoMi4yNHpNMjkuMjYzKzIuNzE4aC0yNC44NDhjLTAuNDMzKzAtMC44MzIrMC4zMjEtMC44MzIrMC43NDl2MjQuODQ1YzArMC40MjgrMC4zOTgrMC43NzQrMC44MzIrMC43NzRoMjQuODQ4YzAuNDMzKzArMC43NTMtMC4zNDcrMC43NTMtMC43NzR2LTI0Ljg0NWMwLTAuNDI4LTAuMzE5LTAuNzQ5LTAuNzUzLTAuNzQ5ek0yNS43MjgrMTIuMzgyaC00LjU0NHYtMS45MmgtMS43OTJ2MTAuNDk2aDEuOTJ2NS4wNTZoLTguNjR2LTQuOGgxLjUzNnYtMTAuNTZoLTEuNTM2djEuNzI4aC00Ljh2LTYuNDY0aDE3Ljg1NnY2LjQ2NHoiLz48L3N2Zz4=
+[travis-ci]: https://travis-ci.org/zchee/docker-machine-driver-xhyve
+[release-badge]: https://img.shields.io/github/release/zchee/docker-machine-driver-xhyve.svg?style=flat-square
+[release]: https://github.com/zchee/docker-machine-driver-xhyve/releases
+[ga-badge]: https://ga-beacon.appspot.com/UA-89201129-1/docker-machine-driver-xhyve?flat&useReferer&pixel
 [ga]: https://github.com/zchee/docker-machine-driver-xhyve
