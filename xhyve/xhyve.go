@@ -956,7 +956,7 @@ func (d *Driver) setupVirt9pShare() error {
 	bootScriptName := "/var/lib/boot2docker/bootlocal.sh"
 	bootScript := fmt.Sprintf("#/bin/bash\\n"+
 		"sudo mkdir -p %s\\n"+
-		"sudo mount -t 9p -o version=9p2000 -o trans=virtio -o uname=%s -o dfltuid=1000 -o dfltgid=50 -o access=any host %s", d.Virtio9pFolder, user.Username, d.Virtio9pFolder)
+		"sudo mount -t 9p -o version=9p2000 -o trans=virtio -o uname=%s -o dfltuid=$(id -u docker) -o dfltgid=50 -o access=any host %s", d.Virtio9pFolder, user.Username, d.Virtio9pFolder)
 
 	writeScriptCmd := fmt.Sprintf("echo -e \"%s\" | sudo tee %s && sudo chmod +x %s && %s",
 		bootScript, bootScriptName, bootScriptName, bootScriptName)
