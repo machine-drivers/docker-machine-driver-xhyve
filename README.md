@@ -139,6 +139,11 @@ By default, will automatically parses the `initrd` contains file path.
 Use `qcow2` disk format.  
 If you using minikube, `CONFIG_VIRTIO_BLK=y` support is included in minikube-iso as of version v0.0.6.
 
+#### `--xhyve-rawdisk`
+
+Use a simple 'raw disk' format and virtio-blk driver for storage.
+This may be significantly faster for I/O intensive applications, at the potential cost of data durability.
+
 #### `--xhyve-virtio-9p`
 
 Enable `virtio-9p` folder share.  
