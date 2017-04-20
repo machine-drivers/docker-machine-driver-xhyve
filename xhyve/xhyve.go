@@ -52,6 +52,7 @@ const (
 	defaultDiskNumber     = -1
 	defaultVirtio9p       = false
 	defaultQcow2          = false
+	defaultRawDisk        = false
 )
 
 type Driver struct {
@@ -69,6 +70,7 @@ type Driver struct {
 	MacAddr        string
 	UUID           string
 	Qcow2          bool
+	RawDisk        bool
 	Virtio9p       bool
 	Virtio9pFolder string
 	NFSShare       bool
@@ -110,6 +112,7 @@ func NewDriver(hostName, storePath string) *Driver {
 		DiskNumber:     defaultDiskNumber,
 		Virtio9p:       defaultVirtio9p,
 		Qcow2:          defaultQcow2,
+		RawDisk:        defaultRawDisk,
 	}
 }
 
@@ -168,6 +171,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "XHYVE_QCOW2",
 			Name:   "xhyve-qcow2",
 			Usage:  "Use qcow2 disk format",
+		},
+		mcnflag.BoolFlag{
+			EnvVar: "XHYVE_RAW_DISK",
+			Name:   "xhyve-rawdisk",
+			Usage:  "Use a raw disk for attached volumes",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "XHYVE_UUID",
@@ -228,6 +236,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Memory = flags.Int("xhyve-memory-size")
 	d.NFSShare = flags.Bool("xhyve-experimental-nfs-share")
 	d.Qcow2 = flags.Bool("xhyve-qcow2")
+	d.RawDisk = flags.Bool("xhyve-rawdisk")
 	d.SSHPort = 22
 	d.SSHUser = "docker"
 	d.SwarmDiscovery = flags.String("swarm-discovery")
@@ -403,6 +412,10 @@ func (d *Driver) Create() error {
 
 	if d.Qcow2 {
 		if err := d.generateQcow2Image(d.DiskSize); err != nil {
+			return err
+		}
+	} else if d.RawDisk {
+		if err := d.generateRawDiskImage(d.DiskSize); err != nil {
 			return err
 		}
 	} else {
@@ -695,6 +708,42 @@ func (d *Driver) extractKernelImages() error {
 	if err := mcnutils.CopyFile(d.BootInitrd, dest); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (d *Driver) generateRawDiskImage(size int64) error {
+	diskPath := filepath.Join(d.ResolveStorePath("."), d.MachineName+".rawdisk")
+
+	f, err := os.OpenFile(diskPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+	if err != nil {
+		if os.IsExist(err) {
+			return nil
+		}
+		return err
+	}
+	f.Close()
+
+	if err := os.Truncate(diskPath, d.DiskSize * 1048576); err != nil {
+		return err
+	}
+
+	tarBuf, err := d.generateKeyBundle()
+	if err != nil {
+		return err
+	}
+
+	file, err := os.OpenFile(diskPath, os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	file.Seek(0, os.SEEK_SET)
+	_, err = file.Write(tarBuf.Bytes())
+	if err != nil {
+		return err
+	}
+	file.Close()
 
 	return nil
 }
@@ -1008,6 +1057,9 @@ func (d *Driver) xhyveArgs() []string {
 	if d.Qcow2 {
 		imgPath := fmt.Sprintf("file://%s", filepath.Join(d.ResolveStorePath("."), d.MachineName+".qcow2"))
 		diskImage = fmt.Sprintf("4:0,virtio-blk,%s,format=qcow", imgPath)
+	} else if d.RawDisk {
+		imgPath := fmt.Sprintf("%s", filepath.Join(d.ResolveStorePath("."), d.MachineName+".rawdisk"))
+		diskImage = fmt.Sprintf("4:0,virtio-blk,%s", imgPath)
 	} else {
 		imgPath := fmt.Sprintf("/dev/rdisk%d", d.DiskNumber)
 		diskImage = fmt.Sprintf("4:0,ahci-hd,%s", imgPath)
