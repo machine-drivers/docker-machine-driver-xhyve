@@ -1,6 +1,34 @@
 Change Log
 ==========
 
+[v0.3.2](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.3.2) (2017-04-21)
+=======================================================================================
+
+[Full Changelog](https://github.com/zchee/docker-machine-driver-xhyve/compare/v0.3.1...v0.3.2)
+
+Auto generated Change Log
+-------------------------
+
+**Closed issues:**
+
+-	Cannot build with Go and Make [\#167](https://github.com/zchee/docker-machine-driver-xhyve/issues/167)
+-	Project Is dead? [\#166](https://github.com/zchee/docker-machine-driver-xhyve/issues/166)
+-	\[Question\] Why use `go generate` for libhyperkit? [\#165](https://github.com/zchee/docker-machine-driver-xhyve/issues/165)
+-	fatal error: 'stdlib.h' file not found [\#160](https://github.com/zchee/docker-machine-driver-xhyve/issues/160)
+-	Build broken when homebrew is installed in a non-default location [\#157](https://github.com/zchee/docker-machine-driver-xhyve/issues/157)
+
+**Merged pull requests:**
+
+-	Update readme to document rawdisk [\#173](https://github.com/zchee/docker-machine-driver-xhyve/pull/173) ([dalehamel](https://github.com/dalehamel)\)
+-	xhyve: bump version 0.3.2 [\#172](https://github.com/zchee/docker-machine-driver-xhyve/pull/172) ([zchee](https://github.com/zchee)\)
+-	Don't hardcode the docker user id [\#171](https://github.com/zchee/docker-machine-driver-xhyve/pull/171) ([dalehamel](https://github.com/dalehamel)\)
+-	ci/circle: remove circle.yml for now [\#170](https://github.com/zchee/docker-machine-driver-xhyve/pull/170) ([zchee](https://github.com/zchee)\)
+-	Add support for using a raw disk for storage [\#169](https://github.com/zchee/docker-machine-driver-xhyve/pull/169) ([dalehamel](https://github.com/dalehamel)\)
+-	Fixed MAC cleaning regular expression [\#163](https://github.com/zchee/docker-machine-driver-xhyve/pull/163) ([juamedgod](https://github.com/juamedgod)\)
+-	Wait for IP before setting up mounts [\#161](https://github.com/zchee/docker-machine-driver-xhyve/pull/161) ([r2d4](https://github.com/r2d4)\)
+-	ci/circle: update circle.yml to macOS based build environment [\#159](https://github.com/zchee/docker-machine-driver-xhyve/pull/159) ([zchee](https://github.com/zchee)\)
+-	Move the NFS and 9p mounting code from Create to Start. [\#158](https://github.com/zchee/docker-machine-driver-xhyve/pull/158) ([dlorenc](https://github.com/dlorenc)\)
+
 [v0.3.1](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.3.1) (2016-12-05)
 =======================================================================================
 
