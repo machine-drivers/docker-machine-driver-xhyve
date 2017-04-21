@@ -1,6 +1,33 @@
 Change Log
 ==========
 
+[v0.3.1](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.3.1) (2016-12-05)
+=======================================================================================
+
+[Full Changelog](https://github.com/zchee/docker-machine-driver-xhyve/compare/v0.3.0...v0.3.1)
+
+Auto generated Change Log
+-------------------------
+
+**Implemented enhancements:**
+
+-	alternative boot2docker ISO image \(minikube-iso\) support [\#135](https://github.com/zchee/docker-machine-driver-xhyve/issues/135)
+
+**Fixed bugs:**
+
+-	alternative boot2docker ISO image \\(minikube-iso\\) support [\#135](https://github.com/zchee/docker-machine-driver-xhyve/issues/135)
+
+**Closed issues:**
+
+-	Extract kernel options from the syslinux.conf file if exist. [\#150](https://github.com/zchee/docker-machine-driver-xhyve/issues/150)
+-	Recompile on Go 1.7.1 to work on macOS Sierra \(10.12\) [\#137](https://github.com/zchee/docker-machine-driver-xhyve/issues/137)
+
+**Merged pull requests:**
+
+-	xhyve: Bump v0.3.1 [\#154](https://github.com/zchee/docker-machine-driver-xhyve/pull/154) ([zchee](https://github.com/zchee)\)
+-	xhyve: Fix included '\tappend\s' in kexec boot option [\#153](https://github.com/zchee/docker-machine-driver-xhyve/pull/153) ([zchee](https://github.com/zchee)\)
+-	Fix \#150 Extract kernel options from the syslinux.conf file if exist [\#152](https://github.com/zchee/docker-machine-driver-xhyve/pull/152) ([praveenkumar](https://github.com/praveenkumar)\)
+
 [v0.3.0](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.3.0) (2016-11-06)
 =======================================================================================
 
