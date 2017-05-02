@@ -724,7 +724,7 @@ func (d *Driver) generateRawDiskImage(size int64) error {
 	}
 	f.Close()
 
-	if err := os.Truncate(diskPath, d.DiskSize * 1048576); err != nil {
+	if err := os.Truncate(diskPath, d.DiskSize*1048576); err != nil {
 		return err
 	}
 
