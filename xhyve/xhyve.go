@@ -499,7 +499,11 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	return d.setupMounts()
+	if err := d.setupMounts(); err != nil {
+		log.Warnf("Error setting up mounts: %v", err)
+	}
+
+	return nil
 }
 
 func (d *Driver) Stop() error {
