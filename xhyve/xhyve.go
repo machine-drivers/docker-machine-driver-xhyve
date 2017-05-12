@@ -40,7 +40,6 @@ const (
 	defaultBoot2DockerURL = ""
 	defaultBootCmd        = ""
 	defaultCPU            = 1
-	defaultCaCertPath     = ""
 	defaultDiskSize       = 20000
 	defaultMacAddr        = ""
 	defaultMemory         = 1024
@@ -60,7 +59,6 @@ type Driver struct {
 	*b2d.B2dUtils
 
 	Boot2DockerURL string
-	CaCertPath     string
 	PrivateKeyPath string
 
 	CPU            int
