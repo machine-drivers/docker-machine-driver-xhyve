@@ -499,7 +499,11 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	return d.setupMounts()
+	if err := d.setupMounts(); err != nil {
+		log.Warnf("Error setting up mounts: %v", err)
+	}
+
+	return nil
 }
 
 func (d *Driver) Stop() error {
@@ -724,7 +728,7 @@ func (d *Driver) generateRawDiskImage(size int64) error {
 	}
 	f.Close()
 
-	if err := os.Truncate(diskPath, d.DiskSize * 1048576); err != nil {
+	if err := os.Truncate(diskPath, d.DiskSize*1048576); err != nil {
 		return err
 	}
 
