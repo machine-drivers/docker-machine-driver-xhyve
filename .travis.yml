@@ -8,14 +8,12 @@ go:
   - 1.8.x
   - tip
 
-
 env:
   global:
     - GO_BUILD_TAGS='lib9p qcow2'
     - HOMEBREW_NO_AUTO_UPDATE=1
     - MAKEFLAGS="-j$(sysctl -n hw.ncpu)"
     - RELEASE_GO_VERSION=''
-
 
 before_install:
   - uname -a
@@ -30,14 +28,12 @@ install:
   # for go test(make test)
   - go get -v -x github.com/stretchr/testify/assert
 
-
 before_script:
   - make install
   - make test-bindings
 
 script:
   - make test
-
 
 before_deploy:
   # make install will change owner to root, root owned binary was can't deploy
@@ -57,7 +53,6 @@ deploy:
     tags: true
   api_key:
     secure: ooncVJ4sSfcLiQ/0mNivrShRbUBcywocGd7mOhWp1MsyKdnAv7/In2qiyw4GD1x/AWyXOGWKGouDATeiP3kQ7jnIw7YoaNcbu/QeKD2xIODf4tYGXDf7AQUEwKnof5XBTIbU7oRgBe+NH1bN6iDh8XBgLqZPXFjaIQSq3gudM2/zJlzcrCdXAA8oKOJdsS4TR4/cCVMou3gV54mbkxmsr+F1BN3zKO7k1ZBv4BDYbkrN1RvBiEOXq7c+ab3ubd4L/AGxU1oou+0qRJMXF7jCyIq4zHrwl4iAQUd5AVKlZRFVWRF2RdGc7ExCA+ZGZZhhvpCmMsldiqjPWRPdcF4rCkaWk1RKhOL4VwSZUaXwVgEM4k9GRuKD0LVqkzPhvPG9DVpEA2rtnmkVtQ6/AttqkV6vDH5emL4zt6Mw4/Uphb0rdKrSYKbpE4NUpMikQXbzmXeEyXjhoNE9I7k8Dkh5CFnlS2VxVl/ECEOA4b2nKClGN+UhM7Z5Hkk/Sx/22mUFAnzwa/1x0gVyG8ONy8JdrbeEUnA03eeXIcvmAvfeyk6QkZMyHL1UGRm7VoN3y5uX30RHS6fDmhsE5CS2VE+TjbM6XppWwxaBueEzKwA5qtdfCiE+Wilttx4GS9bpa7FS8Efw1p/x69yZjzGNQhPC1mjCX3e3XFP35qF4+ZfP8aw=
-
 
 notifications:
   email: false
