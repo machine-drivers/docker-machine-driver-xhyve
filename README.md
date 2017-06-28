@@ -20,15 +20,16 @@ Screencast
 Requirements
 ------------
 
-### docker-machine or minikube
+### docker-machine, minikube or minishift
 
 -	https://github.com/docker/machine
 -	https://github.com/kubernetes/minikube
+-	https://github.com/minishift/minishift
 
 docker-machine-driver-xhyve using libmachine plugin model.
 
-**Please do not post the issue of this repository to the docker/machine and kubernetes/minikube**  
-It will interfere with the development of the docker-machine or minikube.  
+**Please do not post the issue of this repository to docker/machine, kubernetes/minikube and minishift/minishift**  
+It will interfere with the development of docker-machine, minikube or minishift.  
 If you were doubt problem either, please post to this repository [issues](https://github.com/zchee/docker-machine-driver-xhyve/issues).
 
 -	docker-machine
@@ -38,6 +39,10 @@ If you were doubt problem either, please post to this repository [issues](https:
 -	minikube
 
 	-	See https://github.com/kubernetes/minikube/releases
+
+-	minishift
+
+	-	See https://github.com/minishift/minishift/releases
 
 Install
 -------
