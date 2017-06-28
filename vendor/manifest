@@ -109,6 +109,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/mitchellh/go-ps",
+			"repository": "https://github.com/mitchellh/go-ps",
+			"vcs": "git",
+			"revision": "4fdf99ab29366514c69ccccddab5dc58b8d84062",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/zchee/go-qcow2",
 			"repository": "https://github.com/zchee/go-qcow2",
 			"vcs": "git",

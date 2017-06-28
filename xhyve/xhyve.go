@@ -27,6 +27,7 @@ import (
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/johanneswuerbach/nfsexports"
+	ps "github.com/mitchellh/go-ps"
 	"github.com/zchee/docker-machine-driver-xhyve/b2d"
 	"github.com/zchee/docker-machine-driver-xhyve/vmnet"
 	qcow2 "github.com/zchee/go-qcow2"
@@ -327,6 +328,15 @@ func (d *Driver) GetState() (state.State, error) {
 
 	if err := proc.Signal(syscall.Signal(0)); err != nil {
 		return state.Stopped, nil
+	}
+
+	psproc, err := ps.FindProcess(int(pid))
+	if err != nil {
+		return state.Error, err
+	}
+	// process name is truncated to 'docker-machine-d'
+	if !strings.Contains(psproc.Executable(), "docker-machine") {
+		return state.Error, fmt.Errorf("Unable to find 'xhyve' process by PID: %d", pid)
 	}
 
 	return state.Running, nil
