@@ -2,6 +2,14 @@
 	"version": 0,
 	"dependencies": [
 		{
+			"importpath": "github.com/c4milo/gotoolkit",
+			"repository": "https://github.com/c4milo/gotoolkit",
+			"vcs": "git",
+			"revision": "bcc06269efa974c4f098619d9aae436846e83d84",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/docker/machine/libmachine/drivers",
 			"repository": "https://github.com/docker/machine",
 			"vcs": "git",
@@ -98,6 +106,22 @@
 			"revision": "91e368eb7422665278b1d5665139ee0f9980b588",
 			"branch": "master",
 			"path": "version",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docopt/docopt-go",
+			"repository": "https://github.com/docopt/docopt-go",
+			"vcs": "git",
+			"revision": "784ddc588536785e7299f7272f39101f7faccc3f",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/hooklift/iso9660",
+			"repository": "https://github.com/hooklift/iso9660",
+			"vcs": "git",
+			"revision": "1cf07e5970d810f027bfbdfa2e9ad86db479c53a",
+			"branch": "master",
 			"notests": true
 		},
 		{

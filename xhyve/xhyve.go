@@ -30,6 +30,7 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+	"github.com/hooklift/iso9660"
 	"github.com/johanneswuerbach/nfsexports"
 	ps "github.com/mitchellh/go-ps"
 	"github.com/zchee/docker-machine-driver-xhyve/b2d"
@@ -91,7 +92,7 @@ var (
 	ErrMachineExist    = errors.New("machine already exists")
 	ErrMachineNotExist = errors.New("machine does not exist")
 	diskRegexp         = regexp.MustCompile("^/dev/disk([0-9]+)")
-	kernelRegexp       = regexp.MustCompile(`(vmlinu[xz]|bzImage)[\d]*`)
+	kernelRegexp       = regexp.MustCompile(`(?i)(vmlinu[xz]|bzImage)[\d]*`)
 	kernelOptionRegexp = regexp.MustCompile(`(?:\t|\s{2})append\s+([[:print:]]+)`)
 )
 
@@ -633,13 +634,7 @@ func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
 }
 
-func readLine(path string) (string, error) {
-	inFile, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer inFile.Close()
-
+func readLine(inFile io.Reader) (string, error) {
 	scanner := bufio.NewScanner(inFile)
 	for scanner.Scan() {
 		if kernelOptionRegexp.Match(scanner.Bytes()) {
@@ -647,28 +642,14 @@ func readLine(path string) (string, error) {
 			return string(m[1]), nil
 		}
 	}
-	return "", fmt.Errorf("couldn't find kernel option from %s image", path)
+	return "", errors.New("couldn't find kernel option from image")
 }
 
-func (d *Driver) extractKernelOptions() error {
-	volumeRootDir := d.ResolveStorePath(isoMountPath)
-	if d.BootCmd == "" {
-		err := filepath.Walk(volumeRootDir, func(path string, f os.FileInfo, err error) error {
-			if strings.Contains(path, "isolinux.cfg") {
-				d.BootCmd, err = readLine(path)
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-
-		if d.BootCmd == "" {
-			return errors.New("Not able to parse isolinux.cfg, Please use --xhyve-boot-cmd option")
-		}
+func (d *Driver) extractKernelOptions(r io.Reader) error {
+	var err error
+	d.BootCmd, err = readLine(r)
+	if err != nil {
+		return err
 	}
 
 	log.Debugf("Extracted Options %q", d.BootCmd)
@@ -676,54 +657,82 @@ func (d *Driver) extractKernelOptions() error {
 }
 
 func (d *Driver) extractKernelImages() error {
-	log.Debugf("Mounting %s", isoFilename)
 
-	volumeRootDir := d.ResolveStorePath(isoMountPath)
-	err := hdiutil("attach", d.ResolveStorePath(isoFilename), "-mountpoint", volumeRootDir)
+	isof, err := os.Open(d.ResolveStorePath(isoFilename))
+	defer isof.Close()
+	if err != nil {
+		return err
+	}
+	iso, err := iso9660.NewReader(isof)
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("Extracting Kernel Options...")
-	if err := d.extractKernelOptions(); err != nil {
-		return err
-	}
-
-	defer func() error {
-		log.Debugf("Unmounting %s", isoFilename)
-		return hdiutil("detach", volumeRootDir)
-	}()
-
-	if d.BootKernel == "" && d.BootInitrd == "" {
-		err = filepath.Walk(volumeRootDir, func(path string, f os.FileInfo, err error) error {
-			if kernelRegexp.MatchString(path) {
-				d.BootKernel = path
-				_, d.Vmlinuz = filepath.Split(path)
-			}
-			if strings.Contains(path, "initrd") {
-				d.BootInitrd = path
-				_, d.Initrd = filepath.Split(path)
-			}
-			return nil
-		})
-	}
-
-	if err != nil {
-		if err != nil || d.BootKernel == "" || d.BootInitrd == "" {
-			err = fmt.Errorf("==== Can't extract Kernel and Ramdisk file ====")
+	extractFile := func(f os.FileInfo, dst string) error {
+		freader := f.Sys().(io.Reader)
+		ff, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+		if err != nil {
 			return err
+		}
+		defer ff.Close()
+		if _, err := io.Copy(ff, freader); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// We iterate through all files in the ISO, extracting a few important ones:
+	// 1. The kernel image. This can be one of a few types of files, so we check a regex.
+	// 2. The initrd.
+	// We also have to read and parse the isolinux.cfg.
+	// If any of these files were passed in as flags, extract based on the exact path.
+	for {
+		f, err := iso.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		// For some reason extra "."'s make it onto the paths.
+		path := strings.TrimSuffix(f.Name(), ".")
+		log.Debugf("Checking %s", path)
+
+		if d.BootCmd == "" && strings.Contains(path, "isolinux.cfg") {
+			log.Debugf("Extracting Kernel Options...")
+			if err := d.extractKernelOptions(f.Sys().(io.Reader)); err != nil {
+				return err
+			}
+		}
+
+		if d.BootKernel == "" && kernelRegexp.MatchString(path) {
+			d.BootKernel = path
+		}
+		if d.BootKernel == path {
+			_, d.Vmlinuz = filepath.Split(path)
+			dest := d.ResolveStorePath(d.Vmlinuz)
+			log.Debugf("Extracting %s into %s", d.BootKernel, dest)
+			if err := extractFile(f, dest); err != nil {
+				return err
+			}
+		}
+
+		if d.BootInitrd == "" && strings.Contains(path, "initrd") {
+			d.BootInitrd = path
+		}
+		if d.BootInitrd == path {
+			_, d.Initrd = filepath.Split(strings.TrimSuffix(f.Name(), "."))
+			dest := d.ResolveStorePath(d.Initrd)
+			log.Debugf("Extracting %s into %s", d.BootInitrd, dest)
+			if err := extractFile(f, dest); err != nil {
+				return err
+			}
 		}
 	}
 
-	dest := d.ResolveStorePath(d.Vmlinuz)
-	log.Debugf("Extracting %s into %s", d.BootKernel, dest)
-	if err := mcnutils.CopyFile(d.BootKernel, dest); err != nil {
-		return err
-	}
-
-	dest = d.ResolveStorePath(d.Initrd)
-	log.Debugf("Extracting %s into %s", d.BootInitrd, dest)
-	if err := mcnutils.CopyFile(d.BootInitrd, dest); err != nil {
+	if d.BootKernel == "" || d.BootInitrd == "" {
+		err = fmt.Errorf("==== Can't extract Kernel and Ramdisk file ====")
 		return err
 	}
 
