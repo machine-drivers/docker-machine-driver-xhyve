@@ -1,3 +1,7 @@
+// Copyright 2015 The docker-machine-driver-xhyve Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package xhyve
 
 var diskimageFooter = []byte{83, 70, 72, 0, 0, 170, 17, 170, 17, 0, 48, 101, 67, 236, 172, 55, 61, 229, 247, 104, 21, 87, 66, 167, 12, 134, 58, 51, 211, 95, 1, 40, 0, 0, 0, 0, 0, 0, 0, 215, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 105, 0, 115, 0, 107, 0, 32, 0, 105, 0, 109, 0, 97, 0, 103, 0, 101}
