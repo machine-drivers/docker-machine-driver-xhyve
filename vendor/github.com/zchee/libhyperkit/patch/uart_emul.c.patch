@@ -1,0 +1,14 @@
+diff --git a/src/lib/uart_emul.c b/src/lib/uart_emul.c
+index d185f74..a8dcd7e 100644
+--- a/src/lib/uart_emul.c
++++ b/src/lib/uart_emul.c
+@@ -767,6 +767,9 @@
+ 				fprintf(stdout, "%s linked to %s\n", devname, linkname);
+ 			}
+
++            // Sends to Go land the device path name for the slave pseudo-terminal.
++            goSetPtyName(ptyname);
++
+ 			sc->tty.fd = ptyfd;
+ 			sc->tty.name = ptyname;
+ 			sc->tty.opened = true;

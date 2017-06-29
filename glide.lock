@@ -1,0 +1,55 @@
+hash: d35f4c0286fb07f6ca4356fa997095df46d74eba662956a6566abafd37d81213
+updated: 2017-06-29T14:50:19.010643722+05:30
+imports:
+- name: github.com/docker/docker
+  version: a8a31eff10544860d2188dddabdee4d727545796
+  subpackages:
+  - pkg/term
+- name: github.com/docker/machine
+  version: 5b274558ea6ca822c06dd407a4e774a0105c3f60
+  subpackages:
+  - libmachine/drivers
+  - libmachine/drivers/plugin
+  - libmachine/drivers/plugin/localbinary
+  - libmachine/drivers/rpc
+  - libmachine/log
+  - libmachine/mcnflag
+  - libmachine/mcnutils
+  - libmachine/ssh
+  - libmachine/state
+  - libmachine/version
+  - version
+- name: github.com/jceel/lib9p
+  version: 7be3e0b914fbb2d2ecfe2984d02bacfd8e762eae
+- name: github.com/johanneswuerbach/nfsexports
+  version: a9068f3f0daa39616953aec11c3eb1209ebc4086
+- name: github.com/mitchellh/go-ps
+  version: 4fdf99ab29366514c69ccccddab5dc58b8d84062
+- name: github.com/pkg/errors
+  version: a887431f7f6ef7687b556dbf718d9f351d4858a0
+  repo: https://github.com/pkg/errors
+- name: github.com/zchee/go-qcow2
+  version: 9a991fd172f0e8a2a3adfe529ff5e6b814e26b97
+  subpackages:
+  - internal/mem
+- name: github.com/zchee/libhyperkit
+  version: 1a19a7693fac32b46ec6cdd22da6fbec974447fc
+- name: golang.org/x/crypto
+  version: beef0f4390813b96e8e68fd78570396d0f4751fc
+  subpackages:
+  - curve25519
+  - ssh
+  - ssh/terminal
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
+  subpackages:
+  - difflib
+- name: github.com/stretchr/testify
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  subpackages:
+  - assert

@@ -1,0 +1,26 @@
+diff --git a/src/include/xhyve/xhyve.h b/src/include/xhyve/xhyve.h
+index 5464b2e..ac7f526 100644
+--- a/src/include/xhyve/xhyve.h
++++ b/src/include/xhyve/xhyve.h
+@@ -29,6 +29,7 @@
+ #pragma once
+
+ #include <stdint.h>
++#include <stdbool.h>
+ #include <xhyve/support/segments.h>
+
+ #ifndef CTASSERT /* Allow lint to override */
+@@ -44,6 +45,7 @@ extern int guest_ncpus;
+ extern int print_mac;
+ extern char *guest_uuid_str;
+ extern char *vmname;
++extern bool exit_mevent_dispatch_loop;
+
+ void xh_vm_inject_fault(int vcpu, int vector, int errcode_valid,
+     uint32_t errcode);
+@@ -79,3 +81,5 @@ void vcpu_add(int fromcpu, int newcpu, uint64_t rip);
+ int fbsdrun_vmexit_on_hlt(void);
+ int fbsdrun_vmexit_on_pause(void);
+ int fbsdrun_virtio_msix(void);
++int run_xhyve(int argc, char *argv[]);
++extern void goCallbackExit(int status);

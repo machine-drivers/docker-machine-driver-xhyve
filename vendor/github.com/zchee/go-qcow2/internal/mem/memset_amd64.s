@@ -1,4 +1,4 @@
-// Copyright 2016 The Go Authors. All rights reserved.
+// Copyright 2016 The go-qcow2 Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -8,8 +8,8 @@
 
 // NOTE: Windows externalthreadhandler expects memclr to preserve DX.
 
-// void Set(dst []byte, value byte)
-TEXT ·Set(SB), NOSPLIT, $0-25
+// void set(dst []byte, value byte)
+TEXT ·set(SB), NOSPLIT, $0-25
 	XORQ       AX, AX                  // clear upper bytes
 	MOVQ       $0x0101010101010101, R8 // Multiply input by this to spread to all values
 	MOVQ       dst+0(FP), DI

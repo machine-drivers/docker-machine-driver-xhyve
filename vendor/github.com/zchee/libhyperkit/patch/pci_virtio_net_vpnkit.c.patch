@@ -1,0 +1,15 @@
+diff --git a/src/lib/pci_virtio_net_vpnkit.c b/src/lib/pci_virtio_net_vpnkit.c
+index 2e3f18a..519931e 100644
+--- a/src/lib/pci_virtio_net_vpnkit.c
++++ b/src/lib/pci_virtio_net_vpnkit.c
+@@ -300,8 +300,8 @@ static int vpnkit_connect(int fd, const char uuid[36], struct vif_info *vif)
+ 	};
+
+ 	/* msg.commit is not NULL terminated */
+-	assert(sizeof(VERSION_SHA1) == sizeof(init_msg.commit) + 1);
+-	memcpy(&init_msg.commit, VERSION_SHA1, sizeof(init_msg.commit));
++	assert(sizeof("VERSION_SHA1") == sizeof(init_msg.commit) + 1);
++	memcpy(&init_msg.commit, "VERSION_SHA1", sizeof(init_msg.commit));
+
+ 	if (really_write(fd, (uint8_t *)&init_msg, sizeof(init_msg)) < 0) {
+ 		fprintf(stderr, "virtio-net-vpnkit: failed to write init msg\n");

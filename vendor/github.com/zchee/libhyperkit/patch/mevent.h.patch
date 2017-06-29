@@ -1,0 +1,12 @@
+diff --git a/src/include/xhyve/mevent.h b/src/include/xhyve/mevent.h
+index 48866bd..d09ed2e 100644
+--- a/src/include/xhyve/mevent.h
++++ b/src/include/xhyve/mevent.h
+@@ -43,5 +43,5 @@ int mevent_enable(struct mevent *evp);
+ int mevent_disable(struct mevent *evp);
+ int mevent_delete(struct mevent *evp);
+ int mevent_delete_close(struct mevent *evp);
+-
+-void mevent_dispatch(void);
++int mevent_dispatch(void);
++void mevent_exit(void);

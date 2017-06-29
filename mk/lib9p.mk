@@ -1,4 +1,4 @@
-LIB9P_DIR := vendor/lib9p
+LIB9P_DIR := vendor/github.com/jceel/lib9p
 
 LIB9P_CFLAGS := \
 	-Weverything \
@@ -36,7 +36,7 @@ lib9p: ${LIB9P_BUILD_DIR} $(LIB9P_LIB)
 vendor/build/lib9p:
 	$(VERBOSE) mkdir -p ${LIB9P_BUILD_DIR} ${LIB9P_BUILD_DIR}/sbuf ${LIB9P_BUILD_DIR}/transport ${LIB9P_BUILD_DIR}/backend
 
-vendor/build/lib9p/%.o: vendor/lib9p/%.c
+vendor/build/lib9p/%.o: ${LIB9P_DIR}/%.c
 	$(VERBOSE) $(CC) $(LIB9P_CFLAGS) -c $< -o $@
 
 $(LIB9P_LIB): $(LIB9P_LIB_OBJS)

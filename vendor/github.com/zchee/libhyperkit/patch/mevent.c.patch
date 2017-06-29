@@ -1,0 +1,78 @@
+diff --git a/src/lib/mevent.c b/src/lib/mevent.c
+index 6cb27c7..db1ce31 100644
+--- a/src/lib/mevent.c
++++ b/src/lib/mevent.c
+@@ -35,6 +35,7 @@
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <stdio.h>
++#include <stdbool.h>
+ #include <string.h>
+ #include <unistd.h>
+ #include <pthread.h>
+@@ -52,6 +53,7 @@
+ #define	MEV_DEL_PENDING	4
+ 
+ extern char *vmname;
++extern bool exit_mevent_dispatch_loop;
+ 
+ static pthread_t mevent_tid;
+ static int mevent_timid = 43;
+@@ -103,7 +105,7 @@ mevent_pipe_read(int fd, UNUSED enum ev_type type, UNUSED void *param)
+ 	} while (status == MEVENT_MAX);
+ }
+ 
+-static void
++void
+ mevent_notify(void)
+ {
+ 	char c;
+@@ -117,6 +119,12 @@ mevent_notify(void)
+ 	}
+ }
+ 
++void mevent_exit(void)
++{
++	char c;
++	write(mevent_pipefd[1], &c, 1);
++}
++
+ static int
+ mevent_kq_filter(struct mevent *mevp)
+ {
+@@ -387,8 +395,7 @@ mevent_set_name(void)
+ {
+ }
+ 
+-__attribute__ ((noreturn)) void
+-mevent_dispatch(void)
++int mevent_dispatch(void)
+ {
+ 	struct kevent changelist[MEVENT_MAX];
+ 	struct kevent eventlist[MEVENT_MAX];
+@@ -411,7 +418,8 @@ mevent_dispatch(void)
+ 	ret = pipe(mevent_pipefd);
+ 	if (ret < 0) {
+ 		perror("pipe");
+-		exit(0);
++		return EPIPE;
++		// exit(0);
+ 	}
+ 
+ 	/*
+@@ -421,6 +429,9 @@ mevent_dispatch(void)
+ 	assert(pipev != NULL);
+ 
+ 	for (;;) {
++		if (exit_mevent_dispatch_loop) {
++			break;
++		}
+ 		/*
+ 		 * Build changelist if required.
+ 		 * XXX the changelist can be put into the blocking call
+@@ -448,4 +459,5 @@ mevent_dispatch(void)
+ 		 */
+ 		mevent_handle(eventlist, ret);
+ 	}
++	return 0;
+ }

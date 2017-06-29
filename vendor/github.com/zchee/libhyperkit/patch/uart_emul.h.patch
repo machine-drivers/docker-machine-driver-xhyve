@@ -1,0 +1,10 @@
+diff --git a/src/include/xhyve/uart_emul.h b/src/include/xhyve/uart_emul.h
+index a4851a1..0cf1b3c 100644
+--- a/src/include/xhyve/uart_emul.h
++++ b/src/include/xhyve/uart_emul.h
+@@ -40,3 +40,5 @@ int uart_legacy_alloc(int unit, int *ioaddr, int *irq);
+ uint8_t uart_read(struct uart_softc *sc, int offset);
+ void uart_write(struct uart_softc *sc, int offset, uint8_t value);
+ int uart_set_backend(struct uart_softc *sc, const char *backend, const char *devname);
++
++extern void goSetPtyName(char *name);

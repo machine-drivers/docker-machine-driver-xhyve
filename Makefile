@@ -117,7 +117,7 @@ endif
 GO_BUILD_TAGS ?= lib9p
 # included 'lib9p' in the $GO_BUILD_TAGS, and exists 'lib9p.a' file
 ifneq (,$(findstring lib9p,$(GO_BUILD_TAGS)))
-CGO_CFLAGS += -I${PWD}/vendor/lib9p
+CGO_CFLAGS += -I${PWD}/${LIB9P_DIR}
 CGO_LDFLAGS += ${PWD}/vendor/build/lib9p/lib9p.a
 bin/docker-machine-driver-xhyve: lib9p
 endif
@@ -172,6 +172,9 @@ export CGO_ENABLED=1
 # Build jobs settings
 
 default: build
+
+vendor:
+	glide install -v
 
 build: bin/docker-machine-driver-xhyve
 

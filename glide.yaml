@@ -1,0 +1,23 @@
+package: github.com/zchee/docker-machine-driver-xhyve
+import:
+- package: github.com/docker/machine
+  version: v0.11.0
+  subpackages:
+  - libmachine/drivers
+  - libmachine/drivers/plugin
+  - libmachine/log
+  - libmachine/mcnflag
+  - libmachine/mcnutils
+  - libmachine/ssh
+  - libmachine/state
+- package: github.com/johanneswuerbach/nfsexports
+- package: github.com/mitchellh/go-ps
+- package: github.com/zchee/go-qcow2
+- package: github.com/zchee/libhyperkit
+- package: github.com/jceel/lib9p
+  version: 7be3e0b914fbb2d2ecfe2984d02bacfd8e762eae
+testImport:
+- package: github.com/stretchr/testify
+  version: v1.1.4
+  subpackages:
+  - assert

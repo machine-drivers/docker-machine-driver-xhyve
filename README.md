@@ -81,6 +81,26 @@ $ sudo chown root:wheel /usr/local/bin/docker-machine-driver-xhyve
 $ sudo chmod u+s /usr/local/bin/docker-machine-driver-xhyve
 ```
 
+We use [Glide](https://github.com/Masterminds/glide) for dependency management.
+
+```sh
+$ go get github.com/Masterminds/glide
+```
+
+This will install the glide binary into `$GOPATH/bin`.
+
+Updating Dependencies
+
+If your work requires a change to the dependencies, you need to update the Glide
+configuration.
+
+- Edit glide.yaml to change the dependencies as needed.
+- Delete `glide.lock` and re-create the vendor directory by running `make vendor`. Glide will recognize that there is no lock file and recalculatethe required dependencies.
+- Check-in the updated `glide.yaml` and `glide.lock` files.
+- Test that everything still compiles with the new lock file in place by running make clean && make.
+
+Note: In some cases the Glide cache located under ~/.glide/cache can get corrupted. If you seeing Glide errors during `make vendor`, you can clear the Glide cache via `glide cc`.
+
 Usage
 -----
 
