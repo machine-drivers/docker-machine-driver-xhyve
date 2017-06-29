@@ -1,6 +1,27 @@
 Change Log
 ==========
 
+[v0.3.3](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.3.3) (2017-06-29)
+=======================================================================================
+
+[Full Changelog](https://github.com/zchee/docker-machine-driver-xhyve/compare/v0.3.2...v0.3.3)
+
+Auto generated Change Log
+-------------------------
+
+**Closed issues:**
+
+- GetState returns running after host reboot [\#179](https://github.com/zchee/docker-machine-driver-xhyve/issues/179)
+- MAC addresses ending in element with a leading 0 are not mapped to an IP [\#162](https://github.com/zchee/docker-machine-driver-xhyve/issues/162)
+
+**Merged pull requests:**
+
+- xhyve: bump version 0.3.3 [\#184](https://github.com/zchee/docker-machine-driver-xhyve/pull/184) ([zchee](https://github.com/zchee))
+- ci/travis: fix opam install packages to locked io-page to 1.6.1 [\#182](https://github.com/zchee/docker-machine-driver-xhyve/pull/182) ([zchee](https://github.com/zchee))
+- Add Minishift as user [\#181](https://github.com/zchee/docker-machine-driver-xhyve/pull/181) ([gbraad](https://github.com/gbraad))
+- Fix \#179 add process name check to getState [\#180](https://github.com/zchee/docker-machine-driver-xhyve/pull/180) ([gbraad](https://github.com/gbraad))
+- Ignore setupmounts [\#174](https://github.com/zchee/docker-machine-driver-xhyve/pull/174) ([r2d4](https://github.com/r2d4))
+
 [v0.3.2](https://github.com/zchee/docker-machine-driver-xhyve/tree/v0.3.2) (2017-04-21)
 =======================================================================================
 
