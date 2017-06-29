@@ -71,7 +71,7 @@ $ cd $GOPATH/src/github.com/zchee/docker-machine-driver-xhyve
 $ brew install opam libev
 $ opam init
 $ eval `opam config env`
-$ opam install uri qcow-format conf-libev
+$ opam install uri qcow-format io-page.1.6.1 conf-libev
 
 # Install docker-machine-driver-xhyve binary into /usr/local/bin
 $ make install
