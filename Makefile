@@ -173,9 +173,6 @@ export CGO_ENABLED=1
 
 default: build
 
-vendor:
-	glide install -v
-
 build: bin/docker-machine-driver-xhyve
 
 vendor/github.com/zchee/libhyperkit/mirage_block_ocaml.o:
@@ -206,11 +203,14 @@ test-bindings:
 	$(VERBOSE) if nm bin/docker-machine-driver-xhyve | grep _camlMirage_block__code_begin >/dev/null 2>&1; then echo 'qcow2'; fi
 
 
+vendor:
+	$(VERBOSE) glide install -v
+
 vendor-update:
-	$(VERBOSE) gvt update -all
+	$(VERBOSE) glide update
 
 vendor-restore:
-	$(VERBOSE) gvt restore
+	$(VERBOSE) glide restore
 
 
 docker-build:
@@ -244,4 +244,4 @@ test-stop:
 test-upgrade:
 test-url:
 
-.PHONY: clean run rm kill
+.PHONY: clean run rm kill build build-privilege install test test-bindings vendor vendor-update vendor-restore
