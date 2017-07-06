@@ -244,4 +244,4 @@ test-stop:
 test-upgrade:
 test-url:
 
-.PHONY: clean run rm kill build build-privilege install test test-bindings vendor vendor-update vendor-restore
+.PHONY: clean run rm kill build build-privilege install test test-bindings vendor-update vendor-restore
