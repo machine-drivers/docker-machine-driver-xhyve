@@ -32,9 +32,11 @@ import (
 	"github.com/docker/machine/libmachine/state"
 	"github.com/johanneswuerbach/nfsexports"
 	ps "github.com/mitchellh/go-ps"
+	hyperkit "github.com/moby/hyperkit/go"
 	"github.com/zchee/docker-machine-driver-xhyve/b2d"
 	"github.com/zchee/docker-machine-driver-xhyve/vmnet"
 	qcow2 "github.com/zchee/go-qcow2"
+	govmnet "github.com/zchee/go-vmnet"
 )
 
 const (
@@ -339,7 +341,8 @@ func (d *Driver) GetState() (state.State, error) {
 		return state.Error, err
 	}
 	// process name is truncated to 'docker-machine-d'
-	if !strings.Contains(psproc.Executable(), "docker-machine") {
+	exe := psproc.Executable()
+	if !(strings.Contains(exe, "docker-machine") || strings.Contains(exe, "hyperkit")) {
 		return state.Error, fmt.Errorf("Unable to find 'xhyve' process by PID: %d", pid)
 	}
 
@@ -485,29 +488,47 @@ func (d *Driver) Start() error {
 
 	d.attachDiskImage()
 
-	args := d.xhyveArgs()
-	args = append(args, "-F", fmt.Sprintf("%s", pid))
-	if d.Virtio9p {
-		args = append(args, "-s", fmt.Sprintf("5,virtio-9p,host=%s", d.Virtio9pFolder))
-	}
-
-	log.Debug(args)
-
-	cmd := exec.Command(os.Args[0], args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	err := cmd.Start()
+	h, err := hyperkit.New("", "auto", d.ResolveStorePath(""))
 	if err != nil {
 		return err
 	}
+	h.Console = hyperkit.ConsoleFile
 
-	go func() {
-		err := cmd.Wait()
-		if err != nil {
-			log.Error(err, cmd.Stdout, cmd.Stderr)
+	h.Kernel = d.ResolveStorePath(d.Vmlinuz)
+	h.Initrd = d.ResolveStorePath(d.Initrd)
+
+	if d.Qcow2 {
+		h.Disks = []hyperkit.DiskConfig{
+			{
+				Path:   fmt.Sprintf("file://%s", filepath.Join(d.ResolveStorePath("."), d.MachineName+".qcow2")),
+				Format: "qcow",
+				Driver: "virtio-blk",
+			},
 		}
-	}()
+	} else if d.RawDisk {
+		h.Disks = []hyperkit.DiskConfig{
+			{
+				Path:   filepath.Join(d.ResolveStorePath("."), d.MachineName+".rawdisk"),
+				Driver: "virtio-blk",
+			},
+		}
+	} else {
+		h.Disks = []hyperkit.DiskConfig{
+			{
+				Path:   fmt.Sprintf("/dev/rdisk%d", d.DiskNumber),
+				Driver: "ahci-hd",
+			},
+		}
+	}
+
+	h.UUID = d.UUID
+	h.CPUs = d.CPU
+	h.Memory = d.Memory
+	h.VMNet = true
+
+	if err := h.Start(d.BootCmd); err != nil {
+		return err
+	}
 
 	if err := d.waitForIP(); err != nil {
 		return err
@@ -851,7 +872,7 @@ func zeroFill(w io.Writer, n int64) error {
 }
 
 func (d *Driver) generateSparseBundleDiskImage(count int64) error {
-	diskPath := d.ResolveStorePath(rootVolumeName)
+	diskPath := d.ResolveStorePath(rootVolumeName + ".sparsebundle")
 
 	if err := hdiutil("create", "-megabytes", fmt.Sprintf("%d", count), "-type", "SPARSEBUNDLE", diskPath); err != nil {
 		return err
@@ -1029,7 +1050,7 @@ func (d *Driver) nfsExportIdentifier() string {
 }
 
 func (d *Driver) GetPid() (int, error) {
-	p, err := ioutil.ReadFile(d.ResolveStorePath(d.MachineName + ".pid"))
+	p, err := ioutil.ReadFile(d.ResolveStorePath("hyperkit.pid"))
 	if err != nil {
 		return 0, err
 	}
@@ -1068,60 +1089,13 @@ func trimMacAddress(rawUUID string) string {
 	return mac
 }
 
-func (d *Driver) xhyveArgs() []string {
-	iso := d.ResolveStorePath(isoFilename)
-
-	var diskImage string
-	if d.Qcow2 {
-		imgPath := fmt.Sprintf("file://%s", filepath.Join(d.ResolveStorePath("."), d.MachineName+".qcow2"))
-		diskImage = fmt.Sprintf("4:0,virtio-blk,%s,format=qcow", imgPath)
-	} else if d.RawDisk {
-		imgPath := fmt.Sprintf("%s", filepath.Join(d.ResolveStorePath("."), d.MachineName+".rawdisk"))
-		diskImage = fmt.Sprintf("4:0,virtio-blk,%s", imgPath)
-	} else {
-		imgPath := fmt.Sprintf("/dev/rdisk%d", d.DiskNumber)
-		diskImage = fmt.Sprintf("4:0,ahci-hd,%s", imgPath)
-	}
-
-	vmlinuz := d.ResolveStorePath(d.Vmlinuz)
-	initrd := d.ResolveStorePath(d.Initrd)
-
-	return []string{
-		"xhyve",
-		"-A",
-		"-U", fmt.Sprintf("%s", d.UUID),
-		"-c", fmt.Sprintf("%d", d.CPU),
-		"-m", fmt.Sprintf("%dM", d.Memory),
-		"-l", "com1,autopty",
-		"-s", "0:0,hostbridge",
-		"-s", "31,lpc",
-		"-s", "2:0,virtio-net",
-		"-s", fmt.Sprintf("3:0,ahci-cd,%s", iso),
-		"-s", diskImage,
-		"-f", fmt.Sprintf("kexec,%s,%s,%s", vmlinuz, initrd, d.BootCmd),
-	}
-}
-
 func (d *Driver) getMACAdress() (string, error) {
-	args := append(d.xhyveArgs(), "-M")
-
-	stdout := bytes.Buffer{}
-
-	cmd := exec.Command(os.Args[0], args...) // TODO: Should be possible without exec
-	log.Debugf("Running command: %s %s", os.Args[0], args)
-
-	cmd.Stdout = &stdout
-	if err := cmd.Run(); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			log.Debugf("Stderr: %s", exitErr.Stderr)
-		}
+	m, err := govmnet.GetMACAddressFromUUID(d.UUID)
+	if err != nil {
 		return "", err
 	}
 
-	mac := bytes.TrimPrefix(stdout.Bytes(), []byte("MAC: "))
-	mac = bytes.TrimSpace(mac)
-
-	hw, err := net.ParseMAC(string(mac))
+	hw, err := net.ParseMAC(string(m))
 	if err != nil {
 		return "", err
 	}
