@@ -1,5 +1,5 @@
-hash: d35f4c0286fb07f6ca4356fa997095df46d74eba662956a6566abafd37d81213
-updated: 2017-06-29T14:50:19.010643722+05:30
+hash: e4a1c8fb2ae048fafe01ff4acbc47ce390ddbcaecd64c62b778b26d5af52ea86
+updated: 2017-07-12T18:00:29.183706713-07:00
 imports:
 - name: github.com/docker/docker
   version: a8a31eff10544860d2188dddabdee4d727545796
@@ -25,6 +25,10 @@ imports:
   version: a9068f3f0daa39616953aec11c3eb1209ebc4086
 - name: github.com/mitchellh/go-ps
   version: 4fdf99ab29366514c69ccccddab5dc58b8d84062
+- name: github.com/moby/hyperkit
+  version: 62fb993cc65090d3efe29e9b1ed871b017eeaa4d
+  subpackages:
+  - go
 - name: github.com/pkg/errors
   version: a887431f7f6ef7687b556dbf718d9f351d4858a0
   repo: https://github.com/pkg/errors
@@ -32,14 +36,19 @@ imports:
   version: 9a991fd172f0e8a2a3adfe529ff5e6b814e26b97
   subpackages:
   - internal/mem
-- name: github.com/zchee/libhyperkit
-  version: 1a19a7693fac32b46ec6cdd22da6fbec974447fc
+- name: github.com/zchee/go-vmnet
+  version: 97ebf91740978f1e665defc0a960fb997ebe282b
 - name: golang.org/x/crypto
   version: beef0f4390813b96e8e68fd78570396d0f4751fc
   subpackages:
   - curve25519
   - ssh
   - ssh/terminal
+- name: golang.org/x/sys
+  version: d9157a9621b69ad1d8d77a1933590c416593f24f
+  subpackages:
+  - unix
+  - windows/registry
 testImports:
 - name: github.com/davecgh/go-spew
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
