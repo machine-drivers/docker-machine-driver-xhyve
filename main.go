@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/docker/machine/libmachine/drivers/plugin"
+	"github.com/docker/machine/libmachine/ssh"
 	"github.com/zchee/docker-machine-driver-xhyve/xhyve"
 	hyperkit "github.com/zchee/libhyperkit"
 )
@@ -17,6 +18,8 @@ func main() {
 	if len(os.Args) >= 2 && os.Args[1] == "xhyve" {
 		runXhyve()
 	} else {
+		// Using the native driver gives much better performance.
+		ssh.SetDefaultClient(ssh.Native)
 		plugin.RegisterDriver(xhyve.NewDriver("", ""))
 	}
 }
