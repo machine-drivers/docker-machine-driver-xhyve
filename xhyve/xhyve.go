@@ -53,7 +53,6 @@ const (
 	defaultISOFilename    = "boot2docker.iso"
 	defaultPrivateKeyPath = ""
 	defaultUUID           = ""
-	defaultNFSShareEnable = false
 	defaultNFSSharesRoot  = "/xhyve-nfsshares"
 	rootVolumeName        = "root-volume"
 	defaultDiskNumber     = -1
@@ -78,7 +77,6 @@ type Driver struct {
 	UUID           string
 	Qcow2          bool
 	RawDisk        bool
-	NFSShareEnable bool
 	NFSShares      []string
 	NFSSharesRoot  string
 	Virtio9p       bool
@@ -118,7 +116,6 @@ func NewDriver(hostName, storePath string) *Driver {
 		Memory:         defaultMemory,
 		PrivateKeyPath: defaultPrivateKeyPath,
 		UUID:           defaultUUID,
-		NFSShareEnable: defaultNFSShareEnable,
 		NFSSharesRoot:  defaultNFSSharesRoot,
 		DiskNumber:     defaultDiskNumber,
 		Virtio9p:       defaultVirtio9p,
@@ -194,11 +191,6 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "xhyve-virtio-9p",
 			Usage:  "Setup virtio-9p folder share",
 		},
-		mcnflag.BoolFlag{
-			EnvVar: "XHYVE_EXPERIMENTAL_NFS_SHARE_ENABLE",
-			Name:   "xhyve-experimental-nfs-share-enable",
-			Usage:  "Setup NFS shared folder (requires root)",
-		},
 		mcnflag.StringSliceFlag{
 			EnvVar: "XHYVE_EXPERIMENTAL_NFS_SHARE",
 			Name:   "xhyve-experimental-nfs-share",
@@ -266,7 +258,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UUID = flags.String("xhyve-uuid")
 	d.Virtio9p = flags.Bool("xhyve-virtio-9p")
 	d.Virtio9pFolder = "/Users"
-	d.NFSShareEnable = flags.Bool("xhyve-experimental-nfs-share-enable")
 	d.NFSShares = flags.StringSlice("xhyve-experimental-nfs-share")
 	d.NFSSharesRoot = flags.String("xhyve-experimental-nfs-share-root")
 
@@ -586,7 +577,7 @@ func (d *Driver) Remove() error {
 		return err
 	}
 
-	if d.NFSShareEnable {
+	if len(d.NFSShares) > 0 {
 		log.Infof("Remove NFS share folder must be root. Please insert root password.")
 		for _, share := range d.NFSShares {
 			if _, err := nfsexports.Remove("", d.nfsExportIdentifier(share)); err != nil {
@@ -832,7 +823,7 @@ func (d *Driver) setupMounts() error {
 	}
 
 	// Setup NFS sharing
-	if d.NFSShareEnable {
+	if len(d.NFSShares) > 0 {
 		log.Infof("NFS share folder must be root. Please insert root password.")
 		err := d.setupNFSShare()
 		if err != nil {

@@ -118,7 +118,6 @@ Usage
 | `--xhyve-boot-initrd`            | `XHYVE_BOOT_INITRD`            | string | `''`                                                                                                                                 |
 | `--xhyve-qcow2`                  | `XHYVE_QCOW2`                  | bool   | `false`                                                                                                                              |
 | `--xhyve-virtio-9p`              | `XHYVE_VIRTIO_9P`              | bool   | `false`                                                                                                                              |
-| `--xhyve-experimental-nfs-share-enable` | `XHYVE_EXPERIMENTAL_NFS_SHARE_ENABLE` | bool   | Enable `NFS` folder share (experimental) | `false`                                                  |
 | `--xhyve-experimental-nfs-share` | `XHYVE_EXPERIMENTAL_NFS_SHARE` | string   | Path to a host folder to be shared inside the guest |                                                   |
 | `--xhyve-experimental-nfs-share-root` | `XHYVE_EXPERIMENTAL_NFS_SHARE_ROOT` | string   | root path at which the NFS shares will be mounted| `/xhyve-nfsshares`                                                  |
 
@@ -176,9 +175,18 @@ This may be significantly faster for I/O intensive applications, at the potentia
 Enable `virtio-9p` folder share.  
 If you using docker-machine, `CONFIG_NET_9P=y` support is included in boot2docker as of version v1.10.2.
 
-#### `--xhyve-experimental-nfs-share`
+#### `--xhyve-experimental-nfs-share /path/to/host/folder`
 
-Enable `NFS` folder sharing.
+Share `path/to/host/folder` inside the guest at the path specified by `--xhyve-experimental-nfs-share-root` (which itself defaults to `/xhyve-nfsshares`).
+
+Can be specified multiple times
+
+#### `--xhyve-experimental-nfs-share-root /path`
+
+By default, NFS Shares will be mounted in the Guest at `/xhyve-nfsshares`.
+
+You can change this default by specifying `--xhyve-experimental-nfs-share-root /path`, `/path` being a path to the root
+
 
 Known isuue
 -----------
