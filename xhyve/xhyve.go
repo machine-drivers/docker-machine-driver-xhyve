@@ -484,7 +484,9 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	d.setupMounts()
+	if err := d.setupMounts(); err != nil {
+		return fmt.Errorf("Error setting up mounts: %v", err)
+	}
 
 	return nil
 }
@@ -533,10 +535,6 @@ func (d *Driver) Start() error {
 
 	if err := d.waitForIP(); err != nil {
 		return err
-	}
-
-	if err := d.setupMounts(); err != nil {
-		log.Warnf("Error setting up mounts: %v", err)
 	}
 
 	return nil
@@ -1006,8 +1004,8 @@ func (d *Driver) setupVirt9pShare() error {
 		i++
 	}
 
-	writeScriptCmd := fmt.Sprintf("echo -e \"%s\" | sudo tee %s && sudo chmod +x %s && %s",
-		bootScript, bootScriptName, bootScriptName, bootScriptName)
+	writeScriptCmd := fmt.Sprintf("echo -e \"%s\" | sudo tee -a %s && sudo chmod +x %s",
+		bootScript, bootScriptName, bootScriptName)
 
 	if _, err := drivers.RunSSHCommandFromDriver(d, writeScriptCmd); err != nil {
 		return err
@@ -1056,8 +1054,8 @@ func (d *Driver) setupNFSShare() error {
 		return err
 	}
 
-	writeScriptCmd := fmt.Sprintf("echo -e \"%s\" | sudo tee %s && sudo chmod +x %s && %s",
-		bootScript, bootScriptName, bootScriptName, bootScriptName)
+	writeScriptCmd := fmt.Sprintf("echo -e \"%s\" | sudo tee -a %s && sudo chmod +x %s",
+		bootScript, bootScriptName, bootScriptName)
 
 	if _, err := drivers.RunSSHCommandFromDriver(d, writeScriptCmd); err != nil {
 		return err
