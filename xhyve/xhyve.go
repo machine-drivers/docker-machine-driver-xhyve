@@ -484,10 +484,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	if err := d.setupMounts(); err != nil {
-		return fmt.Errorf("Error setting up mounts: %v", err)
-	}
-
 	return nil
 }
 
@@ -534,6 +530,10 @@ func (d *Driver) Start() error {
 	}()
 
 	if err := d.waitForIP(); err != nil {
+		return err
+	}
+
+	if err := d.setupMounts(); err != nil {
 		return err
 	}
 
@@ -838,6 +838,7 @@ func (d *Driver) setupMounts() error {
 		err := d.setupNFSShare()
 		if err != nil {
 			log.Errorf("NFS setup failed: %s", err.Error())
+			return err
 		}
 	}
 	return nil
@@ -992,20 +993,18 @@ func (d *Driver) setupVirt9pShare() error {
 	if err != nil {
 		return err
 	}
-	bootScriptName := "/var/lib/boot2docker/bootlocal.sh"
 
-	bootScript := fmt.Sprintf("#/bin/bash\\n")
+	mountCommands := fmt.Sprintf("#/bin/bash\\n")
 	i := 0
 	for _, virtioShare := range d.Virtio9p {
-		bootScript = fmt.Sprintf("%s\\n", bootScript)
+		mountCommands = fmt.Sprintf("%s\\n", mountCommands)
 		fullMountPath := path.Clean(d.Virtio9pRoot + "/" + virtioShare)
-		bootScript += fmt.Sprintf("sudo mkdir -p %s\\n", fullMountPath)
-		bootScript += fmt.Sprintf("sudo mount -t 9p -o version=9p2000 -o trans=virtio -o uname=%s -o dfltuid=$(id -u docker) -o dfltgid=50 -o access=any host-%d %s", user.Username, i, fullMountPath)
+		mountCommands += fmt.Sprintf("sudo mkdir -p %s\\n", fullMountPath)
+		mountCommands += fmt.Sprintf("sudo mount -t 9p -o version=9p2000 -o trans=virtio -o uname=%s -o dfltuid=$(id -u docker) -o dfltgid=50 -o access=any host-%d %s", user.Username, i, fullMountPath)
 		i++
 	}
 
-	writeScriptCmd := fmt.Sprintf("echo -e \"%s\" | sudo tee -a %s && sudo chmod +x %s",
-		bootScript, bootScriptName, bootScriptName)
+	writeScriptCmd := fmt.Sprintf("echo -e \"%s\" | sh", mountCommands)
 
 	if _, err := drivers.RunSSHCommandFromDriver(d, writeScriptCmd); err != nil {
 		return err
@@ -1026,10 +1025,8 @@ func (d *Driver) setupNFSShare() error {
 		return err
 	}
 
-	bootScriptName := "/var/lib/boot2docker/bootlocal.sh"
-	bootScript := fmt.Sprintf("#/bin/bash\\n")
-
-	bootScript += "sudo /usr/local/etc/init.d/nfs-client start\\n"
+	mountCommands := fmt.Sprintf("#/bin/bash\\n")
+	mountCommands += "sudo /usr/local/etc/init.d/nfs-client start\\n"
 
 	for _, share := range d.NFSShares {
 		if !path.IsAbs(share) {
@@ -1046,16 +1043,15 @@ func (d *Driver) setupNFSShare() error {
 		}
 
 		root := path.Clean(d.NFSSharesRoot)
-		bootScript += fmt.Sprintf("sudo mkdir -p %s/%s\\n", root, share)
-		bootScript += fmt.Sprintf("sudo mount -t nfs -o noacl,async %s:%s %s/%s\\n", hostIP, share, root, share)
+		mountCommands += fmt.Sprintf("sudo mkdir -p %s/%s\\n", root, share)
+		mountCommands += fmt.Sprintf("sudo mount -t nfs -o noacl,async %s:%s %s/%s\\n", hostIP, share, root, share)
 	}
 
 	if err := nfsexports.ReloadDaemon(); err != nil {
 		return err
 	}
 
-	writeScriptCmd := fmt.Sprintf("echo -e \"%s\" | sudo tee -a %s && sudo chmod +x %s",
-		bootScript, bootScriptName, bootScriptName)
+	writeScriptCmd := fmt.Sprintf("echo -e \"%s\" | sh", mountCommands)
 
 	if _, err := drivers.RunSSHCommandFromDriver(d, writeScriptCmd); err != nil {
 		return err
