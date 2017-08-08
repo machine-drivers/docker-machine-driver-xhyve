@@ -56,7 +56,7 @@ const (
 	defaultNFSSharesRoot  = "/xhyve-nfsshares"
 	rootVolumeName        = "root-volume"
 	defaultDiskNumber     = -1
-	defaultVirtio9p       = false
+	defaultVirtio9pRoot   = "/xhyve-virtio9p"
 	defaultQcow2          = false
 	defaultRawDisk        = false
 )
@@ -69,19 +69,19 @@ type Driver struct {
 	CaCertPath     string
 	PrivateKeyPath string
 
-	CPU            int
-	Memory         int
-	DiskSize       int64
-	DiskNumber     int
-	MacAddr        string
-	UUID           string
-	Qcow2          bool
-	RawDisk        bool
-	NFSShares      []string
-	NFSSharesRoot  string
-	Virtio9p       bool
-	Virtio9pFolder string
-	NFSShare       bool
+	CPU           int
+	Memory        int
+	DiskSize      int64
+	DiskNumber    int
+	MacAddr       string
+	UUID          string
+	Qcow2         bool
+	RawDisk       bool
+	NFSShares     []string
+	NFSSharesRoot string
+	Virtio9p      []string
+	Virtio9pRoot  string
+	NFSShare      bool
 
 	BootCmd    string
 	BootKernel string
@@ -116,9 +116,9 @@ func NewDriver(hostName, storePath string) *Driver {
 		Memory:         defaultMemory,
 		PrivateKeyPath: defaultPrivateKeyPath,
 		UUID:           defaultUUID,
+		Virtio9pRoot:   defaultVirtio9pRoot,
 		NFSSharesRoot:  defaultNFSSharesRoot,
 		DiskNumber:     defaultDiskNumber,
-		Virtio9p:       defaultVirtio9p,
 		Qcow2:          defaultQcow2,
 		RawDisk:        defaultRawDisk,
 	}
@@ -186,10 +186,16 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "The UUID for the machine",
 			Value:  defaultUUID,
 		},
-		mcnflag.BoolFlag{
+		mcnflag.StringSliceFlag{
 			EnvVar: "XHYVE_VIRTIO_9P",
 			Name:   "xhyve-virtio-9p",
-			Usage:  "Setup virtio-9p folder share",
+			Usage:  "Setup virtio-9p folder share(s)",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "XHYVE_VIRTIO_9P_ROOT",
+			Name:   "xhyve-virtio-9p-root",
+			Usage:  "root directory where the virtio shared folder will be mounted inside the machine",
+			Value:  defaultVirtio9pRoot,
 		},
 		mcnflag.StringSliceFlag{
 			EnvVar: "XHYVE_EXPERIMENTAL_NFS_SHARE",
@@ -256,8 +262,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.UUID = flags.String("xhyve-uuid")
-	d.Virtio9p = flags.Bool("xhyve-virtio-9p")
-	d.Virtio9pFolder = "/Users"
+	d.Virtio9p = flags.StringSlice("xhyve-virtio-9p")
+	d.Virtio9pRoot = flags.String("xhyve-virtio-9p-root")
 	d.NFSShares = flags.StringSlice("xhyve-experimental-nfs-share")
 	d.NFSSharesRoot = flags.String("xhyve-experimental-nfs-share-root")
 
@@ -497,8 +503,14 @@ func (d *Driver) Start() error {
 
 	args := d.xhyveArgs()
 	args = append(args, "-F", fmt.Sprintf("%s", pid))
-	if d.Virtio9p {
-		args = append(args, "-s", fmt.Sprintf("5,virtio-9p,host=%s", d.Virtio9pFolder))
+	if len(d.Virtio9p) > 0 {
+		const virtio9pPciStartValue = 5
+		i := virtio9pPciStartValue
+		for _, virtioshare := range d.Virtio9p {
+			// In the following line, i-virtio9pPciStartValue is just so that the string "host-" starts from 0 and not from 5
+			args = append(args, "-s", fmt.Sprintf("%d,virtio-9p,host-%d=%s", i, i-virtio9pPciStartValue, virtioshare))
+			i++
+		}
 	}
 
 	log.Debug(args)
@@ -814,7 +826,7 @@ func (d *Driver) generateQcow2Image(size int64) error {
 }
 
 func (d *Driver) setupMounts() error {
-	if d.Virtio9p {
+	if len(d.Virtio9p) > 0 {
 		err := d.setupVirt9pShare()
 		if err != nil {
 			log.Errorf("virtio-9p setup failed: %s", err.Error())
@@ -983,9 +995,16 @@ func (d *Driver) setupVirt9pShare() error {
 		return err
 	}
 	bootScriptName := "/var/lib/boot2docker/bootlocal.sh"
-	bootScript := fmt.Sprintf("#/bin/bash\\n"+
-		"sudo mkdir -p %s\\n"+
-		"sudo mount -t 9p -o version=9p2000 -o trans=virtio -o uname=%s -o dfltuid=$(id -u docker) -o dfltgid=50 -o access=any host %s", d.Virtio9pFolder, user.Username, d.Virtio9pFolder)
+
+	bootScript := fmt.Sprintf("#/bin/bash\\n")
+	i := 0
+	for _, virtioShare := range d.Virtio9p {
+		bootScript = fmt.Sprintf("%s\\n", bootScript)
+		fullMountPath := path.Clean(d.Virtio9pRoot + "/" + virtioShare)
+		bootScript += fmt.Sprintf("sudo mkdir -p %s\\n", fullMountPath)
+		bootScript += fmt.Sprintf("sudo mount -t 9p -o version=9p2000 -o trans=virtio -o uname=%s -o dfltuid=$(id -u docker) -o dfltgid=50 -o access=any host-%d %s", user.Username, i, fullMountPath)
+		i++
+	}
 
 	writeScriptCmd := fmt.Sprintf("echo -e \"%s\" | sudo tee %s && sudo chmod +x %s && %s",
 		bootScript, bootScriptName, bootScriptName, bootScriptName)
