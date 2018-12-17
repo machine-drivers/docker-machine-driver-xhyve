@@ -41,8 +41,8 @@ MAIN_FILE := $(shell grep "func main\(\)" *.go -l)
 # ----------------------------------------------------------------------------
 # Define main commands
 
-CC := $(shell xcrun -f clang)
-LIBTOOL := $(shell xcrun -f libtool)
+CC := xcrun --sdk macosx clang
+LIBTOOL := xcrun --sdk macosx libtool
 GO_CMD := $(shell which go)
 GIT_CMD := $(shell which git)
 DOCKER_CMD := $(shell which docker)
