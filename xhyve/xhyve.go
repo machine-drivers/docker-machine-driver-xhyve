@@ -414,7 +414,7 @@ func (d *Driver) PreCreateCheck() error {
 	if err != nil {
 		return fmt.Errorf("Error detecting VBox version: %s", err)
 	}
-	if !strings.HasPrefix(ver, "5") {
+	if strings.HasPrefix(ver, "4") {
 		return fmt.Errorf("Virtual Box version 4 or lower will cause a kernel panic" +
 			"if xhyve tries to run. You are running version: " +
 			ver +
