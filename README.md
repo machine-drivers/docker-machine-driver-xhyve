@@ -95,7 +95,7 @@ If your work requires a change to the dependencies, you need to update the Glide
 configuration.
 
 - Edit glide.yaml to change the dependencies as needed.
-- Delete `glide.lock` and re-create the vendor directory by running `make vendor`. Glide will recognize that there is no lock file and recalculatethe required dependencies.
+- Delete `glide.lock` and re-create the vendor directory by running `make vendor`. Glide will recognize that there is no lock file and recalculate the required dependencies.
 - Check-in the updated `glide.yaml` and `glide.lock` files.
 - Test that everything still compiles with the new lock file in place by running make clean && make.
 
@@ -142,7 +142,7 @@ Size of disk for the guest (MB).
 #### `--xhyve-uuid`
 
 The UUID for the machine.  
-By default, generate and use ramdom UUID. See [xhyve/uuid.go](https://github.com/zchee/docker-machine-driver-xhyve/blob/master/xhyve/uuid.go)
+By default, generate and use random UUID. See [xhyve/uuid.go](https://github.com/zchee/docker-machine-driver-xhyve/blob/master/xhyve/uuid.go)
 
 #### `--xhyve-boot-cmd`
 
@@ -188,7 +188,7 @@ By default, NFS Shares will be mounted in the Guest at `/xhyve-nfsshares`.
 You can change this default by specifying `--xhyve-experimental-nfs-share-root /path`, `/path` being a path to the root
 
 
-Known isuue
+Known issue
 -----------
 
 ### Does not clean up the vmnet when remove a VM
@@ -251,7 +251,7 @@ So, if you were able to launch the xhyve use docker-machine-driver-xhyve, Could 
 https://github.com/zchee/docker-machine-driver-xhyve/issues/18
 
 If macOS launched by the `Vagrant`, can be build, but will not be able to launch the Hypervisor.  
-The cause probably because backend vm (Virtualbox, VMWare, parallels...) to hide the CPU infomation.
+The cause probably because backend vm (Virtualbox, VMWare, parallels...) to hide the CPU information.
 
 In the case of VMWare,
 
