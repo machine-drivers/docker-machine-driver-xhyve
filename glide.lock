@@ -1,5 +1,5 @@
-hash: d35f4c0286fb07f6ca4356fa997095df46d74eba662956a6566abafd37d81213
-updated: 2017-06-29T14:50:19.010643722+05:30
+hash: b8e63bc050e74b744d715425dae2f7f286f33f6a8b9089981cda8f470907319d
+updated: 2019-02-02T13:46:39.946777+05:30
 imports:
 - name: github.com/docker/docker
   version: a8a31eff10544860d2188dddabdee4d727545796
@@ -28,6 +28,12 @@ imports:
 - name: github.com/pkg/errors
   version: a887431f7f6ef7687b556dbf718d9f351d4858a0
   repo: https://github.com/pkg/errors
+- name: github.com/zchee/docker-machine-driver-xhyve
+  version: 829c0968dac18547636f3ad6aa5ef83677f48267
+  subpackages:
+  - b2d
+  - vmnet
+  - xhyve
 - name: github.com/zchee/go-qcow2
   version: 9a991fd172f0e8a2a3adfe529ff5e6b814e26b97
   subpackages:
