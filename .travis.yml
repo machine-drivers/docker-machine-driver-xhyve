@@ -1,14 +1,14 @@
 os: osx
-osx_image: xcode8.3
+osx_image: xcode10.1
 
 language: go
 go:
-  - 1.8.x
+  - 1.11.x
   - tip
 
 env:
   global:
-    - GO_BUILD_TAGS='lib9p qcow2'
+    - GO_BUILD_TAGS='lib9p'
     - HOMEBREW_NO_AUTO_UPDATE=1
     - MAKEFLAGS="-j$(sysctl -n hw.ncpu)"
     - RELEASE_GO_VERSION=''
@@ -25,7 +25,7 @@ before_install:
   # for ocaml-qcow
   - brew install https://github.com/Homebrew/homebrew-core/raw/master/Formula/opam.rb
   - brew install https://github.com/Homebrew/homebrew-core/raw/master/Formula/libev.rb
-  - opam --version && opam init && opam install uri qcow-format io-page.1.6.1 ocamlfind conf-libev
+  - opam --version && opam init && opam install uri qcow-format io-page ocamlfind conf-libev
   - eval `opam config env`
 
 install:

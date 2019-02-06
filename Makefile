@@ -29,7 +29,7 @@ endif
 # Package settings
 
 # Build package infomation
-GITHUB_USER := zchee
+GITHUB_USER := machine-drivers
 TOP_PACKAGE_DIR := github.com/${GITHUB_USER}
 PACKAGE := $(shell basename $(PWD))
 OUTPUT := bin/docker-machine-driver-xhyve
@@ -41,8 +41,8 @@ MAIN_FILE := $(shell grep "func main\(\)" *.go -l)
 # ----------------------------------------------------------------------------
 # Define main commands
 
-CC := $(shell xcrun -f clang)
-LIBTOOL := $(shell xcrun -f libtool)
+CC := xcrun --sdk macosx clang
+LIBTOOL := xcrun --sdk macosx libtool
 GO_CMD := $(shell which go)
 GIT_CMD := $(shell which git)
 DOCKER_CMD := $(shell which docker)
