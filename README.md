@@ -175,7 +175,7 @@ This may be significantly faster for I/O intensive applications, at the potentia
 Enable `virtio-9p` folder share.  
 If you using docker-machine, `CONFIG_NET_9P=y` support is included in boot2docker as of version v1.10.2.
 
-#### `--xhyve-experimental-nfs-share /path/to/host/folder`
+#### `--xhyve-experimental-nfs-share=true`
 
 Share `path/to/host/folder` inside the guest at the path specified by `--xhyve-experimental-nfs-share-root` (which itself defaults to `/xhyve-nfsshares`).
 
