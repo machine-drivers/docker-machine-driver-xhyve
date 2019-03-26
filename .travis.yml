@@ -25,7 +25,7 @@ before_install:
   # for ocaml-qcow
   - brew install https://github.com/Homebrew/homebrew-core/raw/master/Formula/opam.rb
   - brew install https://github.com/Homebrew/homebrew-core/raw/master/Formula/libev.rb
-  - opam --version && opam init && eval $(opam env) && opam install uri qcow-format io-page.1.6.1 ocamlfind conf-libev
+  - opam --version && opam init && opam install uri qcow-format io-page ocamlfind conf-libev
   - eval `opam config env`
 
 install:
