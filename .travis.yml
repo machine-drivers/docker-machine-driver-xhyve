@@ -1,14 +1,14 @@
 os: osx
-osx_image: xcode8.3
+osx_image: xcode10.1
 
 language: go
 go:
-  - 1.8.x
+  - 1.12.x
   - tip
 
 env:
   global:
-    - GO_BUILD_TAGS='lib9p qcow2'
+    - GO_BUILD_TAGS='lib9p'
     - HOMEBREW_NO_AUTO_UPDATE=1
     - MAKEFLAGS="-j$(sysctl -n hw.ncpu)"
     - RELEASE_GO_VERSION=''
@@ -25,7 +25,7 @@ before_install:
   # for ocaml-qcow
   - brew install https://github.com/Homebrew/homebrew-core/raw/master/Formula/opam.rb
   - brew install https://github.com/Homebrew/homebrew-core/raw/master/Formula/libev.rb
-  - opam --version && opam init && opam install uri qcow-format io-page.1.6.1 ocamlfind conf-libev
+  - opam --version && opam init && opam install uri qcow-format io-page ocamlfind conf-libev
   - eval `opam config env`
 
 install:
@@ -44,14 +44,14 @@ before_deploy:
   - sudo chown travis:staff bin/docker-machine-driver-xhyve
   # add version suffix to binary if not stable Go version
   - if [[ "$TRAVIS_GO_VERSION" == "tip" ]]; then
-      export RELEASE_GO_VERSION=_$TRAVIS_GO_VERSION && mv bin/docker-machine-driver-xhyve{,$RELEASE_GO_VERSION};
+    export RELEASE_GO_VERSION=_$TRAVIS_GO_VERSION && mv bin/docker-machine-driver-xhyve{,$RELEASE_GO_VERSION};
     fi
 
 deploy:
   provider: releases
   skip_cleanup: true
   file_glob: true
-  file: 'bin/docker-machine-driver-xhyve*'
+  file: "bin/docker-machine-driver-xhyve*"
   on:
     repo: zchee/docker-machine-driver-xhyve
     tags: true
