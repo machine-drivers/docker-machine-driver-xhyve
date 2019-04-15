@@ -10,8 +10,8 @@ import (
 
 	"github.com/docker/machine/libmachine/drivers/plugin"
 	"github.com/docker/machine/libmachine/ssh"
-	"github.com/zchee/docker-machine-driver-xhyve/xhyve"
-	hyperkit "github.com/zchee/libhyperkit"
+	"github.com/machine-drivers/docker-machine-driver-xhyve/xhyve"
+	hyperkit "github.com/urbantrout/libhyperkit"
 )
 
 func main() {
