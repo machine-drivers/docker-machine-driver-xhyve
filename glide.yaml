@@ -1,4 +1,4 @@
-package: github.com/docker-machine/docker-machine-driver-xhyve
+package: github.com/machine-drivers/docker-machine-driver-xhyve
 import:
   - package: github.com/docker/machine
     version: v0.11.0
