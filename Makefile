@@ -145,7 +145,7 @@ OCAML_LDLIBS := -L $(OCAML_WHERE) \
 CGO_CFLAGS += -DHAVE_OCAML=1 -DHAVE_OCAML_QCOW=1 -DHAVE_OCAML=1 -I$(OCAML_WHERE)
 CGO_LDFLAGS += $(OCAML_LDLIBS)
 GO_BUILD_TAGS += qcow2
-bin/docker-machine-driver-xhyve: vendor/github.com/zchee/libhyperkit/mirage_block_ocaml.o
+bin/docker-machine-driver-xhyve: vendor/github.com/urbantrout/libhyperkit/mirage_block_ocaml.o
 endif
 
 
@@ -175,8 +175,8 @@ default: build
 
 build: bin/docker-machine-driver-xhyve
 
-vendor/github.com/zchee/libhyperkit/mirage_block_ocaml.o:
-	$(VERBOSE) $(GO_CMD) generate $(GO_BUILD_FLAG) $(GO_VERBOSE) ./vendor/github.com/zchee/libhyperkit
+vendor/github.com/urbantrout/libhyperkit/mirage_block_ocaml.o:
+	$(VERBOSE) $(GO_CMD) generate $(GO_BUILD_FLAG) $(GO_VERBOSE) ./vendor/github.com/urbantrout/libhyperkit
 
 bin/docker-machine-driver-xhyve:
 	$(VERBOSE) test -d bin || mkdir -p bin;
@@ -221,7 +221,7 @@ docker-build-nocache:
 
 
 clean: clean-lib9p
-	@${RM} -r ./bin ./vendor/github.com/zchee/libhyperkit/*.cmi ./vendor/github.com/zchee/libhyperkit/*.cmx ./vendor/github.com/zchee/libhyperkit/*.syso
+	@${RM} -r ./bin ./vendor/github.com/urbantrout/libhyperkit/*.cmi ./vendor/github.com/urbantrout/libhyperkit/*.cmx ./vendor/github.com/urbantrout/libhyperkit/*.syso
 
 
 run: driver-run

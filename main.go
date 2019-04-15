@@ -11,7 +11,7 @@ import (
 	"github.com/docker/machine/libmachine/drivers/plugin"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/machine-drivers/docker-machine-driver-xhyve/xhyve"
-	hyperkit "github.com/zchee/libhyperkit"
+	hyperkit "github.com/urbantrout/libhyperkit"
 )
 
 func main() {
