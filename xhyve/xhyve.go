@@ -33,8 +33,8 @@ import (
 	"github.com/docker/machine/libmachine/state"
 	"github.com/johanneswuerbach/nfsexports"
 	ps "github.com/mitchellh/go-ps"
-	"github.com/zchee/docker-machine-driver-xhyve/b2d"
-	"github.com/zchee/docker-machine-driver-xhyve/vmnet"
+	"github.com/machine-drivers/docker-machine-driver-xhyve/b2d"
+	"github.com/machine-drivers/docker-machine-driver-xhyve/vmnet"
 	qcow2 "github.com/zchee/go-qcow2"
 )
 
