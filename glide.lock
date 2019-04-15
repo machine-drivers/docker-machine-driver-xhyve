@@ -1,5 +1,5 @@
-hash: d35f4c0286fb07f6ca4356fa997095df46d74eba662956a6566abafd37d81213
-updated: 2017-06-29T14:50:19.010643722+05:30
+hash: 8705fc0cc5db3b3f64a8796055d109e4dd986d81deb36b3d563271dbda6109a7
+updated: 2019-04-15T21:06:43.620593+01:00
 imports:
 - name: github.com/docker/docker
   version: a8a31eff10544860d2188dddabdee4d727545796
@@ -28,12 +28,12 @@ imports:
 - name: github.com/pkg/errors
   version: a887431f7f6ef7687b556dbf718d9f351d4858a0
   repo: https://github.com/pkg/errors
+- name: github.com/urbantrout/libhyperkit
+  version: 1f4784ffdcf51a4f3a04ef2818946a02b5e42391
 - name: github.com/zchee/go-qcow2
   version: 9a991fd172f0e8a2a3adfe529ff5e6b814e26b97
   subpackages:
   - internal/mem
-- name: github.com/zchee/libhyperkit
-  version: 1a19a7693fac32b46ec6cdd22da6fbec974447fc
 - name: golang.org/x/crypto
   version: beef0f4390813b96e8e68fd78570396d0f4751fc
   subpackages:
