@@ -193,6 +193,31 @@ generate_qid(struct stat *buf, struct l9p_qid *qid)
 		qid->type |= L9P_QTSYMLINK;
 }
 
+static int
+translate_mode(int mode)
+{
+	int result = 0;
+
+	if (mode & L9P_OWRITE)
+		result |= O_WRONLY;
+	if (mode & L9P_ORDWR)
+		result |= O_RDWR;
+	if (mode & L9P_OTRUNC)
+		result |= O_TRUNC;
+	if (mode & L9P_OCEXEC)
+		result |= O_CLOEXEC;
+	if (mode & L9P_ONONBLOCK)
+		result |= O_NONBLOCK;
+	if (mode & L9P_OEXCL)
+		result |= O_EXCL;
+	if (mode & L9P_OLOCK)
+		result |= O_EXLOCK;
+	if (mode & L9P_OAPPEND)
+		result |= O_APPEND;
+
+	return result;
+}
+
 static bool
 check_access(struct stat *st, uid_t uid, int amode)
 {
@@ -391,7 +416,7 @@ fs_create(void *softc, struct l9p_request *req)
 		}
 	} else {
 		file->fd = open(newname,
-		    O_CREAT | O_TRUNC | req->lr_req.tcreate.mode,
+		    O_CREAT | O_TRUNC | translate_mode(req->lr_req.tcreate.mode),
 		    mode);
 	}
 
@@ -431,7 +456,7 @@ fs_open(void *softc __unused, struct l9p_request *req)
 		return;
 	}
 
-	if (!check_access(&st, file->uid, req->lr_req.topen.mode)) {
+	if (!check_access(&st, file->uid, req->lr_req.topen.mode & L9P_OWRITE)) {
 		l9p_respond(req, EPERM);
 		return;
 	}
@@ -439,7 +464,7 @@ fs_open(void *softc __unused, struct l9p_request *req)
 	if (S_ISDIR(st.st_mode))
 		file->dir = opendir(file->name);
 	else {
-		file->fd = open(file->name, req->lr_req.topen.mode);
+		file->fd = open(file->name, translate_mode(req->lr_req.topen.mode));
 		if (file->fd < 0) {
 			l9p_respond(req, EPERM);
 			return;
