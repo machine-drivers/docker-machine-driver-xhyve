@@ -1044,7 +1044,7 @@ func (d *Driver) setupNFSShare() error {
 
 		root := path.Clean(d.NFSSharesRoot)
 		mountCommands += fmt.Sprintf("sudo mkdir -p %s/%s\\n", root, share)
-		mountCommands += fmt.Sprintf("sudo mount -t nfs -o noacl,async %s:%s %s/%s\\n", hostIP, share, root, share)
+		mountCommands += fmt.Sprintf("sudo mount -t nfs -o noacl,async,vers=3 %s:%s %s/%s\\n", hostIP, share, root, share)
 	}
 
 	if err := nfsexports.ReloadDaemon(); err != nil {
